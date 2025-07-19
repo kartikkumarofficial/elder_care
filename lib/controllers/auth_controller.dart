@@ -1,3 +1,4 @@
+import 'package:elder_care/presentation/screens/auth/role_selection_screen.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -69,7 +70,7 @@ class AuthController extends GetxController {
           'Signed up as ${response.user!.email}, Confirm your email via the link in your inbox',
           colorText: Colors.white,
         );
-        Get.offAll(LoginScreen());
+        Get.offAll(RoleSelectionScreen(userId:response.user!.id));
       } else {
         Get.snackbar(
           'Sign Up Failed',
@@ -134,6 +135,11 @@ class AuthController extends GetxController {
       isLoading.value = false;
     }
   }
+
+  // Future<void> saveUserRole(String role) async {
+  //   final userId = supabase.auth.currentUser?.id;
+  //   await supabase.from('users').update({'role': role}).eq('id', userId);
+  // }
 
   @override
   void onClose() {

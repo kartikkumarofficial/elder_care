@@ -7,7 +7,7 @@ project_structure = {
         "auth_controller.dart",
         "home_controller.dart",
         "dashboard_controller.dart",
-        "profile_controller.dart"
+        "user_controller.dart"
     ],
     "models": [
         "user_model.dart",
