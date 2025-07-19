@@ -48,7 +48,7 @@ class AuthController extends GetxController {
           'Signed up as ${response.user!.email}, Confirm your email via the link in your inbox',
           colorText: Colors.white,
         );
-        Get.offAll(LoginPage());
+        Get.offAll(LoginScreen());
       } else {
         Get.snackbar(
           'Sign Up Failed',
