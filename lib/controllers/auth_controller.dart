@@ -1,4 +1,3 @@
-
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,31 +7,51 @@ import '../presentation/screens/main_scaffold.dart';
 
 class AuthController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
+
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+
   final isLoading = false.obs;
+  final isPasswordVisible = false.obs;
+  final selectedRole = ''.obs;
+
+  void togglePasswordVisibility() {
+    isPasswordVisible.value = !isPasswordVisible.value;
+  }
+
+  void setSelectedRole(String role) {
+    selectedRole.value = role;
+  }
 
   Future<void> signUp() async {
     final name = nameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
+    final role = selectedRole.value;
 
     if (password != confirmPassword) {
       Get.snackbar('Error', 'Passwords do not match', colorText: Colors.white);
       return;
     }
 
+    if (role.isEmpty) {
+      Get.snackbar('Error', 'Please select a role', colorText: Colors.white);
+      return;
+    }
+
     isLoading.value = true;
+
     try {
       final response = await supabase.auth.signUp(
         email: email,
         password: password,
         data: {
-          "name": nameController.text.trim(),
-        }, //final name = Supabase.instance.client.auth.currentUser?.userMetadata?['name']; - can be accessed by this
+          "name": name,
+          "role": role,
+        },
       );
 
       if (response.user != null) {
@@ -40,9 +59,11 @@ class AuthController extends GetxController {
           'id': response.user!.id,
           'email': email,
           'username': name,
+          'role': role,
           'profile_image':
           'https://api.dicebear.com/6.x/pixel-art/svg?seed=$email',
         });
+
         Get.snackbar(
           'Success',
           'Signed up as ${response.user!.email}, Confirm your email via the link in your inbox',
@@ -59,9 +80,9 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        colorText: Colors.white,
         e.toString().replaceAll('Exception: ', ''),
-      ); //just to make error snack bar smaller and more readable
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -70,6 +91,7 @@ class AuthController extends GetxController {
   Future<void> logIn() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
+
     if (email.isEmpty || password.isEmpty) {
       Get.snackbar(
         'Error',
@@ -78,6 +100,7 @@ class AuthController extends GetxController {
       );
       return;
     }
+
     isLoading.value = true;
 
     try {
@@ -89,7 +112,7 @@ class AuthController extends GetxController {
       if (response.user != null) {
         Get.snackbar(
           'Welcome',
-          'Logged in as ${response.user!.email} ',
+          'Logged in as ${response.user!.email}',
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );

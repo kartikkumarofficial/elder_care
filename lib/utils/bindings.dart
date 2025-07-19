@@ -1,3 +1,4 @@
+import 'package:elder_care/controllers/dashboard_controller.dart';
 import 'package:get/get.dart';
 
 import '../controllers/auth_controller.dart';
@@ -9,6 +10,7 @@ class InitialBinding extends Bindings {
   void dependencies() {
     Get.put(AuthController(),permanent: true);
     Get.put(NavController());
+    Get.put(DashboardController());
 
 
   }
