@@ -113,7 +113,7 @@ class AuthController extends GetxController {
       emailController.clear();
       passwordController.clear();
 
-      await _fetchRoleAndNavigate(response.user!.id);
+      await fetchRoleAndNavigate(response.user!.id);
 
     } catch (e) {
       Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''),
@@ -124,34 +124,49 @@ class AuthController extends GetxController {
   }
 
   /// Fetches user role and link status to navigate to the correct, separate dashboard.
-  Future<void> _fetchRoleAndNavigate(String userId) async {
+  Future<void> fetchRoleAndNavigate(String userId) async {
     try {
+      print('[DEBUG] Fetching user data for ID: $userId');
+
       final response = await supabase
           .from('users')
           .select('role, linked_user_id')
           .eq('id', userId)
           .single();
 
+      print('[DEBUG] Supabase response: $response');
+
       final role = response['role'];
       final linkedUserId = response['linked_user_id'];
 
       if (role == null) {
+        print('[DEBUG] Role is null');
         Get.offAll(() => RoleSelectionView());
       } else if (role == 'caregiver') {
         if (linkedUserId == null) {
+          print('[DEBUG] Caregiver not linked');
           Get.offAll(() => CareLinkScreen());
         } else {
-          // FIX: Navigate to the new CaregiverDashboardScreen
+          print('[DEBUG] Caregiver linked → navigating to MainScaffold');
           Get.offAll(() => MainScaffold());
         }
-      } else { // Role is 'receiver'
-        // FIX: Navigate to the new CareReceiverDashboard
+      } else {
+        print('[DEBUG] Receiver → navigating to CareReceiverDashboard');
         Get.offAll(() => CareReceiverDashboard());
       }
     } catch (e) {
-      Get.snackbar('Error', 'Could not retrieve user details. Please try again.',
-          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
-      Get.offAll(() => LoginScreen()); // Fallback to login
+      print('[ERROR] fetchRoleAndNavigate failed: $e');
+
+      Get.snackbar(
+        'Error',
+        'Could not retrieve user details. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
+      Get.offAll(() => LoginScreen());
     }
   }
+
 }

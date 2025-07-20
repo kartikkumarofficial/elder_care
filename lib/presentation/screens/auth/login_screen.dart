@@ -1,3 +1,4 @@
+import 'package:elder_care/controllers/dashboard_controller.dart';
 import 'package:elder_care/presentation/screens/auth/signup_screen.dart' hide AuthController;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,6 +14,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final AuthController authController = Get.find<AuthController>();
+  final DashboardController dashboardController = Get.find<DashboardController>();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
 
