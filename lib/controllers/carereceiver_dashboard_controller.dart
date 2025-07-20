@@ -1,14 +1,15 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/task_model.dart';
-import '../services/location_service.dart'; // Make sure this is imported
+import '../services/location_service.dart';
 
 class CareReceiverDashboardController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
-  final LocationService _locationService = LocationService(); // Add LocationService instance
-  Timer? _locationUpdateTimer; // Add Timer for background updates
+  final LocationService _locationService = LocationService();
+  Timer? _locationUpdateTimer;
 
   // Observables for UI state
   final isLoading = true.obs;
@@ -23,26 +24,38 @@ class CareReceiverDashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Fetch dashboard data and start location sharing simultaneously
-    fetchInitialData();
-    _startAutomaticLocationSharing();
+    // Run the full refresh logic when the controller is first created.
+    refreshAllData();
   }
 
   @override
   void onClose() {
-    // IMPORTANT: Cancel the timer to prevent memory leaks
     _locationUpdateTimer?.cancel();
     super.onClose();
   }
 
+  /// Public method to handle a full refresh of the dashboard.
+  /// This will be called by the RefreshIndicator.
+  Future<void> refreshAllData() async {
+    print('[CareReceiverDashboardController] Refreshing all data...');
+    // Cancel any existing timer to prevent duplicates.
+    _locationUpdateTimer?.cancel();
+
+    // Re-run the initial setup logic concurrently.
+    await Future.wait([
+      fetchInitialData(),
+      startAutomaticLocationSharing(),
+    ]);
+    print('[CareReceiverDashboardController] Refresh complete.');
+  }
+
   /// Starts the automatic location sharing process.
-  Future<void> _startAutomaticLocationSharing() async {
+  Future<void> startAutomaticLocationSharing() async {
     bool permissionsGranted = await _locationService.requestPermissions();
     if (permissionsGranted) {
-      locationStatusMessage.value = "Sharing location...";
+      locationStatusMessage.value = "Permissions granted. Sharing location...";
       isSharingLocation.value = true;
-      await _locationService.updateLocationInSupabase(); // Initial update
-      // Start a timer to update every 2 minutes
+      await _locationService.updateLocationInSupabase();
       _locationUpdateTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
         _locationService.updateLocationInSupabase();
         locationStatusMessage.value = "Location updated at ${TimeOfDay.now().format(Get.context!)}";

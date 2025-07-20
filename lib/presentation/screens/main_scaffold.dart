@@ -6,8 +6,8 @@ import 'package:get/get.dart';
 
 import '../../controllers/nav_controller.dart';
 import '../widgets/bottom_navigation_bar.dart';
-import '../screens/tasks_screen.dart';
-import '../screens/profile_screen.dart';
+
+import 'profile/profile_screen.dart';
 
 class MainScaffold extends StatelessWidget {
   MainScaffold({super.key});
@@ -36,14 +36,15 @@ class MainScaffold extends StatelessWidget {
       // Define the list of screens here, so it gets the latest linkedUserId.
       final List<Widget> screens = [
         CaregiverDashboardScreen(),
-        // TasksScreen(),
-        TasksScreen(), // Note: You have two TasksScreen entries
-        LocationScreen(linkedUserId: linkedUserId), // Pass the ID here
-        ProfileScreen(),
+        // MainScaffold(),
+        LocationScreen(linkedUserId: linkedUserId),
+        Center(child: Text("Profile Screen",style: TextStyle(color: Colors.white),),)
       ];
 
       // Build the main scaffold with the correct data.
       return Scaffold(
+        // This property allows the body to extend behind the navigation bar
+        extendBody: true,
         backgroundColor: const Color(0xFF121212),
         body: screens[navController.selectedIndex.value],
         bottomNavigationBar: BottomNavBar(),

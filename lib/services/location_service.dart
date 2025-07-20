@@ -6,7 +6,6 @@ class LocationService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Requests location service and permissions from the user.
-  /// Returns true if permission is granted, false otherwise.
   Future<bool> requestPermissions() async {
     print('[LocationService] Requesting permissions...');
     bool serviceEnabled = await _location.serviceEnabled();
@@ -44,9 +43,9 @@ class LocationService {
       print('[LocationService] Location fetched: Lat: ${locationData.latitude}, Lon: ${locationData.longitude}');
 
       await _supabase
-          .from('locations') // Using 'locations' table
+          .from('locations')
           .upsert({
-        'user_id': user.id, // This is the primary key
+        'user_id': user.id,
         'latitude': locationData.latitude,
         'longitude': locationData.longitude,
         'updated_at': DateTime.now().toIso8601String(),
@@ -57,20 +56,23 @@ class LocationService {
     }
   }
 
-  /// Fetches the latest location for a given user ID from the 'locations' table.
+  /// Fetches the LATEST location for a given user ID from the 'locations' table.
   Future<Map<String, dynamic>?> getLocationOfLinkedUser(String linkedUserId) async {
     try {
-      print('[LocationService] Fetching location for linked user ID: $linkedUserId');
+      print('[LocationService] Fetching latest location for linked user ID: $linkedUserId');
       final response = await _supabase
           .from('locations')
           .select()
           .eq('user_id', linkedUserId)
-          .single();
+          .order('updated_at', ascending: false) // <-- FIX: Order by most recent
+          .limit(1)                             // <-- FIX: Get only the top one
+          .single();                            // <-- Now .single() is safe to use
 
       print('[LocationService] Supabase response for linked user: $response');
       return response;
     } catch (e) {
       print('[LocationService] Error fetching linked user location: $e');
+      // This will now correctly catch if NO location is found at all.
       return null;
     }
   }

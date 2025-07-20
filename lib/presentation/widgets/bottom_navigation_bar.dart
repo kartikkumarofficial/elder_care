@@ -10,16 +10,15 @@ class BottomNavBar extends StatelessWidget {
 
   final List<IconData> icons = [
     Icons.home,
-    Icons.favorite,
+    // Icons.favorite,
     Icons.location_on,
     Icons.more_horiz,
   ];
 
   final List<String> labels = [
     'Home',
-    'Health',
     'Location',
-    'More',
+    'Profile',
   ];
 
   @override
@@ -51,7 +50,7 @@ class BottomNavBar extends StatelessWidget {
         elevation: 0,
         selectedFontSize: 14,
         unselectedFontSize: 12,
-        items: List.generate(4, (index) {
+        items: List.generate(labels.length, (index) {
           return BottomNavigationBarItem(
             icon: _buildIcon(index),
             label: labels[index],

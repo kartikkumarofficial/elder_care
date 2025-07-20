@@ -4,40 +4,43 @@ import 'package:intl/intl.dart';
 import '../../controllers/carereceiver_dashboard_controller.dart';
 import '../../models/task_model.dart';
 
-// Converted to a StatelessWidget for better performance with GetX
 class CareReceiverDashboard extends StatelessWidget {
   CareReceiverDashboard({Key? key}) : super(key: key);
 
-  // The controller is now initialized here and handles all logic
   final CareReceiverDashboardController controller = Get.put(CareReceiverDashboardController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF2A2E43),
-      body: Obx(
-            () => controller.isLoading.value
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                _buildHeader(),
-                const SizedBox(height: 30),
-                _buildLocationStatusCard(), // <-- NEW WIDGET
-                const SizedBox(height: 30),
-                _buildSectionTitle("Health Vitals"),
-                const SizedBox(height: 16),
-                _buildHealthVitalsGrid(context),
-                const SizedBox(height: 30),
-                _buildSectionTitle("Reminders"),
-                const SizedBox(height: 16),
-                _buildRemindersList(context),
-                const SizedBox(height: 20),
-              ],
+      body: RefreshIndicator(
+        // FIX: This now calls the new method to restart the controller's logic.
+        onRefresh: () => controller.refreshAllData(),
+        child: Obx(
+              () => controller.isLoading.value && controller.userName.value.isEmpty
+              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              : SafeArea(
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(), // Ensures refresh works even if content is small
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  _buildHeader(),
+                  const SizedBox(height: 30),
+                  _buildLocationStatusCard(),
+                  const SizedBox(height: 30),
+                  _buildSectionTitle("Health Vitals"),
+                  const SizedBox(height: 16),
+                  _buildHealthVitalsGrid(context),
+                  const SizedBox(height: 30),
+                  _buildSectionTitle("Reminders"),
+                  const SizedBox(height: 16),
+                  _buildRemindersList(context),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -46,7 +49,6 @@ class CareReceiverDashboard extends StatelessWidget {
     );
   }
 
-  // New widget to display location status from the controller
   Widget _buildLocationStatusCard() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -243,7 +245,6 @@ class CareReceiverDashboard extends StatelessWidget {
   }
 }
 
-// Helper Widget for Task Tiles
 class _TaskTile extends StatelessWidget {
   final Task task;
   final CareReceiverDashboardController controller;
