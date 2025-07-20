@@ -37,3 +37,32 @@ class AppUser {
     };
   }
 }
+
+
+class UserModel {
+  final String id;
+  final String? fullName;
+  final String? email;
+  final String? role;
+  final String? linkedUserId;
+
+  UserModel({
+    required this.id,
+    this.fullName,
+    this.email,
+    this.role,
+    this.linkedUserId,
+  });
+
+  // Factory constructor to create a UserModel from a JSON map (from Supabase)
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'],
+      fullName: json['full_name'],
+      email: json['email'],
+      role: json['role'],
+      linkedUserId: json['linked_user_id'],
+    );
+  }
+}
+

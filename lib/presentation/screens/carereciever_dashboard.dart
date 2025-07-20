@@ -3,31 +3,13 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/carereceiver_dashboard_controller.dart';
 import '../../models/task_model.dart';
-import '../../services/location_service.dart'; // Import the Task model
 
-class CareReceiverDashboard extends StatefulWidget {
+// Converted to a StatelessWidget for better performance with GetX
+class CareReceiverDashboard extends StatelessWidget {
   CareReceiverDashboard({Key? key}) : super(key: key);
 
-  @override
-  State<CareReceiverDashboard> createState() => _CareReceiverDashboardState();
-}
-
-class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
+  // The controller is now initialized here and handles all logic
   final CareReceiverDashboardController controller = Get.put(CareReceiverDashboardController());
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeLocation();
-  }
-
-  void _initializeLocation() async {
-    final locationService = LocationService();
-    await locationService.requestPermissions();
-    await locationService.updateLocationInSupabase();
-  }
-
-  final locationService = LocationService();
 
   @override
   Widget build(BuildContext context) {
@@ -45,13 +27,14 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
                 const SizedBox(height: 20),
                 _buildHeader(),
                 const SizedBox(height: 30),
+                _buildLocationStatusCard(), // <-- NEW WIDGET
+                const SizedBox(height: 30),
                 _buildSectionTitle("Health Vitals"),
                 const SizedBox(height: 16),
                 _buildHealthVitalsGrid(context),
                 const SizedBox(height: 30),
                 _buildSectionTitle("Reminders"),
                 const SizedBox(height: 16),
-                // This now uses the controller's dynamic data
                 _buildRemindersList(context),
                 const SizedBox(height: 20),
               ],
@@ -63,31 +46,57 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
     );
   }
 
+  // New widget to display location status from the controller
+  Widget _buildLocationStatusCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4A4E6C),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Obx(
+            () => Row(
+          children: [
+            Icon(
+              controller.isSharingLocation.value ? Icons.my_location : Icons.location_disabled,
+              color: controller.isSharingLocation.value ? Colors.greenAccent : Colors.redAccent,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Location Sharing",
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    controller.locationStatusMessage.value,
+                    style: TextStyle(color: Colors.grey[300], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Obx(
-              () => Text(
-            "Welcome, ${controller.userName.value}",
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
+        Obx(() => Text(
+          "Welcome, ${controller.userName.value}",
+          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+        )),
         const SizedBox(height: 8),
-        Obx(
-              () => Text(
-            "Care ID: ${controller.careId.value}",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[400],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
+        Obx(() => Text(
+          "Care ID: ${controller.careId.value}",
+          style: TextStyle(fontSize: 16, color: Colors.grey[400], fontWeight: FontWeight.w500),
+        )),
       ],
     );
   }
@@ -95,11 +104,7 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-      ),
+      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
     );
   }
 
@@ -125,51 +130,37 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
         color: const Color(0xFF4A4E6C),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(0.2),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-              const SizedBox(height: 4),
-              Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
-            ],
-          )
-        ],
-      ),
+      child: Row(children: [
+        CircleAvatar(backgroundColor: color.withOpacity(0.2), child: Icon(icon, color: color)),
+        const SizedBox(width: 12),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
+        ])
+      ]),
     );
   }
 
-  // This widget is now fully dynamic and functional
   Widget _buildRemindersList(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF4A4E6C),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFF4A4E6C), borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
-          Obx(
-                () => controller.tasks.isEmpty
-                ? const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text("No reminders for today.", style: TextStyle(color: Colors.white70)),
-            )
-                : ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: controller.tasks.length,
-              itemBuilder: (context, index) {
-                final task = controller.tasks[index];
-                return _TaskTile(task: task, controller: controller);
-              },
-            ),
-          ),
+          Obx(() => controller.tasks.isEmpty
+              ? const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text("No reminders for today.", style: TextStyle(color: Colors.white70)),
+          )
+              : ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: controller.tasks.length,
+            itemBuilder: (context, index) {
+              final task = controller.tasks[index];
+              return _TaskTile(task: task, controller: controller);
+            },
+          )),
           TextButton.icon(
             onPressed: () => _showAddTaskDialog(context),
             icon: const Icon(Icons.add, color: Colors.blueAccent),
@@ -180,52 +171,40 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
     );
   }
 
-  // This dialog now correctly calls the controller's addTask method
   void _showAddTaskDialog(BuildContext context) {
     final TextEditingController titleController = TextEditingController();
     TimeOfDay? selectedTime;
     final Rx<TimeOfDay?> reactiveTime = Rx<TimeOfDay?>(null);
-
     Get.dialog(
       AlertDialog(
         backgroundColor: const Color(0xFF3C3F58),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("Add a New Reminder", style: TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "Reminder Name",
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[600]!)),
-                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-              ),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(
+            controller: titleController,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: "Reminder Name",
+              labelStyle: TextStyle(color: Colors.grey[400]),
+              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[600]!)),
+              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
             ),
-            const SizedBox(height: 20),
-            Obx(
-                  () => ActionChip(
-                avatar: const Icon(Icons.alarm, color: Colors.white),
-                label: Text(
-                  reactiveTime.value == null ? "Pick Time" : reactiveTime.value!.format(context),
-                  style: const TextStyle(color: Colors.white),
-                ),
-                backgroundColor: Colors.blueAccent,
-                onPressed: () async {
-                  selectedTime = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay.now(),
-                  );
-                  if (selectedTime != null) {
-                    reactiveTime.value = selectedTime;
-                  }
-                },
-              ),
-            )
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          Obx(() => ActionChip(
+            avatar: const Icon(Icons.alarm, color: Colors.white),
+            label: Text(
+              reactiveTime.value == null ? "Pick Time" : reactiveTime.value!.format(context),
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.blueAccent,
+            onPressed: () async {
+              selectedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+              if (selectedTime != null) reactiveTime.value = selectedTime;
+            },
+          ))
+        ]),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text("Cancel", style: TextStyle(color: Colors.white70))),
           ElevatedButton(
@@ -257,9 +236,7 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
           backgroundColor: Colors.redAccent,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );
@@ -270,14 +247,12 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
 class _TaskTile extends StatelessWidget {
   final Task task;
   final CareReceiverDashboardController controller;
-
   const _TaskTile({required this.task, required this.controller});
 
   @override
   Widget build(BuildContext context) {
     final timeFormat = DateFormat.jm();
     final formattedTime = timeFormat.format(DateTime(2023, 1, 1, task.time.hour, task.time.minute));
-
     return ListTile(
       title: Text(
         task.title,
@@ -290,9 +265,7 @@ class _TaskTile extends StatelessWidget {
       trailing: Checkbox(
         value: task.isCompleted,
         onChanged: (bool? newValue) {
-          if (newValue != null) {
-            controller.toggleTaskCompletion(task.id, newValue);
-          }
+          if (newValue != null) controller.toggleTaskCompletion(task.id, newValue);
         },
         activeColor: Colors.green,
         checkColor: Colors.white,

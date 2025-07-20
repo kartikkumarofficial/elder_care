@@ -1,46 +1,31 @@
-// splash_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../controllers/auth_controller.dart';
-import 'auth/login_screen.dart';
+import '../../controllers/splash_controller.dart';
 
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  late final AuthController _authController;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _authController = Get.find<AuthController>();
-    _navigateBasedOnSession();
-  }
-
-  Future<void> _navigateBasedOnSession() async {
-    await Future.delayed(Duration(seconds: 1));
-
-    final user = Supabase.instance.client.auth.currentUser;
-
-    if (user == null) {
-      Get.offAll(() => LoginScreen());
-    } else {
-      await _authController.fetchRoleAndNavigate(user.id);
-    }
-  }
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // This line starts the SplashController's logic as soon as the screen is built.
+    Get.put(SplashController());
+
     return const Scaffold(
+      backgroundColor: Color(0xFF121212),
       body: Center(
-        child: CircularProgressIndicator(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // You can add your app logo here
+            // Image.asset('assets/logo.png', width: 150),
+            // SizedBox(height: 20),
+            CircularProgressIndicator(
+              color: Colors.white,
+            ),
+            SizedBox(height: 15),
+            Text('Loading...'),
+          ],
+        ),
       ),
     );
   }

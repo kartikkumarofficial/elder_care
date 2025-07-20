@@ -1,4 +1,5 @@
 
+import 'package:elder_care/presentation/screens/splash_screen.dart';
 import 'package:elder_care/utils/bindings.dart';
 import 'package:elder_care/utils/constants.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
         // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
       debugShowCheckedModeBanner: false,
-      home:LoginScreen(),
+      home:SplashScreen(),
     );
   }
 }

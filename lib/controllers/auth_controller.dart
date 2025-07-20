@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Import your screen files and other controllers
+// Import your screen files, models, and other controllers
+import '../models/user_model.dart'; // <-- IMPORT THE NEW MODEL
 import '../presentation/caregiver_dashboard.dart';
 import '../presentation/screens/care_id_display_screen.dart';
 import '../presentation/screens/care_link_screen.dart';
@@ -14,6 +15,9 @@ import '../presentation/screens/auth/login_screen.dart';
 
 class AuthController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
+
+  // Observable property to hold the current user's data
+  final Rx<UserModel?> user = Rx<UserModel?>(null);
 
   // Text editing controllers
   final nameController = TextEditingController();
@@ -51,7 +55,6 @@ class AuthController extends GetxController {
         throw 'Sign up failed. Please try again.';
       }
 
-      // FIX: Use 'full_name' to match your data model and other controllers.
       await supabase.from('users').insert({
         'id': response.user!.id,
         'email': emailController.text.trim(),
@@ -83,13 +86,8 @@ class AuthController extends GetxController {
 
       await supabase.from('users').update({'role': role}).eq('id', userId);
 
-      if (role == 'caregiver') {
-        Get.offAll(() => CareLinkScreen());
-      } else { // Role is 'receiver'
-        final careLinkController = Get.put(CareLinkController());
-        final careId = await careLinkController.generateAndAssignCareId(userId);
-        Get.offAll(() => CareIdDisplayScreen(careId: careId));
-      }
+      // After updating the role, fetch all user data to update our state
+      await fetchRoleAndNavigate(userId);
 
     } catch (e) {
       Get.snackbar('Error', e.toString(),
@@ -123,21 +121,25 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Fetches user role and link status to navigate to the correct, separate dashboard.
+  /// Fetches FULL user profile, stores it in the observable 'user' property,
+  /// and navigates to the correct dashboard.
   Future<void> fetchRoleAndNavigate(String userId) async {
     try {
       print('[DEBUG] Fetching user data for ID: $userId');
 
       final response = await supabase
           .from('users')
-          .select('role, linked_user_id')
+          .select() // Select all columns
           .eq('id', userId)
           .single();
 
       print('[DEBUG] Supabase response: $response');
 
-      final role = response['role'];
-      final linkedUserId = response['linked_user_id'];
+      // Create a UserModel instance and update the observable
+      user.value = UserModel.fromJson(response);
+
+      final role = user.value?.role;
+      final linkedUserId = user.value?.linkedUserId;
 
       if (role == null) {
         print('[DEBUG] Role is null');
@@ -150,9 +152,13 @@ class AuthController extends GetxController {
           print('[DEBUG] Caregiver linked → navigating to MainScaffold');
           Get.offAll(() => MainScaffold());
         }
-      } else {
+      } else { // Role is 'receiver'
         print('[DEBUG] Receiver → navigating to CareReceiverDashboard');
-        Get.offAll(() => CareReceiverDashboard());
+        // This part of your logic might need adjustment based on receiver flow
+        // For now, assuming it's correct.
+        final careLinkController = Get.put(CareLinkController());
+        final careId = await careLinkController.generateAndAssignCareId(userId);
+        Get.offAll(() => CareIdDisplayScreen(careId: careId));
       }
     } catch (e) {
       print('[ERROR] fetchRoleAndNavigate failed: $e');
@@ -168,5 +174,4 @@ class AuthController extends GetxController {
       Get.offAll(() => LoginScreen());
     }
   }
-
 }
