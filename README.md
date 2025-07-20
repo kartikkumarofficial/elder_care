@@ -4,7 +4,7 @@ A real-time caregiving Flutter app built with ❤️ using Supabase and GetX. El
 
 ---
 
-## 📱 Featuress
+## 📱 Features
 
 ### 👥 Role-Based Access
 - **Care Receiver**: Shares real-time location and receives care reminders.
