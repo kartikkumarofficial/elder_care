@@ -27,7 +27,7 @@ class SignUpScreen extends StatelessWidget {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: srcwidth * 0.08),
+                    padding: EdgeInsets.symmetric(horizontal: srcwidth * 0.08,vertical: srcwidth*0.2),
                     child: Column(
                       children: [
                         SizedBox(height: srcheight * 0.05),
@@ -54,29 +54,29 @@ class SignUpScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(srcwidth * 0.05),
       ),
       child: Padding(
-        padding: EdgeInsets.all(srcwidth * 0.05),
+        padding: EdgeInsets.all(srcwidth * 0.04),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              "Choose your role",
-              style: TextStyle(
-                fontSize: textScaler.scale(28),
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            SizedBox(height: srcheight * 0.02),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                roleOption(srcwidth, srcheight, "Caregiver",
-                    "assets/images/caregiver.png", Colors.green[300]!),
-                roleOption(srcwidth, srcheight, "Careseeker",
-                    "assets/images/careseeker.png", Colors.blue[300]!),
-              ],
-            ),
-            SizedBox(height: srcheight * 0.03),
+            // Text(
+            //   "Choose your role",
+            //   style: TextStyle(
+            //     fontSize: textScaler.scale(28),
+            //     fontWeight: FontWeight.bold,
+            //     color: Colors.black,
+            //   ),
+            // ),
+            // SizedBox(height: srcheight * 0.02),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            //   children: [
+            //     roleOption(srcwidth, srcheight, "Caregiver",
+            //         "assets/images/caregiver.png", Colors.green[300]!),
+            //     roleOption(srcwidth, srcheight, "Careseeker",
+            //         "assets/images/careseeker.png", Colors.blue[300]!),
+            //   ],
+            // ),
+            // SizedBox(height: srcheight * 0.03),
             Text(
               'Create Account',
               style: TextStyle(
@@ -170,7 +170,7 @@ class SignUpScreen extends StatelessWidget {
 
                   // Confirm Password Field
                   TextFormField(
-                    controller: authController.confirmPasswordController,
+                    controller: authController.passwordController,
                     obscureText: true,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -195,7 +195,7 @@ class SignUpScreen extends StatelessWidget {
 
             // Submit Button
             Obx(() => ElevatedButton(
-              onPressed: () {
+              onPressed:authController.isLoading.value?null: () {
                 if (_formKey.currentState!.validate()) {
                   authController.signUp();
                 }
@@ -255,30 +255,7 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 
-  Widget roleOption(
-      double width, double height, String role, String imagePath, Color color) {
-    return GestureDetector(
-      onTap: () => authController.setSelectedRole(role),
-      child: Obx(
-            () => Material(
-          elevation: authController.selectedRole.value == role ? 10 : 4,
-          borderRadius: BorderRadius.circular(25),
-          color: color,
-          child: Container(
-            height: height * 0.13,
-            width: width * 0.3,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(25),
-              child: Image.asset(imagePath, fit: BoxFit.cover),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+
 
   InputDecoration buildInputDecoration(double width, String label, String hint,
       {IconData? icon, Widget? suffixIcon}) {
