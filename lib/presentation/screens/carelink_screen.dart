@@ -1,4 +1,5 @@
 import 'package:elder_care/presentation/screens/dashboard_screen.dart';
+import 'package:elder_care/presentation/screens/main_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -38,7 +39,7 @@ class CareLinkScreen extends StatelessWidget {
                 final match = await client.from('users').select().eq('id', careId).eq('role', 'care_receiver');
                 if (match.isNotEmpty) {
                   await client.from('users').update({'care_id': careId}).eq('id', userId);
-                  Get.offAll(() => DashboardScreen());
+                  Get.offAll(() => MainScaffold());
                 } else {
                   Get.snackbar("Error", "Invalid care receiver ID");
                 }

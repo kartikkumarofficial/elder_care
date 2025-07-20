@@ -1,16 +1,16 @@
-// controllers/auth_controller.dart
-
 import 'package:elder_care/presentation/screens/main_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Import your screen files
+// Import your screen files and other controllers
+import '../presentation/caregiver_dashboard.dart';
+import '../presentation/screens/care_id_display_screen.dart';
+import '../presentation/screens/care_link_screen.dart';
+import '../presentation/screens/carereciever_dashboard.dart';
+import 'care_link_controller.dart';
 import '../presentation/screens/auth/role_selection_screen.dart';
 import '../presentation/screens/auth/login_screen.dart';
-// import '../presentation/screens/caregiver_dashboard.dart'; // Assuming this is your caregiver dashboard
-import '../presentation/screens/carereciever_dashboard.dart';
-import '../presentation/screens/dashboard_screen.dart';
 
 class AuthController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
@@ -19,6 +19,7 @@ class AuthController extends GetxController {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
   // Observable properties for UI reactivity
   final isLoading = false.obs;
@@ -29,6 +30,7 @@ class AuthController extends GetxController {
     nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     super.onClose();
   }
 
@@ -38,68 +40,56 @@ class AuthController extends GetxController {
 
   /// Handles the entire user sign-up process.
   Future<void> signUp() async {
-    final name = nameController.text.trim();
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-
     isLoading.value = true;
     try {
-      // Step 1: Sign up the user with Supabase Auth
       final response = await supabase.auth.signUp(
-        email: email,
-        password: password,
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
       );
 
       if (response.user == null) {
         throw 'Sign up failed. Please try again.';
       }
 
-      // Step 2: Insert user details into the public 'users' table
+      // FIX: Use 'full_name' to match your data model and other controllers.
       await supabase.from('users').insert({
         'id': response.user!.id,
-        'email': email,
-        // FIX: Use 'full_name' to match your AppUser model
-        'username': name,
-        // Role will be updated in the next step
-        'profile_image': 'https://api.dicebear.com/6.x/pixel-art/png?seed=$email',
+        'email': emailController.text.trim(),
+        'full_name': nameController.text.trim(),
+        'profile_image': 'https://api.dicebear.com/6.x/pixel-art/png?seed=${emailController.text.trim()}',
       });
 
-      // Clear text fields after successful signup
       nameController.clear();
       emailController.clear();
       passwordController.clear();
+      confirmPasswordController.clear();
 
-      // Step 3: Navigate to Role Selection Screen
       Get.offAll(() => RoleSelectionView());
 
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''),
+          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Updates the user's role and navigates to the correct dashboard.
+  /// Navigates user to the correct linking flow after role selection.
   Future<void> updateUserRoleAndNavigate(String role) async {
     isLoading.value = true;
     try {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) throw "User not found. Please log in again.";
 
-      // Step 1: Update the user's role in the database
-      await supabase
-          .from('users')
-          .update({'role': role})
-          .eq('id', userId);
+      await supabase.from('users').update({'role': role}).eq('id', userId);
 
-      // Step 2: Navigate to the correct dashboard based on the role
-      _navigateToDashboard(role);
+      if (role == 'caregiver') {
+        Get.offAll(() => CareLinkScreen());
+      } else { // Role is 'receiver'
+        final careLinkController = Get.put(CareLinkController());
+        final careId = await careLinkController.generateAndAssignCareId(userId);
+        Get.offAll(() => CareIdDisplayScreen(careId: careId));
+      }
 
     } catch (e) {
       Get.snackbar('Error', e.toString(),
@@ -109,66 +99,59 @@ class AuthController extends GetxController {
     }
   }
 
-
-  /// Handles the user login process and redirects based on role.
+  /// Handles the user login process and redirects based on role and link status.
   Future<void> logIn() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-
     isLoading.value = true;
     try {
       final response = await supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
       );
 
-      if (response.user == null) {
-        throw 'Login failed. Invalid credentials.';
-      }
+      if (response.user == null) throw 'Login failed. Invalid credentials.';
 
-      // Clear fields after successful login
       emailController.clear();
       passwordController.clear();
 
-      // Fetch user role and redirect
       await _fetchRoleAndNavigate(response.user!.id);
 
     } catch (e) {
-      Get.snackbar(
-          'Error',
-          e.toString().replaceAll('Exception: ', ''),
-          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white
-      );
+      Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''),
+          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Fetches user role from the database and navigates to the dashboard.
+  /// Fetches user role and link status to navigate to the correct, separate dashboard.
   Future<void> _fetchRoleAndNavigate(String userId) async {
-    final response = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', userId)
-        .single(); // Use .single() for efficiency
+    try {
+      final response = await supabase
+          .from('users')
+          .select('role, linked_user_id')
+          .eq('id', userId)
+          .single();
 
-    final role = response['role'];
+      final role = response['role'];
+      final linkedUserId = response['linked_user_id'];
 
-    if (role == null) {
-      // If role is not set, send them to the role selection screen
-      Get.offAll(() => RoleSelectionView());
-    } else {
-      _navigateToDashboard(role as String);
-    }
-  }
-
-  /// Centralized navigation logic.
-  void _navigateToDashboard(String role) {
-    if (role == 'caregiver') {
-      // NOTE: Make sure you have a `DashboardScreen` for caregivers
-      Get.offAll(() => MainScaffold());
-    } else {
-      Get.offAll(() => CareReceiverDashboard());
+      if (role == null) {
+        Get.offAll(() => RoleSelectionView());
+      } else if (role == 'caregiver') {
+        if (linkedUserId == null) {
+          Get.offAll(() => CareLinkScreen());
+        } else {
+          // FIX: Navigate to the new CaregiverDashboardScreen
+          Get.offAll(() => MainScaffold());
+        }
+      } else { // Role is 'receiver'
+        // FIX: Navigate to the new CareReceiverDashboard
+        Get.offAll(() => CareReceiverDashboard());
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Could not retrieve user details. Please try again.',
+          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      Get.offAll(() => LoginScreen()); // Fallback to login
     }
   }
 }

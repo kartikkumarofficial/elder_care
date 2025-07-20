@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// You'll need a simple data model for your tasks
+// Data model for your tasks
 class Task {
   final int id;
   final String title;
@@ -22,17 +22,14 @@ class Task {
   }
 }
 
-class DashboardController extends GetxController {
+// Renamed from DashboardController
+class CareReceiverDashboardController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // Observables for the UI
   final isLoading = true.obs;
   final userName = ''.obs;
   final careId = ''.obs;
   final RxList<Task> tasks = <Task>[].obs;
-
-  // Internal state
-  String? _userId; // The ID of the user whose data is being displayed
 
   @override
   void onInit() {
@@ -46,38 +43,18 @@ class DashboardController extends GetxController {
       final currentUser = supabase.auth.currentUser;
       if (currentUser == null) return;
 
-      // Fetch the current user's details to see if they are a caregiver or receiver
-      final userResponse = await supabase
+      // Fetch the receiver's own data
+      final profileResponse = await supabase
           .from('users')
-          .select('role, linked_user_id')
+          .select('full_name, care_id')
           .eq('id', currentUser.id)
           .single();
 
-      final userRole = userResponse['role'];
-      final linkedUserId = userResponse['linked_user_id'];
+      userName.value = profileResponse['full_name'] ?? 'User';
+      careId.value = profileResponse['care_id'] ?? 'N/A';
 
-      if (userRole == 'caregiver' && linkedUserId != null) {
-        // If caregiver, fetch the linked receiver's data
-        _userId = linkedUserId;
-      } else {
-        // If receiver, use their own ID
-        _userId = currentUser.id;
-      }
+      await fetchTasks();
 
-      if (_userId != null) {
-        // Fetch the profile data of the person being cared for
-        final profileResponse = await supabase
-            .from('users')
-            .select('full_name, care_id')
-            .eq('id', _userId!)
-            .single();
-
-        userName.value = profileResponse['full_name'] ?? 'User';
-        careId.value = profileResponse['care_id'] ?? 'N/A';
-
-        // Fetch the tasks for that user
-        await fetchTasks();
-      }
     } catch (e) {
       Get.snackbar('Error', 'Could not load dashboard data.', backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
@@ -86,11 +63,12 @@ class DashboardController extends GetxController {
   }
 
   Future<void> fetchTasks() async {
-    if (_userId == null) return;
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return;
     final response = await supabase
         .from('tasks')
         .select()
-        .eq('user_id', _userId!)
+        .eq('user_id', userId)
         .order('task_time', ascending: true);
 
     tasks.value = (response as List).map((json) => Task.fromJson(json)).toList();
@@ -100,7 +78,7 @@ class DashboardController extends GetxController {
     final taskIndex = tasks.indexWhere((task) => task.id == taskId);
     if (taskIndex != -1) {
       tasks[taskIndex].isCompleted = newStatus;
-      tasks.refresh(); // Update the UI immediately
+      tasks.refresh();
 
       await supabase
           .from('tasks')
@@ -110,22 +88,20 @@ class DashboardController extends GetxController {
   }
 
   Future<void> addTask(String title, TimeOfDay time) async {
-    if (_userId == null) return;
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return;
 
     final response = await supabase
         .from('tasks')
         .insert({
-      'user_id': _userId,
+      'user_id': userId,
       'task_title': title,
       'task_time': '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00',
-      'created_by': supabase.auth.currentUser!.id, // Track who created it
     })
         .select();
 
-    // Add the new task to the local list and refresh UI
     final newTask = Task.fromJson((response as List).first);
     tasks.add(newTask);
     tasks.sort((a, b) => (a.time.hour * 60 + a.time.minute).compareTo(b.time.hour * 60 + b.time.minute));
-
   }
 }
