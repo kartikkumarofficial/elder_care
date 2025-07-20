@@ -4,6 +4,7 @@ class AppUser {
   final String email;
   final String role; // caregiver or receiver
   final DateTime createdAt;
+  final String? linkedUserId; // ✅ New field
 
   AppUser({
     required this.id,
@@ -11,6 +12,7 @@ class AppUser {
     required this.email,
     required this.role,
     required this.createdAt,
+    this.linkedUserId, // ✅ Optional because not all users will have this
   });
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class AppUser {
       email: json['email'],
       role: json['role'],
       createdAt: DateTime.parse(json['created_at']),
+      linkedUserId: json['linked_user_id'], // ✅ Parse if available
     );
   }
 
@@ -30,6 +33,7 @@ class AppUser {
       'email': email,
       'role': role,
       'created_at': createdAt.toIso8601String(),
+      if (linkedUserId != null) 'linked_user_id': linkedUserId, // ✅ Optional in JSON
     };
   }
 }

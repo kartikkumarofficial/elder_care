@@ -1,5 +1,7 @@
+import 'package:elder_care/controllers/auth_controller.dart';
 import 'package:elder_care/presentation/caregiver_dashboard.dart';
 import 'package:elder_care/presentation/screens/dashboard_screen.dart';
+import 'package:elder_care/presentation/screens/location_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -13,13 +15,15 @@ import '../screens/profile_screen.dart';
 class MainScaffold extends StatelessWidget {
   MainScaffold({super.key});
 
-  final NavController navController = Get.put(NavController());
-
+  final NavController navController = Get.find<NavController>();
+  final AuthController authController = Get.find<AuthController>();
+  // final linkedUserId = authController.user.value.linkedUserId ?? '';
   final List<Widget> screens = [
     CaregiverDashboardScreen(),
     // HomeScreen(),
     TasksScreen(),
-    EmergencyScreen(),
+    TasksScreen(),
+    // LocationScreen(linkedUserId:linkedUserId),
     ProfileScreen(),
   ];
 

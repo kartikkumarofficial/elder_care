@@ -2,12 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/carereceiver_dashboard_controller.dart';
-import '../../models/task_model.dart'; // Import the Task model
+import '../../models/task_model.dart';
+import '../../services/location_service.dart'; // Import the Task model
 
-class CareReceiverDashboard extends StatelessWidget {
+class CareReceiverDashboard extends StatefulWidget {
   CareReceiverDashboard({Key? key}) : super(key: key);
 
+  @override
+  State<CareReceiverDashboard> createState() => _CareReceiverDashboardState();
+}
+
+class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
   final CareReceiverDashboardController controller = Get.put(CareReceiverDashboardController());
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocation();
+  }
+
+  void _initializeLocation() async {
+    final locationService = LocationService();
+    await locationService.requestPermissions();
+    await locationService.updateLocationInSupabase();
+  }
+
+  final locationService = LocationService();
 
   @override
   Widget build(BuildContext context) {

@@ -1,46 +1,50 @@
-import 'package:geolocator/geolocator.dart';
-import 'package:get/get.dart';
+// services/location_service.dart
+// import 'package:location/location.dart';
+import 'package:location/location.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class LocationService extends GetxService {
-  final GeolocatorPlatform geolocator = GeolocatorPlatform.instance;
+class LocationService {
+  final Location _location = Location();
+  final SupabaseClient supabase = Supabase.instance.client;
 
-  Future<Position?> getCurrentLocation() async {
-    LocationPermission permission = await geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return null;
+  Future<void> requestPermissions() async {
+    bool _serviceEnabled = await _location.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await _location.requestService();
+      if (!_serviceEnabled) return;
     }
 
-    return await geolocator.getCurrentPosition();
+    PermissionStatus _permissionGranted = await _location.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await _location.requestPermission();
+    }
+    if (_permissionGranted != PermissionStatus.granted) return;
   }
-}
 
+  Future<void> updateLocationInSupabase() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
 
-void updateLocationToSupabase() async {
-  final pos = await LocationService().getCurrentLocation();
-  if (pos == null) return;
+    final locationData = await _location.getLocation();
 
-  final userId = Supabase.instance.client.auth.currentUser?.id;
-  if (userId == null) return;
+    await supabase
+        .from('user_locations')
+        .upsert({
+      'user_id': user.id,
+      'latitude': locationData.latitude,
+      'longitude': locationData.longitude,
+      'updated_at': DateTime.now().toIso8601String(),
+    },
+        onConflict: 'user_id'); // Ensures update if exists
+  }
 
-  await Supabase.instance.client.from('locations').upsert({
-    'user_id': userId,
-    'latitude': pos.latitude,
-    'longitude': pos.longitude,
-    'updated_at': DateTime.now().toUtc().toIso8601String(),
-  });
-}
+  Future<Map<String, dynamic>?> getLocationOfLinkedUser(String linkedUserId) async {
+    final response = await supabase
+        .from('user_locations')
+        .select()
+        .eq('user_id', linkedUserId)
+        .single();
 
-
-Future<Map<String, dynamic>?> fetchReceiverLocation(String receiverId) async {
-  final res = await Supabase.instance.client
-      .from('locations')
-      .select()
-      .eq('user_id', receiverId)
-      .order('updated_at', ascending: false)
-      .limit(1)
-      .maybeSingle();
-
-  return res;
+    return response;
+  }
 }
