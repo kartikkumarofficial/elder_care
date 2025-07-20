@@ -70,7 +70,8 @@ class AuthController extends GetxController {
           'Signed up as ${response.user!.email}, Confirm your email via the link in your inbox',
           colorText: Colors.white,
         );
-        Get.offAll(RoleSelectionScreen(userId:response.user!.id));
+        Get.offAll(RoleSelectionView());
+        // Get.offAll(RoleSelectionScreen(userId:response.user!.id));
       } else {
         Get.snackbar(
           'Sign Up Failed',
