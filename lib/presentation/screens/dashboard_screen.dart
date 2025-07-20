@@ -36,7 +36,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 4),
-                      Text("Caregiver",
+                      Text("Caretaker",
                           style: TextStyle(
                               fontSize: width * 0.035,
                               color: Colors.grey[400]))
