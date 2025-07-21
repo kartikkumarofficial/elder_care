@@ -4,7 +4,6 @@ A real-time caregiving Flutter app built with ❤️ using Supabase and GetX. El
 
 ---
 
-
 ## 📱 Features
 
 ### 👥 Role-Based Access
