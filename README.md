@@ -3,7 +3,6 @@
 **ElderCare** is a modern, cross-platform application designed to bridge the gap between caregivers and care receivers. Built with a focus on real-time monitoring and ease of use, it provides peace of mind through seamless location tracking, health analytics, and task management.
 
 ---
-
 ## ✨ Core Features
 
 * 🔐 **Secure Authentication & Profiles:** User sign-up, login, and profile management powered by Supabase.
