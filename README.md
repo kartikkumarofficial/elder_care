@@ -5,6 +5,7 @@
 ---
 ## ✨ Core Features
 
+
 * 🔐 **Secure Authentication & Profiles:** User sign-up, login, and profile management powered by Supabase.
 * 📍 **Real-Time Location Tracking:** Caregivers can view the live location of their linked care receiver on a map.
 * 📊 **Health Analytics:** A simple, card-based interface to monitor the latest health vitals like heart rate and blood pressure.
