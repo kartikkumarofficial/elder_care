@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 SizedBox(height: srcwidth * 0.05),
                 Text(
-                  'RentRover',
+                  'ElderCare',
                   style: GoogleFonts.pacifico(
                     fontSize: 40,
                     color: Colors.black,
