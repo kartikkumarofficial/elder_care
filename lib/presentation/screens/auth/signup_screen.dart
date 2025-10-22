@@ -1,281 +1,287 @@
-// Add at the top
+import 'package:elder_care/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/auth_controller.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 
-class SignUpScreen extends StatelessWidget {
-  SignUpScreen({Key? key}) : super(key: key);
+import '../../widgets/social_button.dart';
 
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({Key? key}) : super(key: key);
+
+  @override
+  _SignUpScreenState createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
   final AuthController authController = Get.find<AuthController>();
   final _formKey = GlobalKey<FormState>();
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   Widget build(BuildContext context) {
-    var srcheight = MediaQuery.of(context).size.height;
-    var srcwidth = MediaQuery.of(context).size.width;
-    var textScaler = MediaQuery.of(context).textScaler;
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ));
+
+    final h = Get.height;
+    final w = Get.width;
 
     return Scaffold(
-      resizeToAvoidBottomInset: true,
+      extendBodyBehindAppBar: true,
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Positioned(
-            bottom: 0,
-            right: 0,
-            left: 0,
-            top: 0,
-              child:Image.asset("assets/auth/bgg.png",fit: BoxFit.fitHeight,)),
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: BouncingScrollPhysics(),
-                  child: ConstrainedBox(
-
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: IntrinsicHeight(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: srcwidth * 0.08,vertical: srcwidth*0.2),
-                        child: Column(
-                          children: [
-                            SizedBox(height: srcheight * 0.05),
-                            _buildRoleSelectionCard(srcwidth, srcheight, textScaler),
-                            Spacer(),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+      body: SingleChildScrollView(
+        child: Container(
+          height: h,
+          width: w,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFeaf4f2), Color(0xFFfdfaf6)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
           ),
-        ],
-      )
-    );
-  }
+          padding: EdgeInsets.symmetric(horizontal: w * 0.08),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: h * 0.08),
 
-  Widget _buildRoleSelectionCard(
-      double srcwidth, double srcheight, TextScaler textScaler) {
-    return Card(
-      elevation: 10,
-      shadowColor: Colors.black45,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(srcwidth * 0.05),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(srcwidth * 0.05),
-        child: Stack(
-          children: [
-
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.4,
-                child: Image.asset(
-                  'assets/auth/bgg.png', // Change to your image path
-                  fit: BoxFit.cover,
+              // Screen Title
+              Text(
+                "Join ElderCare",
+                style: GoogleFonts.nunito(
+                  fontSize: w * 0.08,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: h * 0.008),
+              Text(
+                "Create an account to start caring",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.nunito(
+                  fontSize: w * 0.04,
+                  color: Colors.black54,
                 ),
               ),
-            ),
 
-            // Foreground content
-            Padding(
-              padding: EdgeInsets.all(srcwidth * 0.04),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Create Account',
-                    style: TextStyle(
-                      fontSize: textScaler.scale(28),
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: srcheight * 0.01),
-                  Text(
-                    'Sign up to get started',
-                    style: TextStyle(
-                      fontSize: textScaler.scale(18),
-                      color: Colors.black54,
-                    ),
-                  ),
-                  SizedBox(height: srcheight * 0.03),
-                  Form(
+              SizedBox(height: h * 0.05),
+
+              // Sign-Up Card
+              Card(
+                elevation: 12,
+                shadowColor: Colors.black26,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(w * 0.06),
+                ),
+                color: Colors.white.withAlpha(92),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: w * 0.06, vertical: h * 0.035),
+                  child: Form(
                     key: _formKey,
                     child: Column(
                       children: [
+                        // Name
                         TextFormField(
                           controller: authController.nameController,
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Name is required';
-                            } else if (value.trim().length < 3) {
-                              return 'Name must be at least 3 characters';
-                            }
+                            if (value == null || value.trim().isEmpty) return 'Please enter your name';
+                            if (value.trim().length < 3) return 'Name must be at least 3 characters';
                             return null;
                           },
-                          decoration: buildInputDecoration(
-                            srcwidth,
-                            'Name',
-                            'Enter your name',
-                            icon: Icons.person,
-                          ),
+                          decoration: _inputDecoration('Name', Icons.person, w),
                         ),
-                        SizedBox(height: srcheight * 0.02),
+                        SizedBox(height: h * 0.025),
+
+                        // Email
                         TextFormField(
                           controller: authController.emailController,
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Email is required';
-                            }
+                            if (value == null || value.trim().isEmpty) return 'Please enter your email';
                             final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                            if (!emailRegex.hasMatch(value.trim())) {
-                              return 'Enter a valid email';
-                            }
+                            if (!emailRegex.hasMatch(value.trim())) return 'Enter a valid email';
                             return null;
                           },
-                          decoration: buildInputDecoration(
-                            srcwidth,
-                            'Email',
-                            'Enter your email',
-                            icon: Icons.email_outlined,
-                          ),
+                          decoration: _inputDecoration('Email', Icons.email_outlined, w),
                           keyboardType: TextInputType.emailAddress,
                         ),
-                        SizedBox(height: srcheight * 0.02),
-                        Obx(() => TextFormField(
-                          controller: authController.passwordController,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Password is required';
-                            } else if (value.trim().length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
-                          obscureText: !authController.isPasswordVisible.value,
-                          decoration: buildInputDecoration(
-                            srcwidth,
-                            'Password',
-                            'Enter your password',
-                            icon: Icons.lock_outline,
-                            suffixIcon: IconButton(
-                              icon: Icon(authController.isPasswordVisible.value
-                                  ? Icons.visibility
-                                  : Icons.visibility_off),
-                              onPressed: authController.togglePasswordVisibility,
-                            ),
-                          ),
-                        )),
-                        SizedBox(height: srcheight * 0.02),
+                        SizedBox(height: h * 0.025),
+
+                        // Password
                         TextFormField(
                           controller: authController.passwordController,
-                          obscureText: true,
+                          obscureText: !_isPasswordVisible,
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please confirm your password';
-                            } else if (value.trim() !=
-                                authController.passwordController.text.trim()) {
-                              return 'Passwords do not match';
-                            }
+                            if (value == null || value.trim().isEmpty) return 'Please enter your password';
+                            if (value.trim().length < 6) return 'Password must be at least 6 characters';
                             return null;
                           },
-                          decoration: buildInputDecoration(
-                            srcwidth,
-                            'Confirm Password',
-                            'Re-enter your password',
-                            icon: Icons.lock,
+                          decoration: _inputDecoration(
+                            'Password',
+                            Icons.lock_outline,
+                            w,
+                            trailingIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                            ),
                           ),
+                        ),
+                        SizedBox(height: h * 0.025),
+
+                        // Confirm Password
+                        TextFormField(
+                          controller: authController.confirmPasswordController,
+                          obscureText: !_isConfirmPasswordVisible,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) return 'Please confirm your password';
+                            if (value.trim() != authController.passwordController.text.trim()) return 'Passwords do not match';
+                            return null;
+                          },
+                          decoration: _inputDecoration(
+                            'Confirm Password',
+                            Icons.lock,
+                            w,
+                            trailingIcon: IconButton(
+                              icon: Icon(
+                                _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: h * 0.04),
+
+                        // Sign Up Button
+                        Obx(() => ElevatedButton(
+                          onPressed: authController.isLoading.value
+                              ? null
+                              : () {
+                            if (_formKey.currentState!.validate()) {
+                              authController.signUp();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF7AB7A7),
+                            foregroundColor: Colors.white,
+                            minimumSize: Size(double.infinity, h * 0.065),
+                            textStyle: GoogleFonts.nunito(
+                              fontSize: w * 0.045,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(w * 0.04),
+                            ),
+                            elevation: 6,
+                          ),
+                          child: authController.isLoading.value
+                              ? SizedBox(
+                            height: w * 0.05,
+                            width: w * 0.05,
+                            child: const CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                              : const Text("Sign Up"),
+                        )),
+
+                        SizedBox(height: h * 0.03),
+
+                        // Divider + Continue With
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Divider(thickness: 1, color: Colors.grey.shade300),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: w * 0.02),
+                              child: Text(
+                                "or continue with",
+                                style: GoogleFonts.nunito(color: Colors.grey, fontSize: w * 0.035),
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(thickness: 1, color: Colors.grey.shade300),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: h * 0.02),
+
+                        // Social Buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            socialButton("Google", "assets/auth/google.png", w, h),
+                            SizedBox(width: w * 0.05),
+                            socialButton("Apple", "assets/auth/apple2.png", w, h),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: srcheight * 0.03),
-                  Obx(() => ElevatedButton(
-                    onPressed: authController.isLoading.value
-                        ? null
-                        : () {
-                      if (_formKey.currentState!.validate()) {
-                        authController.signUp();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                          horizontal: srcwidth * 0.2,
-                          vertical: srcheight * 0.02),
-                      textStyle: TextStyle(
-                        fontSize: textScaler.scale(18),
-                        fontWeight: FontWeight.bold,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(srcwidth * 0.04),
-                      ),
-                      elevation: 5,
-                    ),
-                    child: authController.isLoading.value
-                        ? CircularProgressIndicator(
-                      strokeWidth: 3,
-                      color: Colors.white,
-                    )
-                        : Text('Sign Up'),
-                  )),
-                  SizedBox(height: srcheight * 0.03),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Already have an account? ",
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: textScaler.scale(14),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => Get.toNamed('/login'),
-                        child: Text(
-                          'Login',
-                          style: TextStyle(
-                            color: Colors.blueAccent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: textScaler.scale(14),
-                          ),
-                        ),
-                      ),
-                    ],
+                ),
+              ),
+
+              SizedBox(height: h * 0.035),
+
+              // Already have account?
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Already have an account? ",
+                    style: GoogleFonts.nunito(fontSize: w * 0.038, color: Colors.black54),
                   ),
-                  SizedBox(height: srcheight * 0.01),
+                  GestureDetector(
+                    onTap: () => Get.back(),
+                    child: Text(
+                      "Login",
+                      style: GoogleFonts.nunito(
+                        fontSize: w * 0.038,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF7AB7A7),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ],
+              SizedBox(height: h * 0.04),
+            ],
+          ),
         ),
       ),
     );
   }
 
-
-
-
-  InputDecoration buildInputDecoration(double width, String label, String hint,
-      {IconData? icon, Widget? suffixIcon}) {
+  InputDecoration _inputDecoration(String label, IconData icon, double w, {Widget? trailingIcon}) {
     return InputDecoration(
       labelText: label,
-      hintText: hint,
-      prefixIcon: icon != null ? Icon(icon) : null,
-      suffixIcon: suffixIcon,
+      prefixIcon: Icon(icon, color: Colors.teal.shade400),
+      suffixIcon: trailingIcon,
+      filled: true,
+      fillColor: Colors.grey.shade100,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(width * 0.04),
+        borderRadius: BorderRadius.circular(w * 0.05),
+        borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(width * 0.04),
-        borderSide: BorderSide(color: Colors.blueAccent, width: 2),
+        borderRadius: BorderRadius.circular(w * 0.05),
+        borderSide: BorderSide(color: Colors.teal.shade300, width: 1.5),
       ),
-      filled: true,
-      fillColor: Colors.grey[200],
+      contentPadding: EdgeInsets.symmetric(vertical: w * 0.035, horizontal: w * 0.04),
     );
   }
+
+
 }
