@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_controller.dart';
-import '../presentation/screens/auth/login_screen.dart';
+import 'package:elder_care/presentation/screens/auth/login_screen.dart';
 
 class SplashController extends GetxController {
   final AuthController authController = Get.find<AuthController>();

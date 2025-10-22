@@ -39,7 +39,7 @@ dependencies:
   get: ^4.7.2
   http: ^1.4.0
   file_picker: ^10.2.0
-  google_sign_in: ^6.3.0
+  google_sign_in: ^7.2.0
   flutter_launcher_icons: ^0.14.4
   font_awesome_flutter: ^10.8.0
   url_launcher: ^6.3.1
@@ -57,6 +57,9 @@ dependencies:
   google_maps_flutter: ^2.12.3
   location: ^8.0.1
   flutter_map: ^8.1.1
+  sign_in_with_apple: ^7.0.1
+  foundation: ^0.0.5
+  flutter_web_auth_2: ^4.1.0
 
 
 dev_dependencies:

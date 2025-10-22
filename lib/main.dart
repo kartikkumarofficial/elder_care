@@ -8,7 +8,7 @@ import 'package:supabase/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 
-import 'presentation/screens/auth/login_screen.dart';
+import 'presentation/screens/auth/old_login.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
