@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../controllers/auth_controller.dart';
 import '../../controllers/carereceiver_dashboard_controller.dart';
 import '../../models/task_model.dart';
 
-class CareReceiverDashboard extends StatelessWidget {
+class CareReceiverDashboard extends StatefulWidget {
+
   CareReceiverDashboard({Key? key}) : super(key: key);
 
+  @override
+  State<CareReceiverDashboard> createState() => _CareReceiverDashboardState();
+}
+
+class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
+
   final CareReceiverDashboardController controller = Get.put(CareReceiverDashboardController());
+  final AuthController authController = Get.find<AuthController>();
 
   @override
   Widget build(BuildContext context) {
@@ -232,6 +241,8 @@ class CareReceiverDashboard extends StatelessWidget {
         icon: const Icon(Icons.warning_amber_rounded, size: 28),
         label: const Text("EMERGENCY SOS", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         onPressed: () {
+          authController.logOut();
+
           Get.snackbar("SOS", "Emergency alert sent to caregiver!", backgroundColor: Colors.red, colorText: Colors.white);
         },
         style: ElevatedButton.styleFrom(

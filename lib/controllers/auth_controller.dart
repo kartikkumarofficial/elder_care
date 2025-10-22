@@ -1,18 +1,21 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:elder_care/presentation/screens/auth/login_screen.dart';
 import 'package:elder_care/presentation/screens/main_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// Import your screen files, models, and other controllers
-import '../models/user_model.dart'; // <-- IMPORT THE NEW MODEL
+import '../models/user_model.dart';
 import '../presentation/caregiver_dashboard.dart';
 import '../presentation/screens/care_id_display_screen.dart';
 import '../presentation/screens/care_link_screen.dart';
 import '../presentation/screens/carereciever_dashboard.dart';
 import 'care_link_controller.dart';
 import '../presentation/screens/auth/role_selection_screen.dart';
-import '../presentation/screens/auth/login_screen.dart';
-
+import '../presentation/screens/auth/old_login.dart';
+import 'package:flutter/foundation.dart';
 class AuthController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
 
@@ -174,4 +177,136 @@ class AuthController extends GetxController {
       Get.offAll(() => LoginScreen());
     }
   }
+
+
+  Future<void> signInWithGoogle() async {
+    try {
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'io.supabase.flutter://login-callback/',
+      );
+
+      supabase.auth.onAuthStateChange.listen((data) async {
+        final session = data.session;
+        if (session != null) {
+          print("✅ Google sign-in success: ${session.user.id}");
+          await insertUserIfNew(session.user);
+          await fetchRoleAndNavigate(session.user.id);
+        }
+      });
+    } catch (e) {
+      print('❌ Error signing in: $e');
+      Get.snackbar('Error', e.toString(),
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+    }
+  }
+
+
+
+  /// Helper function to insert new users into Supabase
+  Future<void> insertUserIfNew(User user) async {
+    final existing = await supabase.from('users').select().eq('id', user.id).maybeSingle();
+    if (existing == null) {
+      await supabase.from('users').insert({
+        'id': user.id,
+        'email': user.email,
+        'full_name': user.userMetadata?['full_name'] ?? 'Anonymous',
+        'profile_image': user.userMetadata?['avatar_url'] ??
+            'https://api.dicebear.com/6.x/pixel-art/png?seed=${user.email}',
+      });
+    }
+  }
+
+
+
+  /// Logs out the user from Supabase and clears local session data.
+  Future<void> logOut() async {
+    try {
+      isLoading.value = true;
+
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+
+      // Clear locally stored reactive user state
+      user.value = null;
+
+      // Optionally clear text controllers
+      nameController.clear();
+      emailController.clear();
+      passwordController.clear();
+      confirmPasswordController.clear();
+
+      // Navigate back to the login screen
+      Get.offAll(() => LoginScreen());
+
+      print('✅ User logged out successfully');
+    } catch (e) {
+      print('❌ Error logging out: $e');
+      Get.snackbar(
+        'Logout Failed',
+        e.toString().replaceAll('Exception: ', ''),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
 }
+
+
+
+
+
+
+
+//sign in with google versions:
+
+
+
+
+// Future<void> signInWithGoogle() async {
+//   try {
+//     final response = await supabase.auth.signInWithOAuth(
+//       OAuthProvider.google,
+//       redirectTo: 'io.supabase.flutter://login-callback/',
+//       // redirectTo: "https://${constants.supabaseUrl}.supabase.co/auth/v1/callback",
+//
+//     );
+//     print('OAuth started: $response');
+//   } catch (e) {
+//     print('Error signing in: $e');
+//   }
+// }
+
+
+
+// Future<AuthResponse> signInWithGoogle() async {
+//
+//   const webClientId = '902746053391-em6hsqemd6udqlbn68m7tec7drarsgnu.apps.googleusercontent.com';
+//
+//   final GoogleSignIn signIn = GoogleSignIn.instance;
+//   unawaited(
+//       signIn.initialize( serverClientId: webClientId));
+//
+//   // Perform the sign in
+//   final googleAccount = await signIn.authenticate();
+//   final googleAuthorization = await googleAccount.authorizationClient.authorizationForScopes([]);
+//   final googleAuthentication = googleAccount!.authentication;
+//   final idToken = googleAuthentication.idToken;
+//   final accessToken = googleAuthorization?.accessToken;
+//
+//   if (idToken == null) {
+//     throw 'No ID Token found.';
+//   }
+//
+//   return supabase.auth.signInWithIdToken(
+//     provider: OAuthProvider.google,
+//     idToken: idToken,
+//     accessToken: accessToken,
+//   );
+// }
