@@ -14,8 +14,7 @@ import '../presentation/screens/care_link_screen.dart';
 import '../presentation/screens/carereciever_dashboard.dart';
 import 'care_link_controller.dart';
 import '../presentation/screens/auth/role_selection_screen.dart';
-import '../presentation/screens/auth/old_login.dart';
-import 'package:flutter/foundation.dart';
+
 class AuthController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
 
@@ -229,21 +228,13 @@ class AuthController extends GetxController {
       // Sign out from Supabase
       await supabase.auth.signOut();
 
-      // Clear locally stored reactive user state
-      user.value = null;
+      print('✅ User signed out successfully');
 
-      // Optionally clear text controllers
-      nameController.clear();
-      emailController.clear();
-      passwordController.clear();
-      confirmPasswordController.clear();
-
-      // Navigate back to the login screen
+      // Optionally navigate to login, but keep local data intact
       Get.offAll(() => LoginScreen());
 
-      print('✅ User logged out successfully');
     } catch (e) {
-      print('❌ Error logging out: $e');
+      print('❌ Error signing out: $e');
       Get.snackbar(
         'Logout Failed',
         e.toString().replaceAll('Exception: ', ''),
@@ -255,6 +246,7 @@ class AuthController extends GetxController {
       isLoading.value = false;
     }
   }
+
 
 }
 
