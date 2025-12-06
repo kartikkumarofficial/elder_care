@@ -16,12 +16,12 @@ import 'care_link_controller.dart';
 import '../presentation/screens/auth/role_selection_screen.dart';
 
 class AuthController extends GetxController {
+
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // holds the current user's data
   final Rx<UserModel?> user = Rx<UserModel?>(null);
 
-  // Text editing controllers
+
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -63,6 +63,9 @@ class AuthController extends GetxController {
         'full_name': nameController.text.trim(),
         'profile_image': 'https://api.dicebear.com/6.x/pixel-art/png?seed=${emailController.text.trim()}',
       });
+
+      final careLinkController = Get.find<CareLinkController>();
+      await careLinkController.generateAndAssignCareId(response.user!.id);
 
       nameController.clear();
       emailController.clear();
@@ -123,88 +126,64 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Fetches FULL user profile, stores it in the observable 'user' property,
-  /// and navigates to the correct dashboard.
+  /// Fetches FULL user profile, stores it in the observable 'user' property, and navigates to the correct dashboard.
   Future<void> fetchRoleAndNavigate(String userId) async {
     try {
-      print('[DEBUG] Fetching user data for ID: $userId');
-
       final response = await supabase
           .from('users')
-          .select() // Select all columns
+          .select()
           .eq('id', userId)
           .single();
 
-      print('[DEBUG] Supabase response: $response');
-
-      // Create a UserModel instance and update the observable
       user.value = UserModel.fromJson(response);
 
       final role = user.value?.role;
-      final linkedUserId = user.value?.linkedUserId;
 
       if (role == null) {
-        print('[DEBUG] Role is null');
         Get.offAll(() => RoleSelectionView());
-      } else if (role == 'caregiver') {
-        if (linkedUserId == null) {
-          print('[DEBUG] Caregiver not linked');
+        return;
+      }
+
+      if (role == "caregiver") {
+        // Fetch all receivers linked to this caregiver
+        final links = await supabase
+            .from('care_links')
+            .select('receiver_id')
+            .eq('caregiver_id', userId);
+
+        if (links.isEmpty) {
           Get.offAll(() => CareLinkScreen());
         } else {
-          print('[DEBUG] Caregiver linked → navigating to MainScaffold');
-          Get.offAll(() => MainScaffold());
+          Get.offAll(() => MainScaffold()); // Caregiver dashboard
         }
-      } else { // Role is 'receiver'
-        print('[DEBUG] Receiver → navigating to CareReceiverDashboard');
-        // This part of your logic might need adjustment based on receiver flow
-        // For now, assuming it's correct.
-        final careLinkController = Get.find<CareLinkController>();
-        // final careId = await careLinkController.generateUniqueCareId(userId);//todo handle this
-        final careId = await careLinkController.generateUniqueCareId();
-        Get.offAll(() => CareIdDisplayScreen(careId: careId)); //
+      } else if (role == "receiver") {
+        final careId = user.value?.careId;
+
+        // Show the receiver their care ID screen if not connected
+        final links = await supabase
+            .from('care_links')
+            .select('caregiver_id')
+            .eq('receiver_id', userId);
+
+        if (links.isEmpty) {
+          Get.offAll(() => CareIdDisplayScreen(careId: careId!));
+        } else {
+          Get.offAll(() => CareReceiverDashboard());
+        }
       }
+
     } catch (e) {
-      print('[ERROR] fetchRoleAndNavigate failed: $e');
-
-      Get.snackbar(
-        'Error',
-        'Could not retrieve user details. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-
+      Get.snackbar('Error', 'Could not load user data.',
+          backgroundColor: Colors.red, colorText: Colors.white);
       Get.offAll(() => LoginScreen());
     }
   }
 
-//old
-//   Future<void> signInWithGoogle() async {
-//     try {
-//       await supabase.auth.signInWithOAuth(
-//         OAuthProvider.google,
-//         redirectTo: 'io.supabase.flutter://login-callback/',
-//       );
-//
-//       supabase.auth.onAuthStateChange.listen((data) async {
-//         final session = data.session;
-//         if (session != null) {
-//           print("✅ Google sign-in success: ${session.user.id}");
-//           await insertUserIfNew(session.user);
-//           await fetchRoleAndNavigate(session.user.id);
-//         }
-//       });
-//     } catch (e) {
-//       print('❌ Error signing in: $e');
-//       Get.snackbar('Error', e.toString(),
-//           snackPosition: SnackPosition.BOTTOM,
-//           backgroundColor: Colors.red,
-//           colorText: Colors.white);
-//     }
-//   }
+
+
   Future<void> signInWithGoogle() async {
     try {
-      final res = await supabase.auth.signInWithOAuth(
+      await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'io.supabase.flutter://login-callback/',
         authScreenLaunchMode: LaunchMode.externalApplication,
@@ -212,9 +191,14 @@ class AuthController extends GetxController {
 
       supabase.auth.onAuthStateChange.listen((event) async {
         final session = event.session;
+
         if (session != null) {
           print("Google Login Success: ${session.user.id}");
+
+          // Insert user if first time → generate care ID inside this call
           await insertUserIfNew(session.user);
+
+          // Navigate properly
           await fetchRoleAndNavigate(session.user.id);
         }
       });
@@ -228,10 +212,13 @@ class AuthController extends GetxController {
 
 
 
+
   /// Helper function to insert new users into Supabase
   Future<void> insertUserIfNew(User user) async {
     final existing = await supabase.from('users').select().eq('id', user.id).maybeSingle();
+
     if (existing == null) {
+      // Insert new Google user
       await supabase.from('users').insert({
         'id': user.id,
         'email': user.email,
@@ -239,8 +226,14 @@ class AuthController extends GetxController {
         'profile_image': user.userMetadata?['avatar_url'] ??
             'https://api.dicebear.com/6.x/pixel-art/png?seed=${user.email}',
       });
+
+      //  Generate Care ID ONLY for new Google user
+      final careLinkController = Get.find<CareLinkController>();
+
+      await careLinkController.generateAndAssignCareId(user.id);
     }
   }
+
 
 
 
@@ -273,56 +266,3 @@ class AuthController extends GetxController {
 
 
 }
-
-
-
-
-
-
-
-//sign in with google versions:
-
-
-
-
-// Future<void> signInWithGoogle() async {
-//   try {
-//     final response = await supabase.auth.signInWithOAuth(
-//       OAuthProvider.google,
-//       redirectTo: 'io.supabase.flutter://login-callback/',
-//       // redirectTo: "https://${constants.supabaseUrl}.supabase.co/auth/v1/callback",
-//
-//     );
-//     print('OAuth started: $response');
-//   } catch (e) {
-//     print('Error signing in: $e');
-//   }
-// }
-
-
-
-// Future<AuthResponse> signInWithGoogle() async {
-//
-//   const webClientId = '902746053391-em6hsqemd6udqlbn68m7tec7drarsgnu.apps.googleusercontent.com';
-//
-//   final GoogleSignIn signIn = GoogleSignIn.instance;
-//   unawaited(
-//       signIn.initialize( serverClientId: webClientId));
-//
-//   // Perform the sign in
-//   final googleAccount = await signIn.authenticate();
-//   final googleAuthorization = await googleAccount.authorizationClient.authorizationForScopes([]);
-//   final googleAuthentication = googleAccount!.authentication;
-//   final idToken = googleAuthentication.idToken;
-//   final accessToken = googleAuthorization?.accessToken;
-//
-//   if (idToken == null) {
-//     throw 'No ID Token found.';
-//   }
-//
-//   return supabase.auth.signInWithIdToken(
-//     provider: OAuthProvider.google,
-//     idToken: idToken,
-//     accessToken: accessToken,
-//   );
-// }

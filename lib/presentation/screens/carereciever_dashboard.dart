@@ -7,6 +7,7 @@ import '../../models/task_model.dart';
 
 class CareReceiverDashboard extends StatefulWidget {
 
+
   CareReceiverDashboard({Key? key}) : super(key: key);
 
   @override
@@ -14,6 +15,7 @@ class CareReceiverDashboard extends StatefulWidget {
 }
 
 class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
+
 
   final CareReceiverDashboardController controller = Get.put(CareReceiverDashboardController());
   final AuthController authController = Get.find<AuthController>();
@@ -105,9 +107,10 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
         )),
         const SizedBox(height: 8),
         Obx(() => Text(
-          "Care ID: ${controller.careId.value}",
-          style: TextStyle(fontSize: 16, color: Colors.grey[400], fontWeight: FontWeight.w500),
-        )),
+          "Your Care ID: ${authController.user.value?.careId ?? 'Loading...'}",
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        )
+        ),
       ],
     );
   }

@@ -9,13 +9,17 @@ class CareLinkController extends GetxController {
   final careIdController = TextEditingController();
   final isLoading = false.obs;
 
-  /// Generates a unique care ID (only call once, during signup)
-  Future<String> generateUniqueCareId() async {
+
+  ///generating and assigning a care id to user (during sign up)
+
+
+  Future<String> generateAndAssignCareId(String userId) async {
     String careId = '';
     bool isUnique = false;
 
     while (!isUnique) {
       careId = (100000 + Random().nextInt(900000)).toString();
+
       final response = await supabase
           .from('users')
           .select('id')
@@ -26,56 +30,92 @@ class CareLinkController extends GetxController {
         isUnique = true;
       }
     }
+
+    // assigning care id to care receiver
+    await supabase
+        .from('users')
+        .update({'care_id': careId})
+        .eq('id', userId);
+
     return careId;
   }
 
-  /// Link caregiver to care receiver
+ ///linking , multi caregiver to care receiver arch
+
   Future<void> linkToReceiver() async {
-    final careId = careIdController.text.trim();
-    if (careId.isEmpty) {
-      Get.snackbar('Error', 'Please enter a Care ID.', backgroundColor: Colors.red, colorText: Colors.white);
+    final careIdInput = careIdController.text.trim();
+
+    if (careIdInput.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Please enter a Care ID.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
 
     isLoading.value = true;
+
     try {
       final caregiverId = supabase.auth.currentUser?.id;
       if (caregiverId == null) throw "Authentication error. Please log in again.";
 
+      // Find receiver using care ID
       final receiverResponse = await supabase
           .from('users')
-          .select('id, linked_user_id')
-          .eq('care_id', careId)
-          .single();
+          .select('id')
+          .eq('care_id', careIdInput)
+          .maybeSingle();
+
+      if (receiverResponse == null) {
+        throw "Invalid Care ID. No such care receiver found.";
+      }
 
       final receiverId = receiverResponse['id'];
 
-      if (receiverResponse['linked_user_id'] != null) {
-        throw "This person is already linked to another caregiver.";
+     //checking duplicate entries
+      final existing = await supabase
+          .from('care_links')
+          .select()
+          .eq('caregiver_id', caregiverId)
+          .eq('receiver_id', receiverId)
+          .maybeSingle();
+
+      if (existing != null) {
+        throw "You are already linked with this person.";
       }
 
-      await supabase
-          .from('users')
-          .update({'linked_user_id': receiverId})
-          .eq('id', caregiverId);
-
-      await supabase
-          .from('users')
-          .update({'linked_user_id': caregiverId})
-          .eq('id', receiverId);
+   //inserting into care_links table form multi care giver arch
+      await supabase.from('care_links').insert({
+        'caregiver_id': caregiverId,
+        'receiver_id': receiverId,
+      });
 
       careIdController.clear();
-      Get.snackbar('Success!', 'You are now linked.', backgroundColor: Colors.green, colorText: Colors.white);
+
+      Get.snackbar(
+        'Success!',
+        'You are now connected.',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+
       Get.offAll(() => MainScaffold());
+
     } catch (e) {
-      String errorMessage = e.toString().contains('PGRST116')
-          ? "Invalid Care ID. Please check and try again."
-          : e.toString().replaceAll('Exception: ', '');
-      Get.snackbar('Error', errorMessage, backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar(
+        'Error',
+        e.toString().replaceAll('Exception: ', ''),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
     } finally {
       isLoading.value = false;
     }
   }
+
 
   @override
   void onClose() {
