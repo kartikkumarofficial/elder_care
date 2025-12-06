@@ -5,7 +5,7 @@ import '../../../controllers/care_link_controller.dart'; // Adjust path if neede
 class CareLinkScreen extends StatelessWidget {
   CareLinkScreen({Key? key}) : super(key: key);
 
-  final CareLinkController controller = Get.put(CareLinkController());
+  final CareLinkController controller = Get.find<CareLinkController>();
 
   @override
   Widget build(BuildContext context) {

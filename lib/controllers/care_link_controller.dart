@@ -1,15 +1,16 @@
-import 'dart:math';
 import 'package:elder_care/presentation/screens/main_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:math';
 
 class CareLinkController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
   final careIdController = TextEditingController();
   final isLoading = false.obs;
 
-  Future<String> generateAndAssignCareId(String userId) async {
+  /// Generates a unique care ID (only call once, during signup)
+  Future<String> generateUniqueCareId() async {
     String careId = '';
     bool isUnique = false;
 
@@ -25,15 +26,10 @@ class CareLinkController extends GetxController {
         isUnique = true;
       }
     }
-
-    await supabase
-        .from('users')
-        .update({'care_id': careId})
-        .eq('id', userId);
-
     return careId;
   }
 
+  /// Link caregiver to care receiver
   Future<void> linkToReceiver() async {
     final careId = careIdController.text.trim();
     if (careId.isEmpty) {
@@ -46,8 +42,6 @@ class CareLinkController extends GetxController {
       final caregiverId = supabase.auth.currentUser?.id;
       if (caregiverId == null) throw "Authentication error. Please log in again.";
 
-      // Step 1: Find the Care Receiver by their care_id
-      // SUGGESTION: Renamed linked_care_id to linked_user_id for clarity
       final receiverResponse = await supabase
           .from('users')
           .select('id, linked_user_id')
@@ -56,19 +50,15 @@ class CareLinkController extends GetxController {
 
       final receiverId = receiverResponse['id'];
 
-      // SUGGESTION: Renamed linked_care_id to linked_user_id
       if (receiverResponse['linked_user_id'] != null) {
         throw "This person is already linked to another caregiver.";
       }
 
-      // Step 2: Establish the two-way link
-      // SUGGESTION: Renamed linked_care_id to linked_user_id
       await supabase
           .from('users')
           .update({'linked_user_id': receiverId})
           .eq('id', caregiverId);
 
-      // SUGGESTION: Renamed linked_care_id to linked_user_id
       await supabase
           .from('users')
           .update({'linked_user_id': caregiverId})
@@ -77,7 +67,6 @@ class CareLinkController extends GetxController {
       careIdController.clear();
       Get.snackbar('Success!', 'You are now linked.', backgroundColor: Colors.green, colorText: Colors.white);
       Get.offAll(() => MainScaffold());
-
     } catch (e) {
       String errorMessage = e.toString().contains('PGRST116')
           ? "Invalid Care ID. Please check and try again."

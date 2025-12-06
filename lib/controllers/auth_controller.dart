@@ -18,7 +18,7 @@ import '../presentation/screens/auth/role_selection_screen.dart';
 class AuthController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // Observable property to hold the current user's data
+  // holds the current user's data
   final Rx<UserModel?> user = Rx<UserModel?>(null);
 
   // Text editing controllers
@@ -27,7 +27,7 @@ class AuthController extends GetxController {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  // Observable properties for UI reactivity
+
   final isLoading = false.obs;
   final isPasswordVisible = false.obs;
 
@@ -44,7 +44,7 @@ class AuthController extends GetxController {
     isPasswordVisible.value = !isPasswordVisible.value;
   }
 
-  /// Handles the entire user sign-up process.
+
   Future<void> signUp() async {
     isLoading.value = true;
     try {
@@ -158,9 +158,10 @@ class AuthController extends GetxController {
         print('[DEBUG] Receiver → navigating to CareReceiverDashboard');
         // This part of your logic might need adjustment based on receiver flow
         // For now, assuming it's correct.
-        final careLinkController = Get.put(CareLinkController());
-        final careId = await careLinkController.generateAndAssignCareId(userId);
-        Get.offAll(() => CareIdDisplayScreen(careId: careId));
+        final careLinkController = Get.find<CareLinkController>();
+        // final careId = await careLinkController.generateUniqueCareId(userId);//todo handle this
+        final careId = await careLinkController.generateUniqueCareId();
+        Get.offAll(() => CareIdDisplayScreen(careId: careId)); //
       }
     } catch (e) {
       print('[ERROR] fetchRoleAndNavigate failed: $e');
@@ -177,30 +178,53 @@ class AuthController extends GetxController {
     }
   }
 
-
+//old
+//   Future<void> signInWithGoogle() async {
+//     try {
+//       await supabase.auth.signInWithOAuth(
+//         OAuthProvider.google,
+//         redirectTo: 'io.supabase.flutter://login-callback/',
+//       );
+//
+//       supabase.auth.onAuthStateChange.listen((data) async {
+//         final session = data.session;
+//         if (session != null) {
+//           print("✅ Google sign-in success: ${session.user.id}");
+//           await insertUserIfNew(session.user);
+//           await fetchRoleAndNavigate(session.user.id);
+//         }
+//       });
+//     } catch (e) {
+//       print('❌ Error signing in: $e');
+//       Get.snackbar('Error', e.toString(),
+//           snackPosition: SnackPosition.BOTTOM,
+//           backgroundColor: Colors.red,
+//           colorText: Colors.white);
+//     }
+//   }
   Future<void> signInWithGoogle() async {
     try {
-      await supabase.auth.signInWithOAuth(
+      final res = await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'io.supabase.flutter://login-callback/',
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
 
-      supabase.auth.onAuthStateChange.listen((data) async {
-        final session = data.session;
+      supabase.auth.onAuthStateChange.listen((event) async {
+        final session = event.session;
         if (session != null) {
-          print("✅ Google sign-in success: ${session.user.id}");
+          print("Google Login Success: ${session.user.id}");
           await insertUserIfNew(session.user);
           await fetchRoleAndNavigate(session.user.id);
         }
       });
     } catch (e) {
-      print('❌ Error signing in: $e');
-      Get.snackbar('Error', e.toString(),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white);
+      print("Google error: $e");
     }
   }
+
+
+
 
 
 
