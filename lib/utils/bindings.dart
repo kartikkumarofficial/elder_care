@@ -10,6 +10,6 @@ class InitialBinding extends Bindings {
     Get.put(AuthController(), permanent: true);
     Get.put(NavController());
     Get.put(DashboardController(), permanent: true);
-    Get.put(CareLinkController());
+    Get.put(CareLinkController(),permanent: true);
   }
 }

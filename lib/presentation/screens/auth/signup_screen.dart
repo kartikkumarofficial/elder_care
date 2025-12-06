@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 
+import '../../../controllers/care_link_controller.dart';
 import '../../widgets/social_button.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final AuthController authController = Get.find<AuthController>();
+  final CareLinkController careLinkController = Get.find<CareLinkController>();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;

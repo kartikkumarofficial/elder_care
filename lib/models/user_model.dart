@@ -1,28 +1,37 @@
-class AppUser {
+class UserModel {
   final String id;
-  final String fullName;
-  final String email;
-  final String role; // caregiver or receiver
-  final DateTime createdAt;
-  final String? linkedUserId; // ✅ New field
+  final String? fullName;
+  final String? email;
+  final String? role;
+  final String? linkedUserId;
+  final String? careId;
+  final DateTime? createdAt;
 
-  AppUser({
+  final String? profileImage;
+
+  UserModel({
     required this.id,
-    required this.fullName,
-    required this.email,
-    required this.role,
-    required this.createdAt,
-    this.linkedUserId, // ✅ Optional because not all users will have this
+    this.fullName,
+    this.email,
+    this.role,
+    this.linkedUserId,
+    this.careId,
+    this.createdAt,
+    this.profileImage,
   });
 
-  factory AppUser.fromJson(Map<String, dynamic> json) {
-    return AppUser(
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
       id: json['id'],
       fullName: json['full_name'],
       email: json['email'],
       role: json['role'],
-      createdAt: DateTime.parse(json['created_at']),
-      linkedUserId: json['linked_user_id'], // ✅ Parse if available
+      linkedUserId: json['linked_user_id'],
+      careId: json['care_id'],
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      profileImage: json['profile_image'],
     );
   }
 
@@ -32,37 +41,10 @@ class AppUser {
       'full_name': fullName,
       'email': email,
       'role': role,
-      'created_at': createdAt.toIso8601String(),
-      if (linkedUserId != null) 'linked_user_id': linkedUserId, // ✅ Optional in JSON
+      'linked_user_id': linkedUserId,
+      'care_id': careId,
+      'created_at': createdAt?.toIso8601String(),
+      'profile_image': profileImage,
     };
   }
 }
-
-
-class UserModel {
-  final String id;
-  final String? fullName;
-  final String? email;
-  final String? role;
-  final String? linkedUserId;
-
-  UserModel({
-    required this.id,
-    this.fullName,
-    this.email,
-    this.role,
-    this.linkedUserId,
-  });
-
-  // Factory constructor to create a UserModel from a JSON map (from Supabase)
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'],
-      fullName: json['full_name'],
-      email: json['email'],
-      role: json['role'],
-      linkedUserId: json['linked_user_id'],
-    );
-  }
-}
-

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../controllers/auth_controller.dart';
+import '../../../controllers/care_link_controller.dart';
 
 class RoleSelectionView extends StatefulWidget {
   @override
@@ -9,6 +10,7 @@ class RoleSelectionView extends StatefulWidget {
 }
 
 class _RoleSelectionViewState extends State<RoleSelectionView> {
+  final CareLinkController careLinkController = Get.find<CareLinkController>();
   final AuthController authController = Get.find<AuthController>();
 
   String selectedRole = ""; // caregiver / receiver

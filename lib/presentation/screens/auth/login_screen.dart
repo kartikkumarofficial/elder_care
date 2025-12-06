@@ -1,3 +1,4 @@
+import 'package:elder_care/controllers/care_link_controller.dart';
 import 'package:elder_care/controllers/dashboard_controller.dart';
 import 'package:elder_care/presentation/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final CareLinkController careLinkController = Get.find<CareLinkController>();
   final AuthController authController = Get.find<AuthController>();
   final DashboardController dashboardController = Get.find<DashboardController>();
   final _formKey = GlobalKey<FormState>();
@@ -59,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
 
 
-              //  Logo + Title
+              //  Logo & Title
               Image.asset('assets/images/eldercare_logo.png',height: h*0.17,),
               // Icon(Icons.favorite, color: Colors.teal.shade400, size: w * 0.14),
               SizedBox(height: h * 0.01),
