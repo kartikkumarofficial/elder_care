@@ -43,6 +43,7 @@ dependencies:
   sign_in_with_apple: ^7.0.1
   foundation: ^0.0.5
   flutter_web_auth_2: ^4.1.0
+  app_links: ^6.4.1
 
 
 dev_dependencies:
