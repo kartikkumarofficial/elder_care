@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- IMPORTANT:
+     Change the package below to match your real package name.
+     Open android/app/src/main/kotlin/.../MainActivity.kt and copy the package line.
+     Example: package="com.example.elder_care"
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.elder_care">
 
     <!-- Location Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -10,7 +16,7 @@
     <!-- Network -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Required for Android 13+ if you show notifications -->
+    <!-- Android 13+ notifications (if you show notifications) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -28,7 +34,7 @@
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
 
-            <!-- Flutter Theme -->
+            <!-- Flutter theme -->
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
@@ -39,8 +45,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Supabase OAuth Redirect (Facebook, Google, Apple OAuth) -->
-            <intent-filter android:autoVerify="true">
+            <!-- Supabase OAuth Redirect (Facebook / Google / Apple) -->
+            <!-- NOTE: removed android:autoVerify to avoid App Links warnings -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -48,6 +55,16 @@
                     android:scheme="io.supabase.flutter"
                     android:host="login-callback" />
             </intent-filter>
+            <intent-filter android:label="reset">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- handle io.supabase.flutter://reset-callback/ and login-callback -->
+                <data android:scheme="io.supabase.flutter" android:host="reset-callback" />
+                <data android:scheme="io.supabase.flutter" android:host="login-callback" />
+            </intent-filter>
+
 
         </activity>
 
@@ -58,11 +75,11 @@
 
     </application>
 
-    <!-- Required by Flutter ProcessTextPlugin -->
+    <!-- Used by Flutter ProcessTextPlugin -->
     <queries>
         <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
         </intent>
     </queries>
 
