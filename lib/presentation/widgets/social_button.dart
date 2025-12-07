@@ -20,7 +20,7 @@ Widget socialButton(String label, String assetPath, double w, double h) {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(w * 0.035),
-        onTap: authController.signInWithGoogle,
+        onTap: label=='Google'? authController.signInWithGoogle:authController.signInWithFacebook,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: w * 0.04, vertical: h * 0.012),
           child: Row(

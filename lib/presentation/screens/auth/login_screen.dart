@@ -1,12 +1,14 @@
 import 'package:elder_care/controllers/care_link_controller.dart';
 import 'package:elder_care/controllers/dashboard_controller.dart';
 import 'package:elder_care/presentation/screens/auth/signup_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../widgets/social_button.dart';
+import 'forgotpassemail_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -60,11 +62,9 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
 
-
-              //  Logo & Title
               Image.asset('assets/images/eldercare_logo.png',height: h*0.17,),
-              // Icon(Icons.favorite, color: Colors.teal.shade400, size: w * 0.14),
               SizedBox(height: h * 0.01),
+
               Text(
                 "Welcome to ElderCare",
                 style: GoogleFonts.nunito(
@@ -75,7 +75,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
               ),
+
               SizedBox(height: h * 0.006),
+
               Text(
                 "Caring made simpler, for your loved ones.",
                 textAlign: TextAlign.center,
@@ -87,15 +89,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
               SizedBox(height: h * 0.05),
 
-              // 🧾 Login Card
               Card(
                 elevation: 12,
-
                 shadowColor: Colors.black26,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(w * 0.06),
                 ),
-
                 color: Colors.white.withAlpha(92),
                 child: Padding(
                   padding: EdgeInsets.symmetric(
@@ -106,6 +105,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
+
+                        /// EMAIL
                         TextFormField(
                           controller: authController.emailController,
                           decoration: _inputDecoration(
@@ -114,11 +115,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             w,
                           ),
                           keyboardType: TextInputType.emailAddress,
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Please enter your email'
-                              : null,
+                          validator: (value) =>
+                          value == null || value.isEmpty ? 'Please enter your email' : null,
                         ),
+
                         SizedBox(height: h * 0.025),
+
+                        /// PASSWORD
                         TextFormField(
                           controller: authController.passwordController,
                           obscureText: !_isPasswordVisible,
@@ -134,16 +137,38 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.grey,
                               ),
                               onPressed: () => setState(
-                                      () => _isPasswordVisible = !_isPasswordVisible),
+                                    () => _isPasswordVisible = !_isPasswordVisible,
+                              ),
                             ),
                           ),
                           validator: (value) => value == null || value.isEmpty
                               ? 'Please enter your password'
                               : null,
                         ),
+
+                        SizedBox(height: h * 0.008),
+
+                        /// SHOW ONLY ON WRONG PASSWORD
+                        Obx(() => authController.wrongPassword.value
+                            ? Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: () => Get.to(() => ForgotPasswordEmailScreen()),
+                            child: Text(
+                              "Forgot Password?",
+                              style: GoogleFonts.nunito(
+                                color: Colors.teal.shade600,
+                                fontWeight: FontWeight.w700,
+                                fontSize: w * 0.038,
+                              ),
+                            ),
+                          ),
+                        )
+                            : const SizedBox()),
+
                         SizedBox(height: h * 0.04),
 
-                        //  Sign In Button
+                        /// SIGN IN BUTTON
                         Obx(() => ElevatedButton(
                           onPressed: () async {
                             if (_formKey.currentState!.validate()) {
@@ -177,7 +202,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         SizedBox(height: h * 0.03),
 
-                        // Divider + Continue With
                         Row(
                           children: [
                             Expanded(
@@ -187,8 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             Padding(
-                              padding:
-                              EdgeInsets.symmetric(horizontal: w * 0.02),
+                              padding: EdgeInsets.symmetric(horizontal: w * 0.02),
                               child: Text(
                                 "or continue with",
                                 style: GoogleFonts.nunito(
@@ -205,15 +228,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
+
                         SizedBox(height: h * 0.02),
 
-                        // 🌐 Google + Apple Buttons
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             socialButton("Google", "assets/auth/google.png", w, h),
                             SizedBox(width: w * 0.05),
-                            socialButton("Apple", "assets/auth/apple2.png", w, h),
+                            socialButton("Facebook", "assets/auth/facebook.png", w, h),
                           ],
                         ),
                       ],
@@ -224,14 +247,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
               SizedBox(height: h * 0.035),
 
-              // Sign Up Text
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     "Don’t have an account? ",
-                    style:
-                    GoogleFonts.nunito(fontSize: w * 0.038, color: Colors.black54),
+                    style: GoogleFonts.nunito(
+                        fontSize: w * 0.038, color: Colors.black54),
                   ),
                   GestureDetector(
                     onTap: () => Get.to(() => SignUpScreen()),
@@ -246,6 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
+
               SizedBox(height: h * 0.04),
             ],
           ),
@@ -262,7 +285,6 @@ class _LoginScreenState extends State<LoginScreen> {
       suffixIcon: trailingIcon,
       filled: true,
       fillColor: Colors.grey.shade100,
-      // fillColor: Color.fromRGBO(242,241,228,1),//grey shade 100
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(w * 0.05),
         borderSide: BorderSide.none,
@@ -271,12 +293,6 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(w * 0.05),
         borderSide: BorderSide(color: Colors.teal.shade300, width: 1.5),
       ),
-      contentPadding: EdgeInsets.symmetric(
-        vertical: w * 0.035,
-        horizontal: w * 0.04,
-      ),
     );
   }
-
- 
 }

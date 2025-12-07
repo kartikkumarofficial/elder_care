@@ -226,7 +226,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           children: [
                             socialButton("Google", "assets/auth/google.png", w, h),
                             SizedBox(width: w * 0.05),
-                            socialButton("Apple", "assets/auth/apple2.png", w, h),
+                            socialButton("Facebook", "assets/auth/facebook.png", w, h),
                           ],
                         ),
                       ],

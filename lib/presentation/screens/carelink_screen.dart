@@ -71,6 +71,7 @@ class CareLinkScreen extends StatelessWidget {
                       () => ElevatedButton(
                     onPressed: controller.isLoading.value
                         ? null
+
                         : () => controller.linkToReceiver(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF7AB7A7),
