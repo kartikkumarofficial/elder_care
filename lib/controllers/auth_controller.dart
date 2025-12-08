@@ -199,6 +199,7 @@ class AuthController extends GetxController {
     }
   }
 
+
   // -----------------------------
   // 🔧 Insert user in DB if it's first login via OAuth
   // -----------------------------
