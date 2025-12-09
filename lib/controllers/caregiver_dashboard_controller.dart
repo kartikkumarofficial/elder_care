@@ -1,10 +1,15 @@
 import 'dart:async';
+import 'package:battery_plus/battery_plus.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CaregiverDashboardController extends GetxController {
   final supabase = Supabase.instance.client;
+  // ----------------------------- VITAL HISTORY FOR CHARTS -----------------------------
+  RxList<double> heartRateHistory = <double>[80, 82, 81, 83, 85].obs;
+  RxList<double> oxygenHistory = <double>[95, 96, 97, 96, 98].obs;
+
 
   // ----------------------------- STATE FLAGS -----------------------------
   final RxBool isMapReady = false.obs;
@@ -26,7 +31,7 @@ class CaregiverDashboardController extends GetxController {
   final RxBool fallDetected = false.obs;
 
   // ----------------------------- DEVICE STATUS ---------------------------
-  final RxBool fitbitConnected = true.obs;
+  final RxBool fitbitConnected = false.obs;
   final RxInt battery = 82.obs;
 
   // ----------------------------- CONTROLLERS -----------------------------
@@ -227,6 +232,19 @@ class CaregiverDashboardController extends GetxController {
     // Optionally create a second subscription for the 'locations' table (if you actually use that).
   }
 
+  Future<void> fetchDeviceStatus() async {
+    final row = await supabase
+        .from("device_status")
+        .select()
+        .eq("user_id", receiverId.value)
+        .maybeSingle();
+
+    if (row != null) {
+      battery.value = row["battery_level"] ?? 0;
+      fitbitConnected.value = row["fitbit_connected"] ?? false;
+    }
+  }
+
 
   // ======================================================================
   // FETCH VITALS
@@ -246,10 +264,28 @@ class CaregiverDashboardController extends GetxController {
       if (!latest.containsKey(row["type"])) latest[row["type"]] = row;
     }
 
-    heartRate.value = latest["heart_rate"]?["value"]?.toString() ?? "--";
-    oxygen.value = latest["oxygen"]?["value"]?.toString() ?? "--";
+    // HEART RATE
+    if (latest["heart_rate"]?["value"] != null) {
+      double hr = (latest["heart_rate"]["value"] as num).toDouble();
+      heartRate.value = hr.toString();
+
+      heartRateHistory.add(hr);
+      if (heartRateHistory.length > 20) heartRateHistory.removeAt(0);
+    }
+
+    // OXYGEN
+    if (latest["oxygen"]?["value"] != null) {
+      double oxy = (latest["oxygen"]["value"] as num).toDouble();
+      oxygen.value = oxy.toString();
+
+      oxygenHistory.add(oxy);
+      if (oxygenHistory.length > 20) oxygenHistory.removeAt(0);
+    }
+
+    // FALL
     fallDetected.value = latest["fall_detected"]?["value"] == 1;
   }
+
 
   // ======================================================================
   // SUBSCRIBE REALTIME VITALS
@@ -277,11 +313,21 @@ class CaregiverDashboardController extends GetxController {
 
         switch (row["type"]) {
           case "heart_rate":
-            heartRate.value = row["value"].toString();
+            double hr = (row["value"] as num).toDouble();
+            heartRate.value = hr.toString();
+
+            heartRateHistory.add(hr);
+            if (heartRateHistory.length > 20) heartRateHistory.removeAt(0);
             break;
+
           case "oxygen":
-            oxygen.value = row["value"].toString();
+            double oxy = (row["value"] as num).toDouble();
+            oxygen.value = oxy.toString();
+
+            oxygenHistory.add(oxy);
+            if (oxygenHistory.length > 20) oxygenHistory.removeAt(0);
             break;
+
           case "fall_detected":
             fallDetected.value = row["value"] == 1;
             break;
@@ -321,6 +367,7 @@ class CaregiverDashboardController extends GetxController {
   Future<void> refreshData() async {
     await fetchLatestLocation();
     await fetchLatestVitals();
+    await fetchDeviceStatus();
   }
 
   // ======================================================================
@@ -353,6 +400,19 @@ class CaregiverDashboardController extends GetxController {
     } catch (e) {
       print("ANIMATE ERROR: $e");
     }
+  }
+  final batery = Battery();
+
+  Future<void> sendBatteryToSupabase(String userId) async {
+    final level = await batery.batteryLevel;
+
+    await Supabase.instance.client
+        .from("device_status")
+        .upsert({
+      "user_id": userId,
+      "battery_level": level,
+      "updated_at": DateTime.now().toIso8601String(),
+    });
   }
 
 }
