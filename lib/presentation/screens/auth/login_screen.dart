@@ -18,9 +18,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final CareLinkController careLinkController = Get.find<CareLinkController>();
+  // final CareLinkController careLinkController = Get.find<CareLinkController>();
+  // final CareLinkController careLinkController = Get.put(CareLinkController(),permanent: true);
   final AuthController authController = Get.find<AuthController>();
-  final DashboardController dashboardController = Get.find<DashboardController>();
+  // final DashboardController dashboardController = Get.find<DashboardController>();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
 

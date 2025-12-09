@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
+import '../presentation/care_receiver_screen.dart';
 import '../presentation/caregiver_dashboard.dart';
 import '../presentation/screens/care_id_display_screen.dart';
 import '../presentation/screens/care_link_screen.dart';
@@ -13,6 +14,8 @@ import '../presentation/screens/carereciever_dashboard.dart';
 import '../presentation/screens/auth/new_password_screen.dart';
 import '../presentation/screens/auth/role_selection_screen.dart';
 import 'care_link_controller.dart';
+import 'caregiver_dashboard_controller.dart';
+import 'dashboard_controller.dart';
 
 class AuthController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
@@ -225,26 +228,52 @@ class AuthController extends GetxController {
   }
 
   // -----------------------------
-  // 🚪 LOGOUT
-  // -----------------------------
+// 🚪 LOGOUT (FIXED & PROPER)
+// -----------------------------
   Future<void> logOut() async {
     try {
       isLoading.value = true;
+
+      // 1. Supabase Logout
       await supabase.auth.signOut();
+
+      // 2. DELETE ALL USER-SPECIFIC CONTROLLERS
+      Get.delete<DashboardController>(force: true);
+      Get.delete<CareLinkController>(force: true);
+
+      // If using caregiver dashboard
+      if (Get.isRegistered<CaregiverDashboardController>()) {
+        Get.delete<CaregiverDashboardController>(force: true);
+      }
+
+      // If using care receiver dashboard
+      if (Get.isRegistered<CareReceiverDashboardController>()) {
+        Get.delete<CareReceiverDashboardController>(force: true);
+      }
+
+      // 3. Clear AuthController user data
+      user.value = null;
+
+      // 4. Navigate to Login
       Get.offAll(() => LoginScreen());
+
     } catch (e) {
-      Get.snackbar('Logout Failed', e.toString(),
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Logout Failed',
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
-  // -----------------------------
+
+
   // 🔄 RESET PASSWORD (EMAIL)
-  // -----------------------------
+
   Future<void> resetPassword(String email) async {
     if (email.isEmpty) {
       Get.snackbar("Error", "Please enter your email.",
@@ -276,9 +305,7 @@ class AuthController extends GetxController {
     }
   }
 
-  // -----------------------------
-  // 🆕 SET NEW PASSWORD (after clicking email link)
-  // -----------------------------
+  ///setting new password
   Future<void> setNewPassword(String newPassword) async {
     if (newPassword.isEmpty || newPassword.length < 6) {
       Get.snackbar('Error', 'Password must be at least 6 characters.',
@@ -351,10 +378,28 @@ class AuthController extends GetxController {
   // -----------------------------
   Future<void> fetchRoleAndNavigate(String userId) async {
     try {
+      // Fetch fresh user row from DB
       final response =
       await supabase.from('users').select().eq('id', userId).single();
 
+      // Set user model (fresh)
       user.value = UserModel.fromJson(response);
+
+      // Delete any user-specific controllers to avoid stale state
+      // (they will be recreated by bindings or when needed)
+      if (Get.isRegistered<DashboardController>()) {
+        Get.delete<DashboardController>(force: true);
+      }
+      if (Get.isRegistered<CareLinkController>()) {
+        Get.delete<CareLinkController>(force: true);
+      }
+      if (Get.isRegistered<CaregiverDashboardController>()) {
+        Get.delete<CaregiverDashboardController>(force: true);
+      }
+      if (Get.isRegistered<CareReceiverDashboardController>()) {
+        Get.delete<CareReceiverDashboardController>(force: true);
+      }
+
       final role = user.value?.role;
 
       if (role == null) {
@@ -371,6 +416,7 @@ class AuthController extends GetxController {
         if (links.isEmpty) {
           Get.offAll(() => CareLinkScreen());
         } else {
+          // ensure NavController / bindings are ready (InitialBinding should lazyPut them)
           Get.offAll(() => MainScaffold());
         }
       } else if (role == "receiver") {
@@ -393,4 +439,5 @@ class AuthController extends GetxController {
       Get.offAll(() => LoginScreen());
     }
   }
+
 }

@@ -2,21 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// You'll need a simple data model for your tasks
 class Task {
   final int id;
   final String title;
   final TimeOfDay time;
   bool isCompleted;
 
-  Task({required this.id, required this.title, required this.time, this.isCompleted = false});
+  Task({
+    required this.id,
+    required this.title,
+    required this.time,
+    this.isCompleted = false,
+  });
 
   factory Task.fromJson(Map<String, dynamic> json) {
     final timeParts = (json['task_time'] as String).split(':');
+
     return Task(
       id: json['id'],
       title: json['task_title'],
-      time: TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1])),
+      time: TimeOfDay(
+        hour: int.parse(timeParts[0]),
+        minute: int.parse(timeParts[1]),
+      ),
       isCompleted: json['is_completed'],
     );
   }
@@ -25,107 +33,161 @@ class Task {
 class DashboardController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // Observables for the UI
+  // Reactive UI variables
   final isLoading = true.obs;
   final userName = ''.obs;
   final careId = ''.obs;
   final RxList<Task> tasks = <Task>[].obs;
 
-  // Internal state
-  String? _userId; // The ID of the user whose data is being displayed
+  // ID of the user whose dashboard is displayed
+  String? _displayUserId;
 
   @override
   void onInit() {
     super.onInit();
+    print("[DashboardController] onInit()");
     fetchInitialData();
   }
 
+  @override
+  void onClose() {
+    print("[DashboardController] onClose()");
+    super.onClose();
+  }
+
+  // -------------------------------------------------------------
+  // FETCH ROLE → DETERMINE WHICH USER DASHBOARD TO SHOW
+  // -------------------------------------------------------------
   Future<void> fetchInitialData() async {
     isLoading.value = true;
+
     try {
       final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) return;
 
-      // Fetch the current user's details to see if they are a caregiver or receiver
-      final userResponse = await supabase
+      if (currentUser == null) {
+        isLoading.value = false;
+        return;
+      }
+
+      // Fetch user's role
+      final userRow = await supabase
           .from('users')
-          .select('role, linked_user_id')
+          .select('role')
           .eq('id', currentUser.id)
           .single();
 
-      final userRole = userResponse['role'];
-      final linkedUserId = userResponse['linked_user_id'];
+      final role = userRow['role'];
 
-      if (userRole == 'caregiver' && linkedUserId != null) {
-        // If caregiver, fetch the linked receiver's data
-        _userId = linkedUserId;
-      } else {
-        // If receiver, use their own ID
-        _userId = currentUser.id;
+      // CASE 1 → CAREGIVER
+      if (role == "caregiver") {
+        final linkRow = await supabase
+            .from('care_links')
+            .select('receiver_id')
+            .eq('caregiver_id', currentUser.id)
+            .maybeSingle();
+
+        if (linkRow == null || linkRow['receiver_id'] == null) {
+          userName.value = "Not Linked";
+          careId.value = "N/A";
+          isLoading.value = false;
+          return;
+        }
+
+        _displayUserId = linkRow['receiver_id'];
+      }
+      // CASE 2 → RECEIVER
+      else {
+        _displayUserId = currentUser.id;
       }
 
-      if (_userId != null) {
-        // Fetch the profile data of the person being cared for
-        final profileResponse = await supabase
-            .from('users')
-            .select('full_name, care_id')
-            .eq('id', _userId!)
-            .single();
-
-        userName.value = profileResponse['full_name'] ?? 'User';
-        careId.value = profileResponse['care_id'] ?? 'N/A';
-
-        // Fetch the tasks for that user
-        await fetchTasks();
-      }
+      // Now fetch profile + tasks for that user
+      await _fetchProfile();
+      await fetchTasks();
     } catch (e) {
-      Get.snackbar('Error', 'Could not load dashboard data.', backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar(
+        "Error",
+        "Could not load dashboard.",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
+  // -------------------------------------------------------------
+  // FETCH PROFILE OF DISPLAY USER
+  // -------------------------------------------------------------
+  Future<void> _fetchProfile() async {
+    if (_displayUserId == null) return;
+
+    final profile = await supabase
+        .from('users')
+        .select('full_name, care_id')
+        .eq('id', _displayUserId!)
+        .single();
+
+    userName.value = profile['full_name'] ?? "User";
+    careId.value = profile['care_id'] ?? "N/A";
+  }
+
+  // -------------------------------------------------------------
+  // FETCH TASKS FOR DISPLAY USER
+  // -------------------------------------------------------------
   Future<void> fetchTasks() async {
-    if (_userId == null) return;
+    if (_displayUserId == null) return;
+
     final response = await supabase
         .from('tasks')
         .select()
-        .eq('user_id', _userId!)
+        .eq('user_id', _displayUserId!)
         .order('task_time', ascending: true);
 
-    tasks.value = (response as List).map((json) => Task.fromJson(json)).toList();
+    tasks.value =
+        (response as List).map((json) => Task.fromJson(json)).toList();
   }
 
+  // -------------------------------------------------------------
+  // TOGGLE TASK COMPLETION
+  // -------------------------------------------------------------
   Future<void> toggleTaskCompletion(int taskId, bool newStatus) async {
-    final taskIndex = tasks.indexWhere((task) => task.id == taskId);
-    if (taskIndex != -1) {
-      tasks[taskIndex].isCompleted = newStatus;
-      tasks.refresh(); // Update the UI immediately
+    final idx = tasks.indexWhere((t) => t.id == taskId);
+    if (idx == -1) return;
 
-      await supabase
-          .from('tasks')
-          .update({'is_completed': newStatus})
-          .eq('id', taskId);
-    }
+    tasks[idx].isCompleted = newStatus;
+    tasks.refresh();
+
+    await supabase
+        .from('tasks')
+        .update({'is_completed': newStatus})
+        .eq('id', taskId);
   }
 
+  // -------------------------------------------------------------
+  // ADD NEW TASK
+  // -------------------------------------------------------------
   Future<void> addTask(String title, TimeOfDay time) async {
-    if (_userId == null) return;
+    if (_displayUserId == null) return;
+
+    final formattedTime =
+        "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00";
 
     final response = await supabase
         .from('tasks')
         .insert({
-      'user_id': _userId,
+      'user_id': _displayUserId!,
       'task_title': title,
-      'task_time': '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00',
-      'created_by': supabase.auth.currentUser!.id, // Track who created it
+      'task_time': formattedTime,
+      'created_by': supabase.auth.currentUser!.id,
     })
         .select();
 
-    // Add the new task to the local list and refresh UI
     final newTask = Task.fromJson((response as List).first);
     tasks.add(newTask);
-    tasks.sort((a, b) => (a.time.hour * 60 + a.time.minute).compareTo(b.time.hour * 60 + b.time.minute));
 
+    // sort by time
+    tasks.sort((a, b) =>
+        (a.time.hour * 60 + a.time.minute)
+            .compareTo(b.time.hour * 60 + b.time.minute));
   }
 }

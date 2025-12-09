@@ -3,10 +3,8 @@ class UserModel {
   final String? fullName;
   final String? email;
   final String? role;
-  final String? linkedUserId;
   final String? careId;
   final DateTime? createdAt;
-
   final String? profileImage;
 
   UserModel({
@@ -14,7 +12,6 @@ class UserModel {
     this.fullName,
     this.email,
     this.role,
-    this.linkedUserId,
     this.careId,
     this.createdAt,
     this.profileImage,
@@ -26,7 +23,6 @@ class UserModel {
       fullName: json['full_name'],
       email: json['email'],
       role: json['role'],
-      linkedUserId: json['linked_user_id'],
       careId: json['care_id'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -41,7 +37,6 @@ class UserModel {
       'full_name': fullName,
       'email': email,
       'role': role,
-      'linked_user_id': linkedUserId,
       'care_id': careId,
       'created_at': createdAt?.toIso8601String(),
       'profile_image': profileImage,
