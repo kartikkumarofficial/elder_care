@@ -66,7 +66,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       final List<Widget> screens =
       user.role == "caregiver"
           ? [
-        CaregiverDashboardScreen(),
+        CaregiverDashboard(),
 
         // Location Screen (only if a receiver is linked)
         LocationScreen(

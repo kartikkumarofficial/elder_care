@@ -4,34 +4,43 @@ import 'auth_controller.dart';
 import 'package:elder_care/presentation/screens/auth/login_screen.dart';
 
 class SplashController extends GetxController {
+  final supabase = Supabase.instance.client;
   final AuthController authController = Get.find<AuthController>();
 
   @override
   void onReady() {
     super.onReady();
-    _checkSessionAndNavigate();
+    _initApp();
   }
 
-  Future<void> _checkSessionAndNavigate() async {
-    // A short delay to allow the splash screen to be visible
-    await Future.delayed(const Duration(seconds: 2));
+  Future<void> _initApp() async {
+    await Future.delayed(const Duration(seconds: 2)); // Show logo nicely
 
     try {
-      final session = Supabase.instance.client.auth.currentSession;
+      // Try to recover the stored session safely
+      print("[SPLASH] Checking saved session...");
+      final session = supabase.auth.currentSession;
 
-      if (session != null) {
-        // If a session exists, the user is already logged in.
-        // We can use your existing function to fetch their data and navigate.
-        print('[SPLASH] Session found. Fetching user profile...');
-        await authController.fetchRoleAndNavigate(session.user.id);
-      } else {
-        // If no session, send them to the login screen.
-        print('[SPLASH] No session. Navigating to LoginScreen.');
-        Get.offAll(() => LoginScreen());
+      if (session == null) {
+        print("[SPLASH] No session found → go to Login");
+        return Get.offAll(() => LoginScreen());
       }
+
+      print("[SPLASH] Session found. Validating session…");
+
+      // Manually validate / refresh the session
+      await supabase.auth.refreshSession();
+
+      // If refresh works → continue
+      await authController.fetchRoleAndNavigate(session.user.id);
     } catch (e) {
-      // In case of any error, default to the login screen.
-      print('[SPLASH] Error during session check: $e');
+      print("[SPLASH] Session invalid or refresh failed: $e");
+
+      // Clear corrupted session (FIX for oauth_client_id error)
+      try {
+        await supabase.auth.signOut();
+      } catch (_) {}
+
       Get.offAll(() => LoginScreen());
     }
   }

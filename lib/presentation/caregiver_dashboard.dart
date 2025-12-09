@@ -1,223 +1,255 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/caregiver_dashboard_controller.dart'; // We will create this controller
+import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../controllers/caregiver_dashboard_controller.dart';
 
-class CaregiverDashboardScreen extends StatelessWidget {
-  // Use the new CaregiverDashboardController
-  final CaregiverDashboardController controller = Get.put(CaregiverDashboardController());
+class CaregiverDashboard extends StatelessWidget {
+  CaregiverDashboard({super.key});
 
-  CaregiverDashboardScreen({Key? key}) : super(key: key);
+  final controller = Get.put(CaregiverDashboardController());
 
   @override
   Widget build(BuildContext context) {
-    final height = Get.height;
-    final width = Get.width;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF2A2E43),
-      body: Obx(
-            () => controller.isLoading.value
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: height * 0.05),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // This now correctly fetches the receiver's name
-                      Text(
-                        "Welcome back, ${controller.userName.value}",
-                        style: TextStyle(
-                          fontSize: width * 0.05,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+      backgroundColor: const Color(0xFFF8F8F8),
+      body: Obx(() {
+        if (!controller.isMapReady.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              expandedHeight: Get.height * 0.36,
+              pinned: false,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  children: [
+                    GoogleMap(
+                      markers: {
+                        Marker(
+                          markerId: MarkerId("receiver"),
+                          position: LatLng(controller.lat.value, controller.lng.value),
+                          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                        ),
+                      },
+
+                      initialCameraPosition: CameraPosition(
+
+                        target: LatLng(
+                          controller.lat.value == 0 ? 20.5937 : controller.lat.value,
+                          controller.lng.value == 0 ? 78.9629 : controller.lng.value,
+                        ),
+                        zoom: 14,
+                      ),
+                      onMapCreated: controller.onMapCreated,
+                      zoomControlsEnabled: false,
+                      gestureRecognizers: {
+                        Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
+                      },
+                    ),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.black.withOpacity(0.6),
+                            Colors.transparent,
+                          ],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text("Caretaker",
-                          style: TextStyle(
-                              fontSize: width * 0.035,
-                              color: Colors.grey[400]))
-                    ],
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.notifications,
-                        size: width * 0.08, color: Colors.white),
-                    onPressed: controller.openNotificationDrawer,
-                  )
-                ],
+                    ),
+
+                    Positioned(
+                      left: 20,
+                      bottom: 25,
+                      child: Obx(() => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            controller.name.value,
+                            style: GoogleFonts.nunito(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Location updated ${controller.lastLocationRefresh.value}",
+                            style: GoogleFonts.nunito(color: Colors.white70),
+                          ),
+                        ],
+                      )),
+                    ),
+
+                    Positioned(
+                      right: 20,
+                      bottom: 20,
+                      child: CircleAvatar(
+                        radius: 38,
+                        backgroundColor: Colors.white,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(40),
+                          child: controller.profileUrl.value.isEmpty
+                              ? Image.asset("assets/images/def_png.png")
+                              : Image.network(controller.profileUrl.value),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              _sectionTitle("Health Overview"),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _healthCard(width, "Heart Rate", "75 BPM", Icons.favorite, Colors.red),
-                  _healthCard(width, "BP", "120/80", Icons.bloodtype, Colors.purple),
-                  _healthCard(width, "Sugar", "95 mg/dL", Icons.water_drop, Colors.teal),
-                  _healthCard(width, "Steps", "2,450", Icons.directions_walk, Colors.orange),
-                ],
+            ),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    _sectionTitle("Device Status"),
+                    _deviceStatusCard(),
+                    const SizedBox(height: 22),
+
+                    _sectionTitle("Health Status"),
+                    _healthGrid(),
+                    const SizedBox(height: 22),
+
+                    _featureCard("Appointment Scheduler (coming soon)", Icons.event),
+                    const SizedBox(height: 14),
+
+                    _featureCard("Task Scheduler (coming soon)", Icons.list_alt),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
-              _sectionTitle("Reminders"),
-              const SizedBox(height: 8),
-              _remindersSection(controller, width),
-              const SizedBox(height: 24),
-              _sectionTitle("Location"),
-              const SizedBox(height: 8),
-              _locationSection(width),
-              const SizedBox(height: 24),
-              _sectionTitle("Appointments"),
-              const SizedBox(height: 8),
-              _appointmentsSection(),
-              const SizedBox(height: 24),
-              _emergencyButton(width),
-              const SizedBox(height: 24),
-            ],
-          ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _sectionTitle(String text) {
+    return Text(
+      text,
+      style: GoogleFonts.nunito(fontSize: 20, fontWeight: FontWeight.w700),
+    );
+  }
+
+  Widget _deviceStatusCard() {
+    return Obx(() {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: _box(),
+        child: Row(
+          children: [
+            Icon(
+              controller.fitbitConnected.value ? Icons.watch : Icons.watch_off,
+              color: controller.fitbitConnected.value ? Colors.green : Colors.red,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              controller.fitbitConnected.value ? "Fitbit Connected" : "Fitbit Not Connected",
+              style: GoogleFonts.nunito(fontSize: 16),
+            ),
+            const Spacer(),
+            Icon(Icons.battery_full,
+                color: controller.battery.value > 40 ? Colors.green : Colors.orange),
+            const SizedBox(width: 5),
+            Text("${controller.battery.value}%"),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: controller.refreshData,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF7AB7A7),
+                shape: const StadiumBorder(),
+              ),
+              child: const Text("Refresh"),
+            ),
+          ],
         ),
+      );
+    });
+  }
+
+  Widget _healthGrid() {
+    return Obx(() {
+      return GridView.count(
+        crossAxisCount: 3,
+        shrinkWrap: true,
+        childAspectRatio: 1,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          _healthCard(Icons.favorite, controller.heartRate.value, "Heart Rate", Colors.red),
+          _healthCard(
+            Icons.warning,
+            controller.fallDetected.value ? "Fall!" : "Normal",
+            "Fall Status",
+            controller.fallDetected.value ? Colors.orange : Colors.green,
+          ),
+          _healthCard(Icons.water_drop, controller.oxygen.value, "Oxygen", Colors.blue),
+        ],
+      );
+    });
+  }
+
+  Widget _healthCard(IconData icon, String value, String label, Color color) {
+    return Container(
+      decoration: _box(),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 6),
+          Text(value, style: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(label, style: GoogleFonts.nunito(fontSize: 13, color: Colors.grey[600])),
+        ],
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Text(title,
-        style: TextStyle(
-            fontSize: Get.width * 0.045,
-            fontWeight: FontWeight.bold,
-            color: Colors.white));
-  }
-
-  Widget _healthCard(double width, String title, String value, IconData icon, Color color) {
+  Widget _featureCard(String label, IconData icon) {
     return Container(
-      width: (width - 48) / 2,
-      padding: const EdgeInsets.all(12),
+      height: 90,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF4A4E6C),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFF6EFE3),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(0.2),
-            child: Icon(icon, color: color),
-          ),
+          Icon(icon, color: Colors.brown, size: 30),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-              const SizedBox(height: 4),
-              Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))
-            ],
-          )
+          Text(label, style: GoogleFonts.nunito(fontSize: 16)),
         ],
       ),
     );
   }
 
-  Widget _remindersSection(CaregiverDashboardController controller, double width) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF4A4E6C),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          // This uses placeholder data from the new controller
-          ...controller.medications.map((med) => ListTile(
-            title: Text(med.name, style: const TextStyle(color: Colors.white)),
-            subtitle: Text(med.time, style: const TextStyle(color: Colors.grey)),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete, color: Colors.redAccent),
-              onPressed: () => controller.deleteMedication(med),
-            ),
-          )),
-          TextButton.icon(
-            onPressed: controller.showAddMedicationBottomSheet,
-            icon: const Icon(Icons.add, color: Colors.blueAccent),
-            label: const Text("Add Reminder", style: TextStyle(color: Colors.blueAccent)),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _locationSection(double width) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFF4A4E6C),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              // Ensure you have this image in your assets folder
-              child: Image.asset('assets/images/map.png', fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Center(child: Text('Map not available', style: TextStyle(color: Colors.white))),
-              )),
-          const ListTile(
-            title: Text("Last updated: 2 mins ago", style: TextStyle(color: Colors.grey)),
-            trailing: TextButton(
-              onPressed: null, // Disabled for now
-              child: Text("Track Now", style: TextStyle(color: Colors.blueAccent)),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _appointmentsSection() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF4A4E6C),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: const [
-          ListTile(
-            title: Text("Dr. Smith - Cardiology", style: TextStyle(color: Colors.white)),
-            subtitle: Text("Today, 2:30 PM - Medical Center", style: TextStyle(color: Colors.grey)),
-          ),
-          Divider(color: Colors.grey),
-          ListTile(
-            title: Text("Physical Therapy", style: TextStyle(color: Colors.white)),
-            subtitle: Text("Tomorrow, 10:00 AM - Wellness Center", style: TextStyle(color: Colors.grey)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _emergencyButton(double width) {
-    return Center(
-      child: SizedBox(
-        width: width * 0.9,
-        child: ElevatedButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.warning_amber_outlined, color: Colors.white),
-          label: const Text("Emergency SOS", style: TextStyle(color: Colors.white)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.redAccent,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-      ),
+  BoxDecoration _box() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 4),
+        )
+      ],
     );
   }
 }
