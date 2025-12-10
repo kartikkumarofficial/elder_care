@@ -37,7 +37,7 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    initAuthListener();   // This handles password reset deep links
+    initAuthListener(); // This handles password reset deep links and centralizes auth handling
   }
 
   @override
@@ -54,7 +54,10 @@ class AuthController extends GetxController {
   // 🔥 AUTH STATE LISTENER
   // -----------------------------
   void initAuthListener() {
-    _authSubscription = supabase.auth.onAuthStateChange.listen((event) {
+    // Ensure we don't attach multiple listeners accidentally
+    _authSubscription?.cancel();
+
+    _authSubscription = supabase.auth.onAuthStateChange.listen((event) async {
       final authEvent = event.event;
       final session = event.session;
 
@@ -63,7 +66,30 @@ class AuthController extends GetxController {
       // When user clicks reset link from email:
       if (authEvent == AuthChangeEvent.passwordRecovery) {
         print("🔐 Password recovery deep link detected!");
+        // Use Get.to so user can set new password
         Get.to(() => NewPasswordScreen());
+        return;
+      }
+
+      // Handle sign in centrally (email/password and OAuth will both trigger this)
+      if (authEvent == AuthChangeEvent.signedIn && session != null) {
+        try {
+          // Ensure user exists in users table for first-time OAuth logins
+          await insertUserIfNew(session.user);
+          // fetch role and navigate
+          await fetchRoleAndNavigate(session.user.id);
+        } catch (e) {
+          print("Error handling signedIn event: $e");
+        }
+        return;
+      }
+
+      // Handle sign out
+      if (authEvent == AuthChangeEvent.signedOut) {
+        print("User signed out via listener");
+        user.value = null;
+        // Navigate to login screen if needed
+        Get.offAll(() => LoginScreen());
       }
     });
   }
@@ -133,7 +159,7 @@ class AuthController extends GetxController {
       emailController.clear();
       passwordController.clear();
 
-      await fetchRoleAndNavigate(response.user!.id);
+      // Navigation and user insertion handled by the central auth listener (onAuthStateChange)
     } catch (e) {
       final message = e.toString();
 
@@ -162,16 +188,15 @@ class AuthController extends GetxController {
         authScreenLaunchMode: LaunchMode.externalApplication,
       );
 
-      supabase.auth.onAuthStateChange.listen((event) async {
-        final session = event.session;
-
-        if (session != null) {
-          await insertUserIfNew(session.user);
-          await fetchRoleAndNavigate(session.user.id);
-        }
-      });
+      // DO NOT create a new onAuthStateChange listener here.
+      // The central listener (initAuthListener) will handle signedIn events,
+      // insert the user if new, and navigate appropriately.
     } catch (e) {
       print("Google Login Error: $e");
+      Get.snackbar("Login Error", e.toString(),
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
     }
   }
 
@@ -186,14 +211,7 @@ class AuthController extends GetxController {
         authScreenLaunchMode: LaunchMode.externalApplication,
       );
 
-      supabase.auth.onAuthStateChange.listen((event) async {
-        final session = event.session;
-
-        if (session != null) {
-          await insertUserIfNew(session.user);
-          await fetchRoleAndNavigate(session.user.id);
-        }
-      });
+      // Central listener will pick up the signedIn event and handle DB + navigation.
     } catch (e) {
       Get.snackbar("Login Error", e.toString(),
           backgroundColor: Colors.red,
@@ -201,7 +219,6 @@ class AuthController extends GetxController {
           snackPosition: SnackPosition.BOTTOM);
     }
   }
-
 
   // -----------------------------
   // 🔧 Insert user in DB if it's first login via OAuth
@@ -228,8 +245,8 @@ class AuthController extends GetxController {
   }
 
   // -----------------------------
-// 🚪 LOGOUT (FIXED & PROPER)
-// -----------------------------
+  // 🚪 LOGOUT (FIXED & PROPER)
+  // -----------------------------
   Future<void> logOut() async {
     try {
       isLoading.value = true;
@@ -238,8 +255,13 @@ class AuthController extends GetxController {
       await supabase.auth.signOut();
 
       // 2. DELETE ALL USER-SPECIFIC CONTROLLERS
-      Get.delete<DashboardController>(force: true);
-      Get.delete<CareLinkController>(force: true);
+      // Delete Dashboard + CareLink
+      if (Get.isRegistered<DashboardController>()) {
+        Get.delete<DashboardController>(force: true);
+      }
+      if (Get.isRegistered<CareLinkController>()) {
+        Get.delete<CareLinkController>(force: true);
+      }
 
       // If using caregiver dashboard
       if (Get.isRegistered<CaregiverDashboardController>()) {
@@ -256,7 +278,6 @@ class AuthController extends GetxController {
 
       // 4. Navigate to Login
       Get.offAll(() => LoginScreen());
-
     } catch (e) {
       Get.snackbar(
         'Logout Failed',
@@ -270,10 +291,7 @@ class AuthController extends GetxController {
     }
   }
 
-
-
   // 🔄 RESET PASSWORD (EMAIL)
-
   Future<void> resetPassword(String email) async {
     if (email.isEmpty) {
       Get.snackbar("Error", "Please enter your email.",
@@ -359,7 +377,6 @@ class AuthController extends GetxController {
 
       // After updating, fetch full user data + navigate
       await fetchRoleAndNavigate(userId);
-
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -439,5 +456,4 @@ class AuthController extends GetxController {
       Get.offAll(() => LoginScreen());
     }
   }
-
 }
