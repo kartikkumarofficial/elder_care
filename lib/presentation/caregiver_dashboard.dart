@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../controllers/caregiver_dashboard_controller.dart';
+import 'widgets/eventssection.dart';
 import 'widgets/healthstatussection.dart';
 import 'widgets/watchstatusSection.dart';
 
@@ -157,14 +158,18 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
               watchStatusSection(),
               SizedBox(height:srch*0.01),
               healthStatusSection(),
-              SizedBox(height:srch*0.01),
+              // SizedBox(height:srch*0.01),
+              SizedBox(height: srch * 0.015),
+              EventSectionModern(),
+              SizedBox(height: srch * 0.02),
+
 
 
 
               // Bottom Action Buttons (Call, Emergency, Caregivers)
 
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 200),
             ],
           ),
         );
