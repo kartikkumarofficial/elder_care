@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:pedometer/pedometer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CaregiverDashboardController extends GetxController {
@@ -87,7 +88,9 @@ class CaregiverDashboardController extends GetxController {
       await fetchReceiverProfile();
       await fetchLatestLocation();
       await fetchLatestVitals();
+      await fetchLatestSteps();
 
+      subscribeToStepsRealtime();
       subscribeToLocationRealtime();
       subscribeToVitalsRealtime();
     } catch (e) {
@@ -233,24 +236,37 @@ class CaregiverDashboardController extends GetxController {
   }
 
   Future<void> fetchDeviceStatus() async {
+    print("fetchDeviceStatus: fetching for ${receiverId.value}");
+
     final row = await supabase
         .from("device_status")
         .select()
         .eq("user_id", receiverId.value)
         .maybeSingle();
 
-    if (row != null) {
-      battery.value = row["battery_level"] ?? 0;
-      fitbitConnected.value = row["fitbit_connected"] ?? false;
+    print("Device Status fetched: $row");
+
+    if (row == null) {
+      print("❌ No device status row found.");
+      return;
     }
+
+    battery.value = row["battery_level"] ?? 0;
+    fitbitConnected.value = row["fitbit_connected"] ?? false;
   }
+
 
 
   // ======================================================================
   // FETCH VITALS
   // ======================================================================
   Future<void> fetchLatestVitals() async {
-    if (receiverId.value.isEmpty) return;
+    if (receiverId.value.isEmpty) {
+      print("fetchLatestVitals: NO RECEIVER ID");
+      return;
+    }
+
+    print("fetchLatestVitals: fetching vitals for ${receiverId.value}");
 
     final rows = await supabase
         .from("health_vitals")
@@ -258,33 +274,45 @@ class CaregiverDashboardController extends GetxController {
         .eq("user_id", receiverId.value)
         .order("timestamp", ascending: false);
 
+    print("Vitals fetched: $rows");
+
+    if (rows.isEmpty) {
+      print("❌ No vitals found for this receiver");
+      return;
+    }
+
     Map<String, dynamic> latest = {};
 
     for (var row in rows) {
       if (!latest.containsKey(row["type"])) latest[row["type"]] = row;
     }
 
-    // HEART RATE
+    print("Latest vitals map: $latest");
+
+    // HEART
     if (latest["heart_rate"]?["value"] != null) {
       double hr = (latest["heart_rate"]["value"] as num).toDouble();
       heartRate.value = hr.toString();
-
-      heartRateHistory.add(hr);
-      if (heartRateHistory.length > 20) heartRateHistory.removeAt(0);
+    } else {
+      print("❌ No heart_rate in latest records");
     }
 
     // OXYGEN
     if (latest["oxygen"]?["value"] != null) {
       double oxy = (latest["oxygen"]["value"] as num).toDouble();
       oxygen.value = oxy.toString();
-
-      oxygenHistory.add(oxy);
-      if (oxygenHistory.length > 20) oxygenHistory.removeAt(0);
+    } else {
+      print("❌ No oxygen in latest records");
     }
 
     // FALL
-    fallDetected.value = latest["fall_detected"]?["value"] == 1;
+    if (latest["fall_detected"]?["value"] != null) {
+      fallDetected.value = latest["fall_detected"]["value"] == 1;
+    } else {
+      print("❌ No fall_detected record");
+    }
   }
+
 
 
   // ======================================================================
@@ -364,10 +392,22 @@ class CaregiverDashboardController extends GetxController {
   // ======================================================================
   // MANUAL REFRESH
   // ======================================================================
+  RxBool isRefreshing = false.obs;
+
   Future<void> refreshData() async {
+    print("🔄 Refresh tapped at: ${DateTime.now()}");
+    isRefreshing.value = true;
+
+    // Simulate API call / Fitbit fetch
+    await Future.delayed(const Duration(seconds: 1));
+
+    
     await fetchLatestLocation();
     await fetchLatestVitals();
     await fetchDeviceStatus();
+
+    isRefreshing.value = false;
+    print("✅ Refresh completed!");
   }
 
   // ======================================================================
@@ -414,5 +454,53 @@ class CaregiverDashboardController extends GetxController {
       "updated_at": DateTime.now().toIso8601String(),
     });
   }
+
+
+  //pedometer - for steps
+
+
+// ====================== STEPS ======================
+  RxString steps = "--".obs;
+
+
+
+  Future<void> fetchLatestSteps() async {
+    if (receiverId.value.isEmpty) return;
+
+    final row = await supabase
+        .from("steps_data")
+        .select("steps")
+        .eq("user_id", receiverId.value)
+        .order("timestamp", ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (row != null) {
+      steps.value = row["steps"].toString();
+    }
+  }
+  void subscribeToStepsRealtime() {
+    if (receiverId.value.isEmpty) return;
+
+    final channel = supabase.channel("steps_${receiverId.value}");
+
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.insert,
+      schema: "public",
+      table: "steps_data",
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: "user_id",
+        value: receiverId.value,
+      ),
+      callback: (payload) {
+        final newSteps = payload.newRecord["steps"];
+        steps.value = newSteps.toString();
+      },
+    ).subscribe();
+  }
+
+
+
 
 }
