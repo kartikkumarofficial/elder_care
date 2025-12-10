@@ -14,9 +14,11 @@
     <application
         android:name="${applicationName}"
         android:label="elder_care"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true"><!-- may comment out later just wrote this to get rid of the warning-->
 
-        <!-- ✅ GOOGLE MAPS API KEY MUST BE HERE (inside <application>, not <activity>) -->
+
+<!--    Google Maps Api-->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_api_key"/>
