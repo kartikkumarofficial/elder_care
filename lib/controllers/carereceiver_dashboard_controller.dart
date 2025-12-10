@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pedometer/pedometer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/task_model.dart';
@@ -198,4 +199,29 @@ class CareReceiverDashboardController extends GetxController {
       );
     }
   }
+
+  //pedometer - tracking steps and sending to supabase
+  RxInt steps = 0.obs;
+
+  Future<void> uploadStepsToSupabase(int steps) async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await Supabase.instance.client
+        .from("steps_data")
+        .insert({
+      "user_id": userId,
+      "steps": steps,
+    });
+  }
+
+
+  void initStepTracking() {
+    Pedometer.stepCountStream.listen((event) async {
+      steps.value = event.steps;
+
+      await uploadStepsToSupabase(event.steps);
+    });
+  }
+
 }

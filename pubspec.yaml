@@ -46,6 +46,7 @@ dependencies:
   app_links: ^6.4.1
   syncfusion_flutter_gauges: ^31.1.19
   battery_plus: ^7.0.0
+  pedometer: ^4.1.1
 
 
 dev_dependencies:

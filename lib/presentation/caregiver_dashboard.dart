@@ -201,53 +201,52 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
       final battery = controller.battery.value;
 
       return Padding(
-        padding: EdgeInsets.symmetric(horizontal: Get.width * 0.06),
+        padding: EdgeInsets.symmetric(horizontal: Get.width * 0.05),
         child: Row(
           children: [
-            // ========== Wearable Status (Icon + Text) ==========
-            Row(
-              children: [
-                Container(
-                  height: 34,
-                  width: 34,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: connected
-                        ? Colors.teal.shade100
-                        : Colors.red.shade100,
+            // -------- Wearable Status --------
+            Flexible(
+              child: Row(
+                children: [
+                  Container(
+                    height: 32,
+                    width: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: connected ? Colors.teal.shade100 : Colors.red.shade100,
+                    ),
+                    child: Icon(
+                      connected ? Icons.watch : Icons.watch_off,
+                      color: connected ? Colors.teal.shade700 : Colors.red.shade700,
+                      size: 18,
+                    ),
                   ),
-                  child: Icon(
-                    connected
-                        ? Icons.watch  // wearable icon
-                        : Icons.watch_off, // wearable disconnected
-                    color: connected
-                        ? Colors.teal.shade700
-                        : Colors.red.shade700,
-                    size: 20,
+                  const SizedBox(width: 8),
+
+                  // Make text wrap if needed (prevents overflow)
+                  Expanded(
+                    child: Text(
+                      connected ? "Wearable Connected" : "No Wearable Detected",
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.nunito(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  connected
-                      ? "Wearable Connected"
-                      : "No Wearable Detected",
-                  style: GoogleFonts.nunito(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
 
-            const Spacer(),
+            const SizedBox(width: 10),
 
-            // ========== Battery Indicator ==========
+            // -------- Battery --------
             Row(
               children: [
                 Icon(
                   Icons.battery_full,
-                  size: 22,
+                  size: 20,
                   color: battery > 40 ? Colors.green : Colors.orange,
                 ),
                 const SizedBox(width: 4),
@@ -261,74 +260,152 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
               ],
             ),
 
-            const SizedBox(width: 16),
+            const SizedBox(width: 8),
 
-            // ========== Refresh Button ==========
-            ElevatedButton(
-              onPressed: controller.refreshData,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade50,
-                foregroundColor: Colors.blue.shade700,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                "Refresh",
-                style: GoogleFonts.nunito(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+            // -------- Refresh Button (more compact) --------
+            SizedBox(
+              height: 32,
+              child: Obx(() {
+                final refreshing = controller.isRefreshing.value;
+
+                return OutlinedButton(
+                  onPressed: refreshing ? null : controller.refreshData,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.blue.shade300, width: 1),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: refreshing
+                      ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 14,
+                        width: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Refreshing...",
+                        style: GoogleFonts.nunito(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ],
+                  )
+                      : Text(
+                    "Refresh",
+                    style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                );
+              }),
             ),
+
           ],
         ),
       );
     });
   }
 
+
   // ================= HEALTH STATUS =================
   Widget _healthStatusSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "HEALTH STATUS",
-          style: GoogleFonts.nunito(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
+    final hr = controller.heartRate.value == "--"
+        ? "--"
+        : "${controller.heartRate.value} bpm";
+
+    final oxy = controller.oxygen.value == "--"
+        ? "--"
+        : "${controller.oxygen.value}%";
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: Get.width * 0.05),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "HEALTH STATUS",
+            style: GoogleFonts.nunito(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
           ),
-        ),
-        const SizedBox(height: 14),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            VitalStatusCard(
-              icon: Icons.favorite,
-              value: "${controller.heartRate.value} bpm",
-              label: "Heart Rate",
-              iconColor: Colors.redAccent,
+          const SizedBox(height: 14),
+
+          // 🔥 Scrollable section only around the row
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+
+            child: Row(
+              children: [
+                _healthCard(
+                  icon: Icons.favorite,
+                  iconColor: Colors.redAccent,
+                  label: "Heart Rate",
+                  value: hr,
+                  gradient: [
+                    Colors.redAccent.withOpacity(0.18),
+                    Colors.redAccent.withOpacity(0.08),
+                  ],
+                ),
+                const SizedBox(width: 12),
+
+                _healthCard(
+                  icon: Icons.warning_amber_rounded,
+                  iconColor: controller.fallDetected.value ? Colors.orange : Colors.green,
+                  label: "Fall",
+                  value: controller.fallDetected.value ? "Fall Detected" : "No Fall",
+                  gradient: [
+                    Colors.orange.withOpacity(0.18),
+                    Colors.orange.withOpacity(0.08),
+                  ],
+                ),
+                const SizedBox(width: 12),
+
+                _healthCard(
+                  icon: Icons.directions_walk,
+                  iconColor: Colors.deepPurple,
+                  label: "Steps",
+                  value: controller.steps.value == "--"
+                      ? "--"
+                      : controller.steps.value.toString(),
+                  gradient: [
+                    Colors.deepPurple.withOpacity(0.18),
+                    Colors.deepPurple.withOpacity(0.08),
+                  ],
+                ),
+                const SizedBox(width: 12),
+
+                _healthCard(
+                  icon: Icons.water_drop_rounded,
+                  iconColor: Colors.blueAccent,
+                  label: "Oxygen",
+                  value: oxy,
+                  gradient: [
+                    Colors.blueAccent.withOpacity(0.18),
+                    Colors.blueAccent.withOpacity(0.08),
+                  ],
+                ),
+              ],
             ),
-            VitalStatusCard(
-              icon: Icons.warning_amber_rounded,
-              value: controller.fallDetected.value ? "Fall!" : "No Fall",
-              label: "Fall",
-              iconColor: controller.fallDetected.value ? Colors.orange : Colors.green,
-            ),
-            VitalStatusCard(
-              icon: Icons.water_drop,
-              value: "${controller.oxygen.value}%",
-              label: "Oxygen",
-              iconColor: Colors.blueAccent,
-            ),
-          ],
-        )
-      ],
+          ),
+        ],
+      ),
     );
   }
+
 
   // ================= ACTION BUTTONS =================
   Widget _actionButton(IconData icon, String label) {
@@ -365,4 +442,71 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
       ),
     );
   }
+}
+
+
+Widget _healthCard({
+  required IconData icon,
+  required Color iconColor,
+  required String label,
+  required String value,
+  required List<Color> gradient,
+}) {
+  return Container(
+    width: Get.width * 0.32,   // matches your exact current look but ensures overflow
+    // auto responsive
+    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(18),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: gradient,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // icon chip
+        Container(
+          height: 32,
+          width: 32,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.9),
+          ),
+          child: Icon(icon, color: iconColor, size: 18),
+        ),
+
+        const SizedBox(height: 12),
+
+        Text(
+          value,
+          style: GoogleFonts.nunito(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        Text(
+          label,
+          style: GoogleFonts.nunito(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
+          ),
+        ),
+      ],
+    ),
+  );
 }
