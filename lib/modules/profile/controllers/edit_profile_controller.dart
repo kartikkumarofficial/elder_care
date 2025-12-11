@@ -1,33 +1,26 @@
-
 import 'dart:io';
-import 'package:elder_care/modules/auth/controllers/auth_controller.dart';
-
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../../core/services/cloudinary_service.dart';
+// import '../../../auth/controllers/auth_controller.dart';
+import '../../../../core/services/cloudinary_service.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class EditProfileController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
 
-  // Text fields
   final nameController = TextEditingController();
   final emailController = TextEditingController();
 
-  // Pickers
-  final ImagePicker _picker = ImagePicker();
-
-  // Reactive state
-  final RxBool isProcessing = false.obs;
-  final RxBool isUploadingImage = false.obs;
-  final RxString imagePreview = "".obs;
+  final isLoading = false.obs;
+  final selectedImage = Rxn<File>();       // for temporary preview
+  final imagePreview = "".obs;             // for network or file preview
 
   @override
   void onInit() {
     super.onInit();
+
     final user = authController.user.value;
     nameController.text = user?.fullName ?? "";
     emailController.text = user?.email ?? "";
@@ -41,142 +34,89 @@ class EditProfileController extends GetxController {
     super.onClose();
   }
 
-  /// ---------------------------------------------
-  /// PICK → CROP (1:1) → UPLOAD (Cloudinary) → SAVE
-  /// ---------------------------------------------
-  Future<void> pickCropUploadImage() async {
-    try {
-      final XFile? picked = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
+  // ---------------------------------------------------------
+  // PICK IMAGE (FilePicker, very stable vs ImagePicker)
+  // ---------------------------------------------------------
+  Future<void> pickImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
 
-      if (picked == null) return;
-
-      // Crop to 1:1
-      final CroppedFile? cropped = await ImageCropper().cropImage(
-        sourcePath: picked.path,
-        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Image',
-            toolbarColor: Color(0xFF7AB7A7),
-            toolbarWidgetColor: Colors.white,
-            lockAspectRatio: true,
-          ),
-          IOSUiSettings(
-            title: 'Crop Image',
-            aspectRatioLockEnabled: true,
-          )
-        ],
-      );
-
-      if (cropped == null) return;
-
-      isUploadingImage.value = true;
-
-      File file = File(cropped.path);
-
-      // Upload to Cloudinary
-      final uploadedUrl = await CloudinaryService.uploadImage(file);
-      if (uploadedUrl == null) {
-        Get.snackbar("Upload failed", "Could not upload image.");
-        return;
-      }
-
-      // Update Supabase users table
-      final updated = await authController.updateUserData({
-        "profile_image": uploadedUrl,
-      });
-
-      if (!updated) {
-        Get.snackbar("Error", "Could not save image to database.");
-        return;
-      }
-
-      // Update local user for instant UI refresh
-      final localUser = authController.user.value;
-      if (localUser != null) {
-        localUser.profileImage = uploadedUrl;
-        authController.user.refresh();
-      }
-
-      imagePreview.value = uploadedUrl;
-
-      Get.snackbar("Success", "Profile picture updated!");
-
-    } catch (e) {
-      debugPrint("pickCropUploadImage error: $e");
-      Get.snackbar("Error", "Something went wrong.");
-    } finally {
-      isUploadingImage.value = false;
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      selectedImage.value = file;
+      imagePreview.value = file.path; // update preview instantly
     }
   }
 
-  /// ---------------------------------------------
-  /// SAVE NAME + EMAIL (with Supabase Auth update)
-  /// ---------------------------------------------
+
+  // ---------------------------------------------------------
+  // SAVE PROFILE: Upload Image → Update DB → Update Auth → Go Back
+  // ---------------------------------------------------------
   Future<void> saveProfileChanges() async {
-    final newName = nameController.text.trim();
-    final newEmail = emailController.text.trim();
-    final user = authController.user.value;
-
-    if (user == null) {
-      Get.snackbar("Error", "No user found.");
-      return;
-    }
-
-    if (newName.isEmpty) {
-      Get.snackbar("Error", "Name cannot be empty.");
-      return;
-    }
-    if (newEmail.isEmpty) {
-      Get.snackbar("Error", "Email cannot be empty.");
-      return;
-    }
+    isLoading.value = true;
 
     try {
-      isProcessing.value = true;
+      String? profileUrl = authController.user.value?.profileImage;
 
-      bool emailChanged = newEmail != user.email;
-
-      // If email changed → update in Supabase Auth
-      if (emailChanged) {
-        final res = await authController.supabase.auth.updateUser(
-          UserAttributes(email: newEmail),
+      // 1) Upload new image if selected
+      if (selectedImage.value != null) {
+        final uploadedUrl = await CloudinaryService.uploadImage(
+          selectedImage.value!,
+          oldUrl: profileUrl,
         );
 
-        if (res.user == null) {
-          Get.snackbar("Error", "Email update failed (Supabase Auth)");
+        if (uploadedUrl == null) {
+          Get.snackbar("Error", "Image upload failed");
           return;
         }
+
+        profileUrl = uploadedUrl;
       }
 
-      // Update database row in users table
-      final updated = await authController.updateUserData({
-        "full_name": newName,
-        if (emailChanged) "email": newEmail,
-      });
+      // 2) Save new name + email + profile image in Supabase table
+      final uid = authController.user.value?.id;
 
-      if (!updated) {
-        Get.snackbar("Error", "Failed to update profile details.");
+      if (uid == null) {
+        Get.snackbar("Error", "User not found");
         return;
       }
 
-      // Update local model
-      user.fullName = newName;
-      if (emailChanged) user.email = newEmail;
+      final newName = nameController.text.trim();
+      final newEmail = emailController.text.trim();
 
-      authController.user.refresh();
+      await Supabase.instance.client
+          .from("users")
+          .update({
+        "full_name": newName,
+        "email": newEmail,
+        "profile_image": profileUrl,
+      })
+          .eq("id", uid);
 
-      Get.snackbar("Success", "Profile updated successfully!");
+      // 3) Update Supabase Auth email if changed
+      if (newEmail != authController.user.value?.email) {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(email: newEmail),
+        );
+      }
+
+      // 4) Update local model
+      final u = authController.user.value;
+      if (u != null) {
+        u.fullName = newName;
+        u.email = newEmail;
+        u.profileImage = profileUrl;
+        authController.user.refresh();
+      }
+
+      // 5) Exit the screen
       Get.back();
+      Get.snackbar("Success", "Profile updated!");
 
     } catch (e) {
       debugPrint("saveProfileChanges error: $e");
-      Get.snackbar("Error", "Something went wrong.");
+      Get.snackbar("Error", "Something went wrong");
     } finally {
-      isProcessing.value = false;
+      isLoading.value = false;
     }
   }
 }

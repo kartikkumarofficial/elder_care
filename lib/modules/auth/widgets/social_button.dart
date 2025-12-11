@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../modules/auth/controllers/auth_controller.dart';
+import '../controllers/auth_controller.dart';
 
 final AuthController authController = Get.find<AuthController>();
 

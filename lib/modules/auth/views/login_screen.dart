@@ -7,7 +7,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import '../../../modules/auth/controllers/auth_controller.dart';
-import '../../../app/widgets/social_button.dart';
+import '../widgets/social_button.dart';
 import '../../../modules/auth/views/forgotpassemail_screen.dart';
 import 'signup_screen.dart';
 
