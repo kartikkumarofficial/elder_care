@@ -1,11 +1,13 @@
 
-import 'package:elder_care/presentation/screens/splash_screen.dart';
-import 'package:elder_care/utils/bindings.dart';
-import 'package:elder_care/utils/constants.dart';
+import 'package:elder_care/modules/splash/views/splash_screen.dart';
+import 'package:elder_care/core/bindings/bindings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'app/utils/constants.dart';
 
 
 void main() async{
