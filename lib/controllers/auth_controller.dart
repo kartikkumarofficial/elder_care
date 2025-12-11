@@ -67,7 +67,7 @@ class AuthController extends GetxController {
       if (authEvent == AuthChangeEvent.passwordRecovery) {
         print("🔐 Password recovery deep link detected!");
         // Use Get.to so user can set new password
-        Get.to(() => NewPasswordScreen());
+        Get.to(NewPasswordScreen());
         return;
       }
 
@@ -456,4 +456,14 @@ class AuthController extends GetxController {
       Get.offAll(() => LoginScreen());
     }
   }
+
+  Future<bool> updateUserData(Map<String, dynamic> data) async {
+    final userId = user.value?.id;
+    if (userId == null) return false;
+
+    final response = await supabase.from("users").update(data).eq("id", userId);
+
+    return response.error == null;
+  }
+
 }

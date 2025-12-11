@@ -1,7 +1,7 @@
 class UserModel {
   final String id;
-  final String? fullName;
-  final String? email;
+  late final String? fullName;
+  late final String? email;
   final String? role;
   final String? careId;
   final DateTime? createdAt;
