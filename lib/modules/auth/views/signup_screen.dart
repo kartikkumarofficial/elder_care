@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 
 import '../../caregiver/controllers/care_link_controller.dart';
-import '../../../app/widgets/social_button.dart';
+import '../widgets/social_button.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);

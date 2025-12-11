@@ -1,11 +1,11 @@
 class UserModel {
   final String id;
-  late final String? fullName;
-  late final String? email;
-  final String? role;
-  final String? careId;
-  final DateTime? createdAt;
-  late final String? profileImage;
+  String? fullName;
+  String? email;
+  String? role;
+  String? careId;
+  DateTime? createdAt;
+  String? profileImage;
 
   UserModel({
     required this.id,
@@ -33,13 +33,13 @@ class UserModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'full_name': fullName,
-      'email': email,
-      'role': role,
-      'care_id': careId,
-      'created_at': createdAt?.toIso8601String(),
-      'profile_image': profileImage,
+      "id": id,
+      "full_name": fullName,
+      "email": email,
+      "role": role,
+      "care_id": careId,
+      "created_at": createdAt?.toIso8601String(),
+      "profile_image": profileImage,
     };
   }
 }

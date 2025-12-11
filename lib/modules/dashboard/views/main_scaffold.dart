@@ -6,7 +6,7 @@ import '../../auth/controllers/auth_controller.dart';
 
 
 import '../../caregiver/views/caregiver_dashboard.dart';
-import '../../../app/widgets/bottom_navigation_bar.dart';
+import '../widgets/bottom_navigation_bar.dart';
 import '../controllers/nav_controller.dart';
 import '../../profile/views/profile_screen.dart';
 import '../../care_receiver/views/carereciever_dashboard.dart';

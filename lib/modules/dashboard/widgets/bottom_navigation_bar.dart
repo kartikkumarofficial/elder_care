@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 
-import '../../modules/dashboard/controllers/nav_controller.dart';
+import '../controllers/nav_controller.dart';
 
 
 class BottomNavBar extends StatelessWidget {

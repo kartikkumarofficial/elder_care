@@ -1,16 +1,20 @@
 
 import 'dart:io';
+
 import 'package:elder_care/modules/auth/controllers/auth_controller.dart';
 import 'package:elder_care/modules/profile/views/edit_profile_screen.dart';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase/supabase.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/models/user_model.dart';
 import '../../../core/services/cloudinary_service.dart';
 
 class ProfileController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
+  final SupabaseClient supabase = Supabase.instance.client;
 
   final RxBool isUploading = false.obs;
   final ImagePicker _picker = ImagePicker();
@@ -59,6 +63,19 @@ class ProfileController extends GetxController {
       isUploading.value = false;
     }
   }
+  Future<void> refreshProfile() async {
+    try {
+      final uid = authController.user.value?.id;
+      if (uid == null) return;
+
+      final data = await supabase.from('users').select().eq('id', uid).single();
+
+      authController.user.value = UserModel.fromJson(data);
+    } catch (e) {
+      print("Profile refresh error: $e");
+    }
+  }
+
 
   void onEditProfileTap() => Get.to(() => EditProfileScreen());
   void onLinkedTap() => Get.toNamed('/linked-care');
