@@ -20,7 +20,7 @@ class CareReceiverDashboardController extends GetxController {
   final userName = ''.obs;
   final careId = ''.obs;
 
-  final RxList<Task> tasks = <Task>[].obs;
+
 
   // Location sharing state
   final isSharingLocation = false.obs;
@@ -104,8 +104,6 @@ class CareReceiverDashboardController extends GetxController {
       userName.value = profile['full_name'] ?? "User";
       careId.value = profile['care_id'] ?? "N/A";
 
-      await fetchTasks();
-
     } catch (e) {
       Get.snackbar(
         "Error",
@@ -121,84 +119,17 @@ class CareReceiverDashboardController extends GetxController {
   // =========================================================
   // FETCH REMINDER TASKS
   // =========================================================
-  Future<void> fetchTasks() async {
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) return;
 
-    try {
-      final response = await supabase
-          .from('tasks')
-          .select()
-          .eq('user_id', userId)
-          .order('task_time', ascending: true);
-
-      tasks.value =
-          (response as List).map((json) => Task.fromJson(json)).toList();
-
-    } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Could not fetch reminders.",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
 
   // =========================================================
   // TOGGLE TASK COMPLETION
   // =========================================================
-  Future<void> toggleTaskCompletion(int taskId, bool newStatus) async {
-    int index = tasks.indexWhere((t) => t.id == taskId);
 
-    if (index == -1) return;
-
-    tasks[index].isCompleted = newStatus;
-    tasks.refresh(); // Update UI
-
-    await supabase
-        .from('tasks')
-        .update({'is_completed': newStatus})
-        .eq('id', taskId);
-  }
 
   // =========================================================
   // ADD NEW TASK
   // =========================================================
-  Future<void> addTask(String title, TimeOfDay time) async {
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) return;
 
-    try {
-      final formattedTime =
-          "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00";
-
-      final response = await supabase
-          .from('tasks')
-          .insert({
-        'user_id': userId,
-        'task_title': title,
-        'task_time': formattedTime,
-      })
-          .select();
-
-      final newTask = Task.fromJson((response as List).first);
-
-      tasks.add(newTask);
-
-      // Sort by time
-      tasks.sort((a, b) =>
-          (a.time.hour * 60 + a.time.minute).compareTo(b.time.hour * 60 + b.time.minute));
-
-    } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Failed to add reminder.",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
 
   //pedometer - tracking steps and sending to supabase
   RxInt steps = 0.obs;

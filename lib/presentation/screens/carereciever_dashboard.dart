@@ -47,8 +47,6 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
                   _buildHealthVitalsGrid(context),
                   const SizedBox(height: 30),
                   _buildSectionTitle("Reminders"),
-                  const SizedBox(height: 16),
-                  _buildRemindersList(context),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -156,86 +154,9 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
     );
   }
 
-  Widget _buildRemindersList(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(color: const Color(0xFF4A4E6C), borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        children: [
-          Obx(() => controller.tasks.isEmpty
-              ? const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text("No reminders for today.", style: TextStyle(color: Colors.white70)),
-          )
-              : ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: controller.tasks.length,
-            itemBuilder: (context, index) {
-              final task = controller.tasks[index];
-              return _TaskTile(task: task, controller: controller);
-            },
-          )),
-          TextButton.icon(
-            onPressed: () => _showAddTaskDialog(context),
-            icon: const Icon(Icons.add, color: Colors.blueAccent),
-            label: const Text("Add Reminder", style: TextStyle(color: Colors.blueAccent)),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showAddTaskDialog(BuildContext context) {
-    final TextEditingController titleController = TextEditingController();
-    TimeOfDay? selectedTime;
-    final Rx<TimeOfDay?> reactiveTime = Rx<TimeOfDay?>(null);
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: const Color(0xFF3C3F58),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Add a New Reminder", style: TextStyle(color: Colors.white)),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(
-            controller: titleController,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              labelText: "Reminder Name",
-              labelStyle: TextStyle(color: Colors.grey[400]),
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[600]!)),
-              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Obx(() => ActionChip(
-            avatar: const Icon(Icons.alarm, color: Colors.white),
-            label: Text(
-              reactiveTime.value == null ? "Pick Time" : reactiveTime.value!.format(context),
-              style: const TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.blueAccent,
-            onPressed: () async {
-              selectedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-              if (selectedTime != null) reactiveTime.value = selectedTime;
-            },
-          ))
-        ]),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text("Cancel", style: TextStyle(color: Colors.white70))),
-          ElevatedButton(
-            onPressed: () {
-              if (titleController.text.isNotEmpty && selectedTime != null) {
-                controller.addTask(titleController.text, selectedTime!);
-                Get.back();
-              } else {
-                Get.snackbar("Error", "Please provide a title and time.", backgroundColor: Colors.red, colorText: Colors.white);
-              }
-            },
-            child: const Text("Add"),
-          ),
-        ],
-      ),
-    );
-  }
+
+
 
   Widget _buildBottomSosBar() {
     return Padding(
@@ -259,33 +180,4 @@ class _CareReceiverDashboardState extends State<CareReceiverDashboard> {
   }
 }
 
-class _TaskTile extends StatelessWidget {
-  final Task task;
-  final CareReceiverDashboardController controller;
-  const _TaskTile({required this.task, required this.controller});
 
-  @override
-  Widget build(BuildContext context) {
-    final timeFormat = DateFormat.jm();
-    final formattedTime = timeFormat.format(DateTime(2023, 1, 1, task.time.hour, task.time.minute));
-    return ListTile(
-      title: Text(
-        task.title,
-        style: TextStyle(
-          decoration: task.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
-          color: task.isCompleted ? Colors.grey[500] : Colors.white,
-        ),
-      ),
-      subtitle: Text(formattedTime, style: TextStyle(color: Colors.grey[400])),
-      trailing: Checkbox(
-        value: task.isCompleted,
-        onChanged: (bool? newValue) {
-          if (newValue != null) controller.toggleTaskCompletion(task.id, newValue);
-        },
-        activeColor: Colors.green,
-        checkColor: Colors.white,
-        side: BorderSide(color: Colors.grey[600]!),
-      ),
-    );
-  }
-}

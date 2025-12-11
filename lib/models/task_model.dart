@@ -1,44 +1,55 @@
-import 'package:flutter/material.dart';
+  // lib/presentation/widgets/tasks/task_model.dart
+  import 'package:meta/meta.dart';
 
-class Task {
-  final int id;
-  final String title;
-  final TimeOfDay time;
-  bool isCompleted;
+  class TaskModel {
+    final int? id;
+    final String receiverId; // uuid stored as String
+    final String title;
+    final String? datetime; // ISO string, optional
+    final bool alarmEnabled;
+    final String? createdAt; // ISO string
 
-  Task({
-    required this.id,
-    required this.title,
-    required this.time,
-    this.isCompleted = false,
-  });
+    TaskModel({
+      this.id,
+      required this.receiverId,
+      required this.title,
+      this.datetime,
+      this.alarmEnabled = false,
+      this.createdAt,
+    });
 
-  /// Creates a Task object from a JSON map.
-  /// This factory is now more robust to prevent crashes from null data.
-  factory Task.fromJson(Map<String, dynamic> json) {
-    TimeOfDay parsedTime;
-    final timeString = json['task_time'] as String?;
-
-    // Safely parse the time, defaulting to midnight if it's missing or malformed.
-    if (timeString != null && timeString.contains(':')) {
-      final timeParts = timeString.split(':');
-      parsedTime = TimeOfDay(
-        hour: int.tryParse(timeParts[0]) ?? 0,
-        minute: int.tryParse(timeParts[1]) ?? 0,
-      );
-    } else {
-      parsedTime = const TimeOfDay(hour: 0, minute: 0);
+    Map<String, dynamic> toMap() {
+      return {
+        if (id != null) 'id': id,
+        'receiver_id': receiverId,
+        'title': title,
+        'datetime': datetime,
+        'alarm_enabled': alarmEnabled,
+        'created_at': createdAt,
+      };
+    }
+    Map<String, dynamic> toUpdateMap() {
+      return {
+        'receiver_id': receiverId,
+        'title': title,
+        'datetime': datetime,
+        'alarm_enabled': alarmEnabled,
+      };
     }
 
-    return Task(
-      // Default to 0 if 'id' is null
-      id: json['id'] ?? 0,
-      // Default to a placeholder title if 'task_title' is null
-      title: json['task_title'] ?? 'Untitled Task',
-      // Use the safely parsed time
-      time: parsedTime,
-      // Default to false if 'is_completed' is null
-      isCompleted: json['is_completed'] ?? false,
-    );
+
+    factory TaskModel.fromMap(Map<String, dynamic> m) {
+      return TaskModel(
+        id: m['id'] is int ? m['id'] as int : (m['id'] is num ? (m['id'] as num).toInt() : null),
+        receiverId: (m['receiver_id'] ?? '').toString(),
+        title: (m['title'] ?? '').toString(),
+        datetime: m['datetime'] == null ? null : m['datetime'].toString(),
+        alarmEnabled: m['alarm_enabled'] == null
+            ? false
+            : (m['alarm_enabled'] is bool
+            ? m['alarm_enabled'] as bool
+            : (m['alarm_enabled'].toString().toLowerCase() == 'true')),
+        createdAt: m['created_at'] == null ? null : m['created_at'].toString(),
+      );
+    }
   }
-}

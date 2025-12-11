@@ -23,6 +23,8 @@ class _MainScaffoldState extends State<MainScaffold> {
   final AuthController authController = Get.find<AuthController>();
   final SupabaseClient client = Supabase.instance.client;
 
+
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +54,7 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
+
     return Obx(() {
       final user = authController.user.value;
 
@@ -68,11 +71,12 @@ class _MainScaffoldState extends State<MainScaffold> {
           ? [
         CaregiverDashboard(),
 
-        // Location Screen (only if a receiver is linked)
+        // Location Screen
         LocationScreen(
-          linkedUserId: navController.linkedReceiverId.value.isEmpty
-              ? null
-              : navController.linkedReceiverId.value,
+          linkedUserId: (navController.linkedReceiverId.value.isNotEmpty)
+              ? navController.linkedReceiverId.value
+              : null,
+
         ),
 
         ProfileScreen(),
