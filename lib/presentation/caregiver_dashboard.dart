@@ -8,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../controllers/caregiver_dashboard_controller.dart';
 import 'widgets/eventssection.dart';
 import 'widgets/healthstatussection.dart';
+import 'widgets/task_section.dart';
 import 'widgets/watchstatusSection.dart';
 
 class CaregiverDashboard extends StatefulWidget {
@@ -21,8 +22,10 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
 
   final controller = Get.put(CaregiverDashboardController());
 
+
   @override
   Widget build(BuildContext context) {
+    final receiverId = controller.receiverId.value;
     final srch=Get.height;
     final srcw=Get.width;
     return Scaffold(
@@ -162,6 +165,8 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
               SizedBox(height: srch * 0.015),
               EventSectionModern(),
               SizedBox(height: srch * 0.02),
+
+              TaskSection(),
 
 
 

@@ -69,6 +69,7 @@ class CaregiverDashboardController extends GetxController {
     }
 
     try {
+
       final link = await supabase
           .from("care_links")
           .select("receiver_id")

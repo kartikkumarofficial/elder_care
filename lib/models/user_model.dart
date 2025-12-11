@@ -5,7 +5,7 @@ class UserModel {
   final String? role;
   final String? careId;
   final DateTime? createdAt;
-  final String? profileImage;
+  late final String? profileImage;
 
   UserModel({
     required this.id,

@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'DashSocial',
+      title: 'Elder Care',
       initialBinding: InitialBinding(),
       theme: ThemeData(
         // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
