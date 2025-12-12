@@ -35,6 +35,7 @@ class EditProfileScreen extends StatelessWidget {
       ),
       body: Container(
         width: w,
+        height: h,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFeaf4f2), Color(0xFFfdfaf6)],

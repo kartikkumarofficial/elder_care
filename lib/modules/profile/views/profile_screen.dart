@@ -40,303 +40,301 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
 
-          child: SafeArea(
-            child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: w * 0.04),
-              children: [
+          child: ListView(
+            padding: EdgeInsets.symmetric(horizontal: w * 0.04),
+            children: [
 
-                SizedBox(height: h * 0.005),
+              SizedBox(height: h * 0.035),
 
-                /// ---------- HEADER ----------
-                Center(
-                  child: Text(
-                    "Profile",
-                    style: GoogleFonts.nunito(
-                      fontSize: w * 0.08,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
+              /// ---------- HEADER ----------
+              Center(
+                child: Text(
+                  "Profile",
+                  style: GoogleFonts.nunito(
+                    fontSize: w * 0.08,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
                   ),
                 ),
+              ),
 
-                SizedBox(height: h * 0.02),
+              SizedBox(height: h * 0.02),
 
-                /// ---------------------------------------
-                /// PROFILE AVATAR + NAME + EMAIL + ROLE
-                /// ---------------------------------------
-                Obx(() {
-                  final user = authController.user.value;
-                  final imageUrl = user?.profileImage;
+              /// ---------------------------------------
+              /// PROFILE AVATAR + NAME + EMAIL + ROLE
+              /// ---------------------------------------
+              Obx(() {
+                final user = authController.user.value;
+                final imageUrl = user?.profileImage;
 
-                  return Column(
-                    children: [
-                      Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            Get.to(() => EditProfileScreen(),
-                              transition: Transition.cupertino,
-                              duration: const Duration(milliseconds: 300),
-                            );
-                          },
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              /// HERO AVATAR WRAPPER
-                              Hero(
-                                tag: "profile-avatar",
+                return Column(
+                  children: [
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          Get.to(() => EditProfileScreen(),
+                            transition: Transition.cupertino,
+                            duration: const Duration(milliseconds: 300),
+                          );
+                        },
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            /// HERO AVATAR WRAPPER
+                            Hero(
+                              tag: "profile-avatar",
+                              child: Container(
+                                padding: EdgeInsets.all(w * 0.006),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFeaf4f2), Color(0xFFfdfaf6)],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 12,
+                                      offset: Offset(0, 6),
+                                    ),
+                                  ],
+                                ),
+                                child: CircleAvatar(
+                                  radius: w * 0.18,
+                                  backgroundColor: Colors.grey.shade100,
+                                  backgroundImage: (imageUrl == null)
+                                      ? null
+                                      : imageUrl.startsWith("http")
+                                      ? NetworkImage(imageUrl)
+                                      : FileImage(File(imageUrl)) as ImageProvider,
+                                  child: imageUrl == null
+                                      ? Icon(Icons.person, size: w * 0.18, color: Colors.grey)
+                                      : null,
+                                ),
+                              ),
+                            ),
+
+                            /// Upload Loader Overlay
+                            if (controller.isUploading.value)
+                              Positioned.fill(
                                 child: Container(
-                                  padding: EdgeInsets.all(w * 0.006),
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFFeaf4f2), Color(0xFFfdfaf6)],
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black12,
-                                        blurRadius: 12,
-                                        offset: Offset(0, 6),
-                                      ),
-                                    ],
+                                    color: Colors.black.withOpacity(0.35),
                                   ),
-                                  child: CircleAvatar(
-                                    radius: w * 0.18,
-                                    backgroundColor: Colors.grey.shade100,
-                                    backgroundImage: (imageUrl == null)
-                                        ? null
-                                        : imageUrl.startsWith("http")
-                                        ? NetworkImage(imageUrl)
-                                        : FileImage(File(imageUrl)) as ImageProvider,
-                                    child: imageUrl == null
-                                        ? Icon(Icons.person, size: w * 0.18, color: Colors.grey)
-                                        : null,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: w * 0.08,
+                                      height: w * 0.08,
+                                      child: const CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 3,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
 
-                              /// Upload Loader Overlay
-                              if (controller.isUploading.value)
-                                Positioned.fill(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.black.withOpacity(0.35),
-                                    ),
-                                    child: Center(
-                                      child: SizedBox(
-                                        width: w * 0.08,
-                                        height: w * 0.08,
-                                        child: const CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 3,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                              /// EDIT BUTTON
-                              // Positioned(
-                              //   bottom: 0,
-                              //   right: 0,
-                              //   child: GestureDetector(
-                              //     onTap: () {
-                              //       Get.to(() => EditProfileScreen(),
-                              //         transition: Transition.rightToLeftWithFade,
-                              //         duration: const Duration(milliseconds: 300),
-                              //       );
-                              //     },
-                              //     child: Container(
-                              //       width: w * 0.12,
-                              //       height: w * 0.12,
-                              //       decoration: BoxDecoration(
-                              //         color: Colors.white,
-                              //         shape: BoxShape.circle,
-                              //         boxShadow: [
-                              //           BoxShadow(
-                              //             color: Colors.black26,
-                              //             blurRadius: 6,
-                              //             offset: Offset(0, 3),
-                              //           )
-                              //         ],
-                              //       ),
-                              //       child: CircleAvatar(
-                              //         backgroundColor: const Color(0xFF7AB7A7),
-                              //         child: Icon(Icons.edit, color: Colors.white, size: w * 0.06),
-                              //       ),
-                              //     ),
-                              //   ),
-                              // ),
-                            ],
-                          ),
+                            /// EDIT BUTTON
+                            // Positioned(
+                            //   bottom: 0,
+                            //   right: 0,
+                            //   child: GestureDetector(
+                            //     onTap: () {
+                            //       Get.to(() => EditProfileScreen(),
+                            //         transition: Transition.rightToLeftWithFade,
+                            //         duration: const Duration(milliseconds: 300),
+                            //       );
+                            //     },
+                            //     child: Container(
+                            //       width: w * 0.12,
+                            //       height: w * 0.12,
+                            //       decoration: BoxDecoration(
+                            //         color: Colors.white,
+                            //         shape: BoxShape.circle,
+                            //         boxShadow: [
+                            //           BoxShadow(
+                            //             color: Colors.black26,
+                            //             blurRadius: 6,
+                            //             offset: Offset(0, 3),
+                            //           )
+                            //         ],
+                            //       ),
+                            //       child: CircleAvatar(
+                            //         backgroundColor: const Color(0xFF7AB7A7),
+                            //         child: Icon(Icons.edit, color: Colors.white, size: w * 0.06),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
+                          ],
                         ),
                       ),
+                    ),
 
 
-                      SizedBox(height: h * 0.025),
+                    SizedBox(height: h * 0.025),
 
-                      /// Name
-                      Hero(
-                        tag: "profile-name",
-                        child: Text(
-                          user?.fullName ?? "Loading...",
-                          style: GoogleFonts.nunito(
-                            fontSize: w * 0.055,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: h * 0.006),
-
-                      /// Email
-                      Text(
-                        user?.email ?? "",
+                    /// Name
+                    Hero(
+                      tag: "profile-name",
+                      child: Text(
+                        user?.fullName ?? "Loading...",
                         style: GoogleFonts.nunito(
-                          fontSize: w * 0.038,
-                          color: Colors.black54,
+                          fontSize: w * 0.055,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black87,
                         ),
                       ),
+                    ),
 
-                      SizedBox(height: h * 0.01),
+                    SizedBox(height: h * 0.006),
 
-                      /// Role + Care ID
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: w * 0.03,
-                              vertical: h * 0.006,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE9F8F5),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              user?.role?.capitalizeFirst ?? "Role not set",
-                              style: GoogleFonts.nunito(
-                                color: const Color(0xFF007B6F),
-                                fontWeight: FontWeight.w700,
-                                fontSize: w * 0.039,
-                              ),
+                    /// Email
+                    Text(
+                      user?.email ?? "",
+                      style: GoogleFonts.nunito(
+                        fontSize: w * 0.038,
+                        color: Colors.black54,
+                      ),
+                    ),
+
+                    SizedBox(height: h * 0.01),
+
+                    /// Role + Care ID
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: w * 0.03,
+                            vertical: h * 0.006,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE9F8F5),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            user?.role?.capitalizeFirst ?? "Role not set",
+                            style: GoogleFonts.nunito(
+                              color: const Color(0xFF007B6F),
+                              fontWeight: FontWeight.w700,
+                              fontSize: w * 0.039,
                             ),
                           ),
+                        ),
 
-                          if (user?.careId != null) ...[
-                            SizedBox(width: w * 0.03),
-                            Text(
-                              "•  Care ID: ${user!.careId}",
-                              style: GoogleFonts.nunito(
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w600,
-                              ),
+                        if (user?.careId != null) ...[
+                          SizedBox(width: w * 0.03),
+                          Text(
+                            "•  Care ID: ${user!.careId}",
+                            style: GoogleFonts.nunito(
+                              color: Colors.black54,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ]
-                        ],
-                      ),
-                    ],
-                  );
-                }),
-
-                SizedBox(height: h * 0.03),
-
-                /// --------------------------------------
-                ///  BIG CARD : ACCOUNT + SETTINGS
-                /// --------------------------------------
-                Card(
-                  elevation: 12,
-                  shadowColor: Colors.black26,
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(w * 0.06),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: w * 0.03, vertical: w * 0.03),
-                    child: Column(
-                      children: [
-
-                        _menuTile(
-                          icon: Icons.person_outline,
-                          label: "Edit Profile",
-                          onTap: controller.onEditProfileTap,
-                          w: w,
-                        ),
-                        Divider(color: Colors.grey.shade200),
-
-                        _menuTile(
-                          icon: Icons.link,
-                          label: (authController.user.value?.role == "caregiver")
-                              ? "Linked Care Receiver"
-                              : "My Caregivers",
-                          onTap: controller.onLinkedTap,
-                          w: w,
-                        ),
-                        Divider(color: Colors.grey.shade200),
-
-                        _menuTile(
-                          icon: Icons.privacy_tip_outlined,
-                          label: "Privacy & Security",
-                          onTap: controller.onPrivacyTap,
-                          w: w,
-                        ),
-                        Divider(color: Colors.grey.shade200),
-
-                        _menuTile(
-                          icon: Icons.help_outline,
-                          label: "Help & Support",
-                          onTap: controller.onHelpTap,
-                          w: w,
-                        ),
+                          ),
+                        ]
                       ],
                     ),
+                  ],
+                );
+              }),
+
+              SizedBox(height: h * 0.03),
+
+              /// --------------------------------------
+              ///  BIG CARD : ACCOUNT + SETTINGS
+              /// --------------------------------------
+              Card(
+                elevation: 12,
+                shadowColor: Colors.black26,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(w * 0.06),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: w * 0.03, vertical: w * 0.03),
+                  child: Column(
+                    children: [
+
+                      _menuTile(
+                        icon: Icons.person_outline,
+                        label: "Edit Profile",
+                        onTap: controller.onEditProfileTap,
+                        w: w,
+                      ),
+                      Divider(color: Colors.grey.shade200),
+
+                      _menuTile(
+                        icon: Icons.link,
+                        label: (authController.user.value?.role == "caregiver")
+                            ? "Manage Care Receivers"
+                            : "My Caregivers",
+                        onTap: controller.onLinkedTap,
+                        w: w,
+                      ),
+                      Divider(color: Colors.grey.shade200),
+
+                      _menuTile(
+                        icon: Icons.privacy_tip_outlined,
+                        label: "Privacy & Security",
+                        onTap: controller.onPrivacyTap,
+                        w: w,
+                      ),
+                      Divider(color: Colors.grey.shade200),
+
+                      _menuTile(
+                        icon: Icons.help_outline,
+                        label: "Help & Support",
+                        onTap: controller.onHelpTap,
+                        w: w,
+                      ),
+                    ],
                   ),
                 ),
+              ),
 
-                SizedBox(height: h * 0.025),
+              SizedBox(height: h * 0.025),
 
-                /// ---------------- LOGOUT BUTTON ----------------
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: controller.onLogoutTap,
-                    icon: Icon(Icons.logout, size: w * 0.045),
-                    label: Text(
-                      "Log Out",
-                      style: GoogleFonts.nunito(
-                        fontWeight: FontWeight.bold,
-                        fontSize: w * 0.040,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: h * 0.014),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(w * 0.03),
-                      ),
-                      elevation: 6,
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: h * 0.02),
-
-                /// Footer
-                Center(
-                  child: Text(
-                    "ElderCare v2.0.1",
+              /// ---------------- LOGOUT BUTTON ----------------
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: controller.onLogoutTap,
+                  icon: Icon(Icons.logout, size: w * 0.045),
+                  label: Text(
+                    "Log Out",
                     style: GoogleFonts.nunito(
-                      color: Colors.black45,
-                      fontSize: w * 0.032,
+                      fontWeight: FontWeight.bold,
+                      fontSize: w * 0.040,
                     ),
                   ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: h * 0.014),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(w * 0.03),
+                    ),
+                    elevation: 6,
+                  ),
                 ),
+              ),
 
-                SizedBox(height: h * 0.02),
-              ],
-            ),
+              SizedBox(height: h * 0.02),
+
+              /// Footer
+              Center(
+                child: Text(
+                  "ElderCare v2.0.1",
+                  style: GoogleFonts.nunito(
+                    color: Colors.black45,
+                    fontSize: w * 0.032,
+                  ),
+                ),
+              ),
+
+              SizedBox(height: h * 0.02),
+            ],
           ),
         ),
       ),
@@ -396,4 +394,5 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
+
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:elder_care/modules/auth/controllers/auth_controller.dart';
 import 'package:elder_care/modules/profile/views/edit_profile_screen.dart';
+import 'package:elder_care/modules/profile/views/linked_users_Screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -78,7 +79,7 @@ class ProfileController extends GetxController {
 
 
   void onEditProfileTap() => Get.to(() => EditProfileScreen());
-  void onLinkedTap() => Get.toNamed('/linked-care');
+  void onLinkedTap() => Get.to(()=>LinkedUsersScreen());
   void onPrivacyTap() => Get.toNamed('/privacy');
   void onHelpTap() => Get.toNamed('/help');
 
