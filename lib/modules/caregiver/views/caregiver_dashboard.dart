@@ -174,7 +174,7 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
               // Bottom Action Buttons (Call, Emergency, Caregivers)
 
 
-              const SizedBox(height: 200),
+              // const SizedBox(height: 200),
             ],
           ),
         );
