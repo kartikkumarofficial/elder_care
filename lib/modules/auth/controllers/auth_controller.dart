@@ -452,7 +452,7 @@ class AuthController extends GetxController {
         if (links.isEmpty) {
           Get.offAll(() => CareIdDisplayScreen(careId: careId!));
         } else {
-          Get.offAll(() => CareReceiverDashboard());
+          Get.offAll(() => MainScaffold());
         }
       }
     } catch (e) {
