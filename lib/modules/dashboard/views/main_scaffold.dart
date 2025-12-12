@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -71,6 +72,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       user.role == "caregiver"
           ? [
         CaregiverDashboard(),
+        Center(child: Text('Chat Screen'),),
 
         // Location Screen
         LocationScreen(

@@ -64,7 +64,7 @@ class EventSectionModern extends StatelessWidget {
         final events = controller.events;
         if (events.isEmpty) {
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            padding: const EdgeInsets.only(left:20),
             child: Align(
               alignment: Alignment.topLeft,
               child: Text('No events yet', style: GoogleFonts.nunito(color: Colors.grey)),
@@ -73,7 +73,7 @@ class EventSectionModern extends StatelessWidget {
         }
 
         return ListView.builder(
-          padding: EdgeInsets.only(left: 20, right: 20),
+          padding: EdgeInsets.only(left: 20),
           scrollDirection: Axis.horizontal,
           itemCount: events.length,
           itemBuilder: (_, i) {
