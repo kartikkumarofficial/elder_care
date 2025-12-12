@@ -1,49 +1,54 @@
+// modules/location/controllers/location_controller.dart
 import 'dart:async';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../core/services/location_service.dart';
-
 
 class LocationController extends GetxController {
   final String linkedUserId;
   LocationController({required this.linkedUserId});
 
   final LocationService _locationService = LocationService();
-  final MapController mapController = MapController();
 
-  // Flag to track if the map widget is ready.
-  bool _isMapReady = false;
+  // Google map controller
+  GoogleMapController? gmapController;
 
-  // Observables for UI state
+  // Observables
   final Rx<LatLng?> receiverLocation = Rx<LatLng?>(null);
   final Rx<DateTime?> lastUpdatedAt = Rx<DateTime?>(null);
   final isLoading = true.obs;
   final RxString timeAgo = ''.obs;
+
+  // Geofence properties
+  final Rx<LatLng?> safeCenter = Rx<LatLng?>(null);
+  final RxInt safeRadius = 300.obs; // meters
+  final RxBool geofenceActive = false.obs;
+  final RxBool geofenceTriggered = false.obs;
+
   Timer? _timer;
+  Timer? _pollTimer;
 
   @override
   void onInit() {
     super.onInit();
-    fetchLocation();
-    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
-      _updateTimeAgo();
-    });
+    _startTimeAgoTimer();
+    fetchAll();
+    // Poll for location every 10s — adjust as needed (or subscribe to realtime)
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => fetchLocation());
   }
 
   @override
   void onClose() {
     _timer?.cancel();
+    _pollTimer?.cancel();
     super.onClose();
   }
 
-  /// This method is called by the UI when the map is initialized.
-  void onMapReady() {
-    _isMapReady = true;
-    // If location data is already available, move the map to it now.
-    if (receiverLocation.value != null) {
-      mapController.move(receiverLocation.value!, 15.0);
-    }
+  void _startTimeAgoTimer() {
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _updateTimeAgo();
+    });
   }
 
   void _updateTimeAgo() {
@@ -51,56 +56,131 @@ class LocationController extends GetxController {
       timeAgo.value = '';
       return;
     }
-    final difference = DateTime.now().difference(lastUpdatedAt.value!);
-    if (difference.inMinutes < 1) {
-      timeAgo.value = 'Updated just now';
-    } else if (difference.inMinutes < 60) {
-      timeAgo.value = 'Updated ${difference.inMinutes} minute(s) ago';
-    } else if (difference.inHours < 24) {
-      timeAgo.value = 'Updated ${difference.inHours} hour(s) ago';
-    } else {
-      timeAgo.value = 'Updated ${difference.inDays} day(s) ago';
+    final diff = DateTime.now().difference(lastUpdatedAt.value!);
+    if (diff.inMinutes < 1) timeAgo.value = 'Updated just now';
+    else if (diff.inMinutes < 60) timeAgo.value = 'Updated ${diff.inMinutes} minute(s) ago';
+    else if (diff.inHours < 24) timeAgo.value = 'Updated ${diff.inHours} hour(s) ago';
+    else timeAgo.value = 'Updated ${diff.inDays} day(s) ago';
+  }
+
+  /// Call when map is created
+  void onMapCreated(GoogleMapController controller) {
+    gmapController = controller;
+    // apply custom style if needed
+    controller.setMapStyle(_mapStyle);
+    // if we already have receiverLocation, move camera
+    if (receiverLocation.value != null) {
+      controller.animateCamera(CameraUpdate.newLatLngZoom(receiverLocation.value!, 15.0));
     }
+  }
+
+  /// Fetch both location and existing geofence
+  Future<void> fetchAll() async {
+    isLoading.value = true;
+    await Future.wait([fetchLocation(), fetchGeofence()]);
+    isLoading.value = false;
   }
 
   Future<void> fetchLocation({bool isRefresh = false}) async {
     try {
-      // Only show full-screen loader on initial fetch
-      if (receiverLocation.value == null) {
-        isLoading.value = true;
-      }
-      if (isRefresh) {
-        Get.snackbar('Refreshing...', 'Fetching the latest location.', snackPosition: SnackPosition.TOP, duration: const Duration(seconds: 2));
-      }
       final data = await _locationService.getLocationOfLinkedUser(linkedUserId);
-
       if (data != null && data['latitude'] != null && data['longitude'] != null) {
-        receiverLocation.value = LatLng(data['latitude'], data['longitude']);
+        final lat = (data['latitude'] as num).toDouble();
+        final lng = (data['longitude'] as num).toDouble();
+        receiverLocation.value = LatLng(lat, lng);
 
         if (data['updated_at'] != null) {
-          lastUpdatedAt.value = DateTime.tryParse(data['updated_at']);
+          final parsed = DateTime.tryParse(data['updated_at']);
+          lastUpdatedAt.value = parsed ?? DateTime.now();
           _updateTimeAgo();
         }
 
-        // Instead of moving the map here, we now check the _isMapReady flag.
-        // If the map is already ready, we move it. If not, the onMapReady
-        // callback will handle moving it once it's ready.
-        if (_isMapReady) {
-          mapController.move(receiverLocation.value!, 15.0);
+        // center map on update only if user hasn't panned the map (we keep it simple and center)
+        if (gmapController != null) {
+          gmapController!.animateCamera(CameraUpdate.newLatLng(receiverLocation.value!));
         }
-      } else if (isRefresh) {
-        // Only show a snackbar if a manual refresh fails.
-        Get.snackbar(
-          'Location Not Found',
-          'Could not retrieve location. The user may not be sharing it.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+
+        _checkGeofence();
+      } else {
+        if (isRefresh) {
+          Get.snackbar('Location Not Found', 'Receiver may not be sharing location', snackPosition: SnackPosition.BOTTOM);
+        }
       }
     } catch (e) {
-      Get.snackbar('Error', 'An error occurred while fetching the location.', snackPosition: SnackPosition.BOTTOM);
-      print('[LocationController] Error: $e');
-    } finally {
-      isLoading.value = false;
+      print('[LocationController] fetchLocation error: $e');
+      Get.snackbar('Error', 'Unable to fetch location', snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  Future<void> fetchGeofence() async {
+    try {
+      final g = await _locationService.fetchGeofence(linkedUserId);
+      if (g != null) {
+        safeCenter.value = LatLng((g['latitude'] as num).toDouble(), (g['longitude'] as num).toDouble());
+        safeRadius.value = (g['radius'] as num).toInt();
+        geofenceActive.value = true;
+      } else {
+        safeCenter.value = null;
+        geofenceActive.value = false;
+      }
+    } catch (e) {
+      print('[LocationController] fetchGeofence error: $e');
+    }
+  }
+
+  Future<void> saveGeofence(LatLng center, int radius) async {
+    final ok = await _locationService.saveGeofence(linkedUserId, center.latitude, center.longitude, radius);
+    if (ok) {
+      safeCenter.value = center;
+      safeRadius.value = radius;
+      geofenceActive.value = true;
+      Get.snackbar('Saved', 'Safe zone saved successfully', snackPosition: SnackPosition.BOTTOM);
+      _checkGeofence();
+    } else {
+      Get.snackbar('Error', 'Could not save safe zone', snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  Future<void> removeGeofence() async {
+    final ok = await _locationService.removeGeofence(linkedUserId);
+    if (ok) {
+      safeCenter.value = null;
+      safeRadius.value = 300;
+      geofenceActive.value = false;
+      geofenceTriggered.value = false;
+      Get.snackbar('Removed', 'Safe zone removed', snackPosition: SnackPosition.BOTTOM);
+    } else {
+      Get.snackbar('Error', 'Could not remove safe zone', snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  void _checkGeofence() {
+    if (!geofenceActive.value || safeCenter.value == null || receiverLocation.value == null) {
+      geofenceTriggered.value = false;
+      return;
+    }
+    final dist = Geolocator.distanceBetween(
+      safeCenter.value!.latitude,
+      safeCenter.value!.longitude,
+      receiverLocation.value!.latitude,
+      receiverLocation.value!.longitude,
+    ); // in meters
+    if (dist > safeRadius.value) {
+      geofenceTriggered.value = true;
+    } else {
+      geofenceTriggered.value = false;
+    }
+  }
+
+  /// Utility: set safe center to current receiver location (for easy set)
+  void setSafeCenterToReceiver() {
+    if (receiverLocation.value != null) {
+      safeCenter.value = receiverLocation.value;
     }
   }
 }
+
+/// Replace with your map style string below (I provide a json further down).
+const String _mapStyle = ''' 
+// paste the map style JSON or a minimal style here (see map_style.json in repo)
+''';

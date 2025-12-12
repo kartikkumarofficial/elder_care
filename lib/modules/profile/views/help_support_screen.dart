@@ -1,9 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
-
 import '../../../app/utils/mail_utils.dart';
 import '../controllers/help_support_controller.dart';
 import 'about_screen.dart';
