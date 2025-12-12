@@ -1,19 +1,15 @@
-// lib/presentation/widgets/events/events_section_modern.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// external pickers (ensure added to pubspec)
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:day_night_time_picker/day_night_time_picker.dart';
 
 import '../controllers/events_controller.dart';
 import '../../../core/models/event_model.dart';
 
-/// =================================================
-/// UI: EventSectionModern
-/// =================================================
+
 class EventSectionModern extends StatelessWidget {
   EventSectionModern({Key? key}) : super(key: key);
 
@@ -100,6 +96,9 @@ class EventSectionModern extends StatelessWidget {
 /// =================================================
 /// COMPACT CARD (smaller height, safe layout)
 /// =================================================
+/// =================================================
+/// IMPROVED COMPACT EVENT CARD — matches login theme
+/// =================================================
 class _EventCardCompact extends StatelessWidget {
   final EventModel event;
   const _EventCardCompact({Key? key, required this.event}) : super(key: key);
@@ -160,53 +159,115 @@ class _EventCardCompact extends StatelessWidget {
         showDialog(context: context, builder: (_) => EditDeleteDialog(event: event));
       },
       child: Container(
-        width: Get.width*0.6,
+        width: Get.width * 0.63,
         height: kCardHeight,
-        margin: EdgeInsets.only(right: 14),
-        padding: EdgeInsets.all(12),
+        margin: EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(kCardRadius),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 6))],
-        ),
-        child: Row(children: [
-          // icon bubble
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: _colorForCategory(event.category),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(_iconForCategory(event.category), color: Colors.white, size: 28),
+          borderRadius: BorderRadius.circular(kCardRadius + 6),
+          // boxShadow: [
+          //   BoxShadow(
+          //     color: Colors.black12,
+          //     blurRadius: 12,
+          //     offset: Offset(0, 5),
+          //   )
+          // ],
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFeaf4f2),
+              Color(0xFFfdfaf6),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          SizedBox(width: 12),
-          // text
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(event.title,
-                  maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.nunito(fontWeight: FontWeight.w800)),
-              SizedBox(height: 6),
-              Text(_friendlyDate(event.datetime),
-                  maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.nunito(color: Colors.black54, fontSize: 13)),
-              Spacer(),
-              // category chip + small notes preview
-              Row(children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  decoration: BoxDecoration(color: kTealLight, borderRadius: BorderRadius.circular(10)),
-                  child: Text(event.category, style: GoogleFonts.nunito(fontSize: 12, color: kTeal)),
-                ),
-                SizedBox(width: 8),
+        ),
+        padding: EdgeInsets.all(14),
+        child: Row(
+          children: [
+            // Left side Icon bubble
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: _colorForCategory(event.category).withOpacity(0.9),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: _colorForCategory(event.category).withOpacity(0.35),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Icon(
+                _iconForCategory(event.category),
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
 
-              ])
-            ]),
-          )
-        ]),
+            SizedBox(width: 14),
+
+            // Right side text
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16.5,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  SizedBox(height: 6),
+
+                  Text(
+                    _friendlyDate(event.datetime),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      color: Colors.black54,
+                      fontSize: 13.2,
+                    ),
+                  ),
+
+                  Spacer(),
+
+                  // Category chip
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.65),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: kTealLight.withOpacity(0.6)),
+                        ),
+                        child: Text(
+                          event.category,
+                          style: GoogleFonts.nunito(
+                            fontSize: 12.5,
+                            color: kTeal,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
 
 /// =================================================
 /// DETAILS DIALOG (tap) — contains Edit & Delete buttons

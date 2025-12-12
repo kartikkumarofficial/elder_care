@@ -101,7 +101,7 @@ class TaskSection extends StatelessWidget {
             ],
           ),
 
-          SizedBox(height: 12),
+          SizedBox(height:Get.height*0.018 ),
 
           // TASK LIST
           Obx(() {
@@ -115,69 +115,140 @@ class TaskSection extends StatelessWidget {
               );
             }
 
-            return ListView.separated(
-              physics: NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: list.length,
-              separatorBuilder: (_, __) => SizedBox(height: 10),
-              itemBuilder: (_, i) {
-                final t = list[i];
-                final parsed = t.datetime != null
-                    ? DateTime.tryParse(t.datetime!)
-                    : null;
-                final isOverdue =
-                    parsed != null && parsed.isBefore(DateTime.now());
+            return MediaQuery.removePadding(
+              context: context,
+              removeTop: true,
+              child: ListView.separated(
+                physics: NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: list.length,
+                separatorBuilder: (_, __) => SizedBox(height: 10),
+                itemBuilder: (_, i) {
+                  final t = list[i];
+                  final parsed = t.datetime != null
+                      ? DateTime.tryParse(t.datetime!)
+                      : null;
+                  final isOverdue =
+                      parsed != null && parsed.isBefore(DateTime.now());
+              
+                  return GestureDetector(
+                    onTap: () => _openDetailsDialog(context, t),
+                    onLongPress: () => _openDetailsDialog(context, t),
+                    // {
+                    //   controller.startEdit(t);
+                    //   showDialog(
+                    //       context: context,
+                    //       builder: (_) =>
+                    //           _EditDeleteDialog(task: t, controller: controller));
+                    // },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F6F7), // soft subtle background
+                        borderRadius: BorderRadius.circular(22), // pill shape
+                        border: Border.all(
+                          color: const Color(0xFFE1E6E8),
+                          width: 1.1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
 
-                return GestureDetector(
-                  onTap: () => _openDetailsDialog(context, t),
-                  onLongPress: () {
-                    controller.startEdit(t);
-                    showDialog(
-                        context: context,
-                        builder: (_) =>
-                            _EditDeleteDialog(task: t, controller: controller));
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isOverdue
-                          ? Colors.red.withOpacity(0.06)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 6,
-                            offset: Offset(0, 4))
-                      ],
-                    ),
-                    child: Row(children: [
-                      if (t.datetime != null && t.alarmEnabled) ...[
-                        Icon(Icons.alarm, color: kTeal, size: 20),
-                        SizedBox(width: 10),
-                      ],
-                      Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(t.title,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+
+                          /// 🔵 Leading icon bubble
+                          Container(
+                            height: 40,
+                            width: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Color(0xFFE3E7EA)),
+                            ),
+                            child: Icon(
+                              Icons.task_alt_rounded,
+                              size: 20,
+                              color: Colors.black87,
+                            ),
+                          ),
+
+                          SizedBox(width: 14),
+
+                          /// 🔤 Text + date/time section
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                /// TITLE
+                                Text(
+                                  t.title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: GoogleFonts.nunito(
-                                      fontWeight: FontWeight.w700)),
-                              if (t.datetime != null) SizedBox(height: 6),
-                              if (t.datetime != null)
-                                Text(_friendlyDate(t.datetime!),
-                                    style: GoogleFonts.nunito(
-                                        color: Colors.black54, fontSize: 13)),
-                            ]),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+
+                                SizedBox(height: 6),
+
+                                /// TIME + optional ALARM
+                                Row(
+                                  children: [
+                                    Text(
+                                      t.datetime != null
+                                          ? _friendlyDate(t.datetime!)
+                                          : "",
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 13,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+
+                                    if (t.alarmEnabled) ...[
+                                      SizedBox(width: 6),
+                                      Icon(
+                                        Icons.alarm,
+                                        size: 16,
+                                        color: Colors.black54, // black as requested
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          /// ⋮ MORE ICON
+                          GestureDetector(
+                            onTap: () => _openDetailsDialog(context, t),
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Icon(
+                                Icons.more_vert,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 8),
-                      Icon(Icons.more_vert, color: Colors.grey),
-                    ]),
-                  ),
-                );
-              },
+                    ),
+
+
+
+
+
+                  );
+                },
+              ),
             );
           }),
         ],
@@ -227,13 +298,48 @@ class TaskDetailsDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Container(
         padding: EdgeInsets.all(16),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(task.title, style: GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.w800)),
-          SizedBox(height: 8),
-          if (dt != null)
-            Text('${dt.day}/${dt.month}/${dt.year} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}', style: GoogleFonts.nunito(color: Colors.black54)),
-          SizedBox(height: 12),
-          Row(children: [
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              /// NEW TITLE HEADING
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Task",
+                    style: GoogleFonts.nunito(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 10),
+
+              /// Task Name
+              Text(
+                task.title,
+                style: GoogleFonts.nunito(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+
+              SizedBox(height: 8),
+
+              if (dt != null)
+                Text(
+                  '${dt.day}/${dt.month}/${dt.year} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}',
+                  style: GoogleFonts.nunito(color: Colors.black54),
+                ),
+
+              SizedBox(height: 18),
+
+              Row(children: [
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
