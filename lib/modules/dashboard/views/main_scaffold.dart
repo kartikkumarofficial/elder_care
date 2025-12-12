@@ -26,7 +26,6 @@ class _MainScaffoldState extends State<MainScaffold> {
   final SupabaseClient client = Supabase.instance.client;
 
 
-
   @override
   void initState() {
     super.initState();
@@ -72,28 +71,37 @@ class _MainScaffoldState extends State<MainScaffold> {
       user.role == "caregiver"
           ? [
         CaregiverDashboard(),
-        Center(child: Text('Chat Screen'),),
-
-        // Location Screen
+        Center(child: Text('Chat Screen')),
         LocationScreen(
           linkedUserId: (navController.linkedReceiverId.value.isNotEmpty)
               ? navController.linkedReceiverId.value
               : null,
-
         ),
-
         ProfileScreen(),
       ]
           : [
         CareReceiverDashboard(),
-        const Center(
+
+        // Chat
+        Center(
           child: Text(
-            "Location unavailable for receivers",
+            'Chat Screen',
             style: TextStyle(color: Colors.white),
           ),
         ),
+
+        // Tasks Screen (placeholder)
+        Center(
+          child: Text(
+            'Tasks Screen (Receiver)',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+
+        // Profile
         ProfileScreen(),
       ];
+
 
       return Scaffold(
         extendBody: true,
