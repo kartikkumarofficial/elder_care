@@ -117,9 +117,5 @@ class CareLinkController extends GetxController {
   }
 
 
-  @override
-  void onClose() {
-    careIdController.dispose();
-    super.onClose();
-  }
+
 }

@@ -10,7 +10,7 @@ class RoleSelectionView extends StatefulWidget {
 }
 
 class _RoleSelectionViewState extends State<RoleSelectionView> {
-  final CareLinkController careLinkController = Get.find<CareLinkController>();
+  final CareLinkController careLinkController = Get.put(CareLinkController(),permanent: true);
   final AuthController authController = Get.find<AuthController>();
 
   String selectedRole = ""; // caregiver / receiver
