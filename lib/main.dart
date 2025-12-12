@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
       title: 'Elder Care',
       initialBinding: InitialBinding(),
       theme: ThemeData(
-        // colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        // colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
       ),
       debugShowCheckedModeBanner: false,
       home:SplashScreen(),
