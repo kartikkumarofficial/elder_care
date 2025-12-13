@@ -9,10 +9,18 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rawInset = MediaQuery.of(context).viewPadding.bottom;
+    final bottomInset = rawInset > 24 ? rawInset : 0;
+
     return Obx(() {
       return Container(
-        height: Get.height*0.115,
-        padding: const EdgeInsets.only(bottom: 13, left: 26,right: 26),
+        height: Get.height * 0.11 + bottomInset,
+        padding: EdgeInsets.fromLTRB(
+          26,
+          12,
+          26,
+          12 + bottomInset.toDouble(),
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: const BorderRadius.only(
@@ -41,36 +49,35 @@ class BottomNavBar extends StatelessWidget {
   }
 
   Widget _navItem(IconData icon, String label, int index) {
-    final bool isSelected = nav.selectedIndex.value == index;
+    final isSelected = nav.selectedIndex.value == index;
 
     return GestureDetector(
       onTap: () => nav.selectedIndex.value = index,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 22 : 16, // wider pills
-          vertical: isSelected ? 14 : 10,   // taller pills
+          horizontal: isSelected ? 22 : 16,
+          vertical: isSelected ? 14 : 10,
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFFE8EDFF) // light blue highlight
-              : const Color(0xFFF2F3F7), // soft grey bubbles
+              ? const Color(0xFFE8EDFF)
+              : const Color(0xFFF2F3F7),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
             Icon(
               icon,
-              size: isSelected ? 28 : 24, // larger icons
+              size: isSelected ? 28 : 24,
               color: isSelected ? const Color(0xFF1E2A78) : Colors.black54,
             ),
-
             if (isSelected) ...[
               const SizedBox(width: 8),
               Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 16, // bigger text
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF1E2A78),
                 ),
@@ -82,3 +89,4 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 }
+
