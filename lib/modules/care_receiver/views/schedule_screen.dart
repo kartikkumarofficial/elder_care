@@ -1,65 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/utils/sound_utils.dart';
-import '../../dashboard/controllers/nav_controller.dart';
-import '../controllers/schedule_controller.dart';
 import '../../../core/models/timeline_item.dart';
-
-const Color kTeal = Color(0xFF7AB7A7);
+import '../../events/controllers/events_controller.dart';
+import '../controllers/schedule_controller.dart';
 
 class ScheduleScreen extends StatefulWidget {
-  /// If provided → care receiver view
-  /// If null → caregiver view
-  final String? receiverIdOverride;
-
-  const ScheduleScreen({Key? key, this.receiverIdOverride}) : super(key: key);
+  const ScheduleScreen({Key? key}) : super(key: key);
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  final NavController nav = Get.find<NavController>();
   final ScheduleController controller = Get.find<ScheduleController>();
-
-  Worker? _receiverWorker;
 
   @override
   void initState() {
     super.initState();
-
-    final id = widget.receiverIdOverride ?? nav.linkedReceiverId.value;
-
-    if (id.isNotEmpty) {
-      controller.loadForReceiver(id, DateTime.now());
-    }
-
-    /// Listen only for caregiver flow
-    if (widget.receiverIdOverride == null) {
-      _receiverWorker = ever<String>(
-        nav.linkedReceiverId,
-            (rid) {
-          if (rid.isNotEmpty) {
-            controller.loadForReceiver(rid, DateTime.now());
-          }
-        },
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _receiverWorker?.dispose();
-    super.dispose();
+    controller.loadForCurrentUser(DateTime.now());
   }
 
   @override
   Widget build(BuildContext context) {
-    final effectiveReceiverId =
-        widget.receiverIdOverride ?? nav.linkedReceiverId.value;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -70,29 +36,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-
-      /// 🚫 NO Obx HERE
-      body: effectiveReceiverId.isEmpty
-          ? _noReceiverView()
-          : _scheduleBody(),
+      body: _scheduleBody(),
     );
   }
 
   // ─────────────────────────────────────────────
-  // BODY (reactive parts only)
+  // BODY
   // ─────────────────────────────────────────────
 
   Widget _scheduleBody() {
     return Obx(() {
-      final isLoading = controller.loading.value;
-      final timeline = controller.timeline;
-      final now = controller.now.value;
-
-      if (isLoading) {
+      if (controller.loading.value) {
         return const Center(child: CircularProgressIndicator());
       }
 
-      if (timeline.isEmpty) {
+      if (controller.timeline.isEmpty) {
         return Center(
           child: Text(
             'No tasks or events today',
@@ -101,25 +59,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         );
       }
 
+      final now = controller.now.value;
+
       return ListView.builder(
         padding: const EdgeInsets.all(20),
-        itemCount: timeline.length,
+        itemCount: controller.timeline.length,
         itemBuilder: (_, i) {
-          final item = timeline[i];
+          final item = controller.timeline[i];
           final isPast = item.time.isBefore(now);
           return _timelineTile(item, isPast);
         },
       );
     });
-  }
-
-  Widget _noReceiverView() {
-    return Center(
-      child: Text(
-        'No care receiver linked',
-        style: GoogleFonts.nunito(color: Colors.grey),
-      ),
-    );
   }
 
   // ─────────────────────────────────────────────

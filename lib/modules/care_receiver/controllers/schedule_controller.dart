@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -34,6 +35,8 @@ class ScheduleController extends GetxController {
   // ─────────────────────────────────────────────
 
   Future<void> loadForReceiver(String receiverId, DateTime day) async {
+
+    debugPrint("📅 Loading schedule for receiver: $receiverId");
     loading.value = true;
 
     final start = DateTime(day.year, day.month, day.day);
@@ -96,4 +99,13 @@ class ScheduleController extends GetxController {
     await supabase.from(table).delete().eq('id', item.id);
     timeline.remove(item);
   }
+
+
+  Future<void> loadForCurrentUser(DateTime day) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    await loadForReceiver(user.id, day);
+  }
+
 }
