@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../../app/utils/sound_utils.dart';
 import '../../../core/models/timeline_item.dart';
@@ -26,108 +27,240 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          'Schedule',
-          style: GoogleFonts.nunito(fontWeight: FontWeight.w800),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: _scheduleBody(),
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  // BODY
-  // ─────────────────────────────────────────────
-
-  Widget _scheduleBody() {
     return Obx(() {
-      if (controller.loading.value) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      if (controller.timeline.isEmpty) {
-        return Center(
-          child: Text(
-            'No tasks or events today',
-            style: GoogleFonts.nunito(color: Colors.grey),
+      return Column(
+        children: [
+          scheduleHeader(
+            completed: controller.completedCount,
+            total: controller.totalCount,
           ),
-        );
-      }
 
-      final now = controller.now.value;
+          const SizedBox(height: 16),
+          dateSelector(controller),
 
-      return ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: controller.timeline.length,
-        itemBuilder: (_, i) {
-          final item = controller.timeline[i];
-          final isPast = item.time.isBefore(now);
-          return _timelineTile(item, isPast);
-        },
+          const SizedBox(height: 12),
+          Expanded(child: _scheduleBody()),
+        ],
       );
-    });
+    });}
+
+
+
+    // ─────────────────────────────────────────────
+    // BODY
+    // ─────────────────────────────────────────────
+
+    Widget _scheduleBody() {
+      return Obx(() {
+        if (controller.loading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (controller.timeline.isEmpty) {
+          return Center(
+            child: Text(
+              'No tasks or events today',
+              style: GoogleFonts.nunito(color: Colors.grey),
+            ),
+          );
+        }
+
+        final now = controller.now.value;
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: controller.timeline.length,
+          itemBuilder: (_, i) {
+            final item = controller.timeline[i];
+            final isPast = item.time.isBefore(now);
+            return _timelineTile(item, isPast);
+          },
+        );
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // TIMELINE TILE
+    // ─────────────────────────────────────────────
+
+    Widget _timelineTile(TimelineItem item, bool isPast) {
+      final bg = item.type == TimelineType.event
+          ? const Color(0xFFEFF3FF)
+          : const Color(0xFFFFF1E6);
+
+      return GestureDetector(
+        onTap: () => _openActions(item),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 60,
+              child: Text(
+                '${item.time.hour.toString().padLeft(2, '0')}:${item.time.minute.toString().padLeft(2, '0')}',
+                style: GoogleFonts.nunito(color: Colors.black54),
+              ),
+            ),
+            Column(
+              children: [
+                Container(
+                  height: 14,
+                  width: 14,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isPast ? kTeal : Colors.white,
+                    border: Border.all(color: kTeal, width: 2),
+                  ),
+                ),
+                Container(
+                  height: 70,
+                  width: 2,
+                  color: isPast ? kTeal : Colors.grey.shade300,
+                ),
+              ],
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 18),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(
+                  item.title,
+                  style: GoogleFonts.nunito(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ─────────────────────────────────────────────
+    // ACTIONS
+    // ─────────────────────────────────────────────
+
+    void _openActions(TimelineItem item) {
+      Get.dialog(
+        Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(
+                item.type == TimelineType.task ? 'Task' : 'Event',
+                style: GoogleFonts.nunito(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              if (item.type == TimelineType.task)
+                ElevatedButton(
+                  onPressed: () async {
+                    await controller.deleteItem(item);
+                    await SoundUtils.playDone();
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: kTeal),
+                  child: const Text('Mark Completed'),
+                ),
+
+              const SizedBox(height: 8),
+
+              TextButton(
+                onPressed: () async {
+                  await controller.deleteItem(item);
+                  Get.back();
+                },
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      );
+    }
   }
 
-  // ─────────────────────────────────────────────
-  // TIMELINE TILE
-  // ─────────────────────────────────────────────
 
-  Widget _timelineTile(TimelineItem item, bool isPast) {
-    final bg = item.type == TimelineType.event
-        ? const Color(0xFFEFF3FF)
-        : const Color(0xFFFFF1E6);
 
-    return GestureDetector(
-      onTap: () => _openActions(item),
+  Widget scheduleHeader({
+    required int completed,
+    required int total,
+  }) {
+    final percent = total == 0 ? 0.0 : completed / total;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+      decoration: const BoxDecoration(
+        color: Color(0xFFEAF4F2),
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(32),
+        ),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 60,
-            child: Text(
-              '${item.time.hour.toString().padLeft(2, '0')}:${item.time.minute.toString().padLeft(2, '0')}',
-              style: GoogleFonts.nunito(color: Colors.black54),
+          // LEFT
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Schedule",
+                  style: GoogleFonts.nunito(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "You are almost done!",
+                  style: GoogleFonts.nunito(
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "$completed / $total tasks completed",
+                  style: GoogleFonts.nunito(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
-          Column(
-            children: [
-              Container(
-                height: 14,
-                width: 14,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isPast ? kTeal : Colors.white,
-                  border: Border.all(color: kTeal, width: 2),
+
+          // RIGHT (CIRCULAR PROGRESS)
+          SizedBox(
+            height: 90,
+            width: 90,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: percent,
+                  strokeWidth: 8,
+                  backgroundColor: Colors.white,
+                  color: kTeal,
                 ),
-              ),
-              Container(
-                height: 70,
-                width: 2,
-                color: isPast ? kTeal : Colors.grey.shade300,
-              ),
-            ],
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 18),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: bg,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                item.title,
-                style: GoogleFonts.nunito(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                Text(
+                  "${(percent * 100).round()}%",
+                  style: GoogleFonts.nunito(
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -135,54 +268,59 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────
-  // ACTIONS
-  // ─────────────────────────────────────────────
 
-  void _openActions(TimelineItem item) {
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(
-              item.type == TimelineType.task ? 'Task' : 'Event',
-              style: GoogleFonts.nunito(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
+  Widget dateSelector(ScheduleController controller) {
+
+    final today = DateTime.now();
+
+
+    return SizedBox(
+      height: 90,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: 7,
+        itemBuilder: (_, i) {
+          final date = today.add(Duration(days: i));
+          final isSelected =
+              controller.selectedDate.value.day == date.day;
+
+          return GestureDetector(
+            onTap: () {
+              controller.selectedDate.value = date;
+              controller.loadForCurrentUser(date);
+            },
+            child: Container(
+              width: 60,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: isSelected ? kTeal : Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: kTeal),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    DateFormat.E().format(date),
+                    style: GoogleFonts.nunito(
+                      color: isSelected ? Colors.white : Colors.black54,
+                    ),
+                  ),
+                  Text(
+                    date.day.toString(),
+                    style: GoogleFonts.nunito(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            if (item.type == TimelineType.task)
-              ElevatedButton(
-                onPressed: () async {
-                  await controller.deleteItem(item);
-                  await SoundUtils.playDone();
-                  Get.back();
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: kTeal),
-                child: const Text('Mark Completed'),
-              ),
-
-            const SizedBox(height: 8),
-
-            TextButton(
-              onPressed: () async {
-                await controller.deleteItem(item);
-                Get.back();
-              },
-              child: const Text(
-                'Delete',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ]),
-        ),
+          );
+        },
       ),
     );
   }
-}
+

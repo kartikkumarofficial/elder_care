@@ -12,9 +12,19 @@ class ScheduleController extends GetxController {
 
   final RxList<TimelineItem> timeline = <TimelineItem>[].obs;
   final RxBool loading = false.obs;
+  int get totalCount => timeline.length;
+
+  int get completedCount {
+    final nowTime = DateTime.now();
+    return timeline.where((e) => e.time.isBefore(nowTime)).length;
+  }
+
+
 
   final Rx<DateTime> now = DateTime.now().obs;
   Timer? _timer;
+  final selectedDate = DateTime.now().obs;
+
 
   @override
   void onInit() {

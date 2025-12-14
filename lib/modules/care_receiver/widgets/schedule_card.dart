@@ -17,7 +17,8 @@ Widget buildScheduleCard({
         borderRadius: BorderRadius.circular(20),
         onTap: () {
           Get.to(() => ScheduleScreen(
-            receiverIdOverride: receiverId,
+
+            // receiverIdOverride: receiverId,
           ));
         },
         child: Padding(
