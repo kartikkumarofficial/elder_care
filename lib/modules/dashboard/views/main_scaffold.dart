@@ -1,5 +1,6 @@
 
 import 'package:elder_care/modules/care_receiver/views/schedule_screen.dart';
+import 'package:elder_care/modules/chat/views/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -72,7 +73,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       user.role == "caregiver"
           ? [
         CaregiverDashboard(),
-        Center(child: Text('Chat Screen')),
+        ChatPlaceholderScreen(),
         LocationScreen(
           linkedUserId: (navController.linkedReceiverId.value.isNotEmpty)
               ? navController.linkedReceiverId.value
@@ -84,12 +85,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         ReceiverDashboardScreen(),
 
         // Chat
-        Center(
-          child: Text(
-            'Chat Screen',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
+        ChatPlaceholderScreen(),
 
         ScheduleScreen(),
 
