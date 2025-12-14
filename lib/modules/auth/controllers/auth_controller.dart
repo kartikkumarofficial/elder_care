@@ -274,8 +274,8 @@ class AuthController extends GetxController {
       }
 
       // If using care receiver dashboard
-      if (Get.isRegistered<CareReceiverDashboardController>()) {
-        Get.delete<CareReceiverDashboardController>(force: true);
+      if (Get.isRegistered<ReceiverDashboardController>()) {
+        Get.delete<ReceiverDashboardController>(force: true);
       }
 
       // 3. Clear AuthController user data
@@ -418,8 +418,8 @@ class AuthController extends GetxController {
       if (Get.isRegistered<CaregiverDashboardController>()) {
         Get.delete<CaregiverDashboardController>(force: true);
       }
-      if (Get.isRegistered<CareReceiverDashboardController>()) {
-        Get.delete<CareReceiverDashboardController>(force: true);
+      if (Get.isRegistered<ReceiverDashboardController>()) {
+        Get.delete<ReceiverDashboardController>(force: true);
       }
 
       final role = user.value?.role;

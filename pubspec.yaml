@@ -52,6 +52,7 @@ dependencies:
   image_cropper: ^11.0.0
   package_info_plus: ^8.3.1
   latlong2: ^0.9.1
+  audioplayers: ^6.5.1
 
 
 dev_dependencies:
@@ -80,6 +81,7 @@ flutter:
     - assets/auth/
     - assets/
     - assets/images/
+    - assets/sounds/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

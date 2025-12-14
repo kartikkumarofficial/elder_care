@@ -1,4 +1,5 @@
 
+import 'package:elder_care/modules/care_receiver/views/schedule_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -80,7 +81,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         ProfileScreen(),
       ]
           : [
-        CareReceiverDashboard(),
+        ReceiverDashboardScreen(),
 
         // Chat
         Center(
@@ -90,13 +91,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           ),
         ),
 
-        // Tasks Screen (placeholder)
-        Center(
-          child: Text(
-            'Tasks Screen (Receiver)',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
+        ScheduleScreen(),
 
         // Profile
         ProfileScreen(),
@@ -107,7 +102,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         extendBody: true,
         backgroundColor: const Color(0xFF121212),
         body: screens[navController.selectedIndex.value],
-        bottomNavigationBar: BottomNavBar(),
+        bottomNavigationBar: user.role == "caregiver" ? CareGiverBottomNavBar():CareReceiverBottomNavBar(),
       );
     });
   }

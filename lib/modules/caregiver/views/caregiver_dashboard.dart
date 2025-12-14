@@ -9,7 +9,7 @@ import '../../events/views/eventssection.dart';
 import '../widgets/healthstatussection.dart';
 import '../../tasks/views/task_section.dart';
 import '../controllers/caregiver_dashboard_controller.dart';
-import '../widgets/watchstatusSection.dart';
+import '../widgets/statussection.dart';
 
 class CaregiverDashboard extends StatefulWidget {
   CaregiverDashboard({super.key});
@@ -158,7 +158,7 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
 
               // const SizedBox(height: 30),
               SizedBox(height:srch*0.01),
-              watchStatusSection(),
+              StatusSection(),
               SizedBox(height:srch*0.01),
               healthStatusSection(),
               // SizedBox(height:srch*0.01),

@@ -15,42 +15,50 @@ const Color kTeal = Color(0xFF7AB7A7);
 
 
 class TaskSection extends StatelessWidget {
-  TaskSection({Key? key}) : super(key: key);
+  final String? receiverIdOverride;
 
-  final TaskController controller = Get.put(TaskController(), permanent: true);
+  TaskSection({Key? key, this.receiverIdOverride}) : super(key: key);
+
+  final TaskController controller = Get.put(TaskController());
   final NavController nav = Get.find<NavController>();
 
   @override
   Widget build(BuildContext context) {
     // 🔥 Reactively reload tasks whenever linkedReceiverId changes
-    ever(nav.linkedReceiverId, (id) {
-      if (id != null && id.toString().isNotEmpty) {
-        controller.loadTasksForReceiver(id);
-      } else {
-        controller.tasks.clear();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rid = receiverIdOverride ?? nav.linkedReceiverId.value;
+      if (rid.isNotEmpty && controller.currentReceiverId != rid) {
+        controller.loadTasksForReceiver(rid);
       }
     });
+
+
 
     // Load initial tasks if id already present
-    if (nav.linkedReceiverId.value.isNotEmpty) {
-      controller.loadTasksForReceiver(nav.linkedReceiverId.value);
+    final initialId = receiverIdOverride ?? nav.linkedReceiverId.value;
+    if (initialId.isNotEmpty) {
+      controller.loadTasksForReceiver(initialId);
     }
 
-    return Obx(() {
-      final receiverId = nav.linkedReceiverId.value;
 
-      if (receiverId.isEmpty) {
-        return Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Text(
-            "No receiver linked yet",
-            style: GoogleFonts.nunito(color: Colors.grey, fontSize: 16),
-          ),
-        );
-      }
+    final receiverId = receiverIdOverride?.isNotEmpty == true
+        ? receiverIdOverride!
+        : nav.linkedReceiverId.value;
 
-      return _buildTaskUI(context);
-    });
+    if (receiverId.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Text(
+          receiverIdOverride != null
+              ? "No tasks available"
+              : "No receiver linked yet",
+          style: GoogleFonts.nunito(color: Colors.grey, fontSize: 16),
+        ),
+      );
+    }
+
+    return _buildTaskUI(context);
+
   }
 
   Widget _buildTaskUI(BuildContext context) {

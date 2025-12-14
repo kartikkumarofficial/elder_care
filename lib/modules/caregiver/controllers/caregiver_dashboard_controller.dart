@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:battery_plus/battery_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pedometer/pedometer.dart';
@@ -34,6 +35,11 @@ class CaregiverDashboardController extends GetxController {
   // ----------------------------- DEVICE STATUS ---------------------------
   final RxBool fitbitConnected = false.obs;
   final RxInt battery = 82.obs;
+  final RxBool isCharging = false.obs;
+  // ----------------------------- MOOD DATA -----------------------------
+  final RxString receiverMood = "".obs;
+  final RxBool moodAvailable = false.obs;
+
 
   // ----------------------------- CONTROLLERS -----------------------------
   GoogleMapController? mapCtrl;
@@ -52,6 +58,52 @@ class CaregiverDashboardController extends GetxController {
     vitalsChannel?.unsubscribe();
     super.onClose();
   }
+
+
+  // ======================================================================
+  // mood/status section
+  // ======================================================================
+  Future<void> fetchReceiverMood() async {
+    if (receiverId.value.isEmpty) return;
+
+    final today =
+    DateTime.now().toIso8601String().substring(0, 10);
+
+    final row = await supabase
+        .from('mood_tracking')
+        .select('mood')
+        .eq('user_id', receiverId.value)
+        .eq('mood_date', today)
+        .maybeSingle();
+
+    if (row != null && row['mood'] != null) {
+      receiverMood.value = row['mood'];
+      moodAvailable.value = true;
+    } else {
+      receiverMood.value = "";
+      moodAvailable.value = false;
+    }
+  }
+
+  Future<void> fetchDeviceStatus() async {
+    if (receiverId.value.isEmpty) return;
+
+    final row = await supabase
+        .from("device_status")
+        .select()
+        .eq("user_id", receiverId.value)
+        .maybeSingle();
+
+    if (row == null) return;
+
+    battery.value = row["battery_level"] ?? 0;
+    fitbitConnected.value = row["fitbit_connected"] ?? false;
+    isCharging.value = row["charging"] ?? false;
+  }
+
+
+
+
 
   // ======================================================================
   // LOAD RECEIVER LINK
@@ -87,6 +139,8 @@ class CaregiverDashboardController extends GetxController {
       receiverId.value = link["receiver_id"];
 
       await fetchReceiverProfile();
+      await fetchReceiverMood();
+      await fetchDeviceStatus();
       await fetchLatestLocation();
       await fetchLatestVitals();
       await fetchLatestSteps();
@@ -143,7 +197,7 @@ class CaregiverDashboardController extends GetxController {
       if (row == null) {
         print('fetchLatestLocation: no row in user_locations, trying locations table');
         row = await supabase
-            .from('locations')
+            .from('user_locations')
             .select('latitude, longitude, updated_at')
             .eq('user_id', receiverId.value)
             .order('updated_at', ascending: false)
@@ -236,25 +290,7 @@ class CaregiverDashboardController extends GetxController {
     // Optionally create a second subscription for the 'locations' table (if you actually use that).
   }
 
-  Future<void> fetchDeviceStatus() async {
-    print("fetchDeviceStatus: fetching for ${receiverId.value}");
 
-    final row = await supabase
-        .from("device_status")
-        .select()
-        .eq("user_id", receiverId.value)
-        .maybeSingle();
-
-    print("Device Status fetched: $row");
-
-    if (row == null) {
-      print("❌ No device status row found.");
-      return;
-    }
-
-    battery.value = row["battery_level"] ?? 0;
-    fitbitConnected.value = row["fitbit_connected"] ?? false;
-  }
 
 
 
@@ -370,13 +406,12 @@ class CaregiverDashboardController extends GetxController {
   // ======================================================================
   void onMapCreated(GoogleMapController c) {
     mapCtrl = c;
+    _mapReady = true;
     isMapReady.value = true;
 
-    // Move camera if valid
-    if (lat.value != 0.0 && lng.value != 0.0) {
-      _moveCamera();
-    }
+    _animateMap(); // safe now
   }
+
 
   void _moveCamera() {
     if (mapCtrl == null) return;
@@ -406,6 +441,8 @@ class CaregiverDashboardController extends GetxController {
     await fetchLatestLocation();
     await fetchLatestVitals();
     await fetchDeviceStatus();
+    await fetchReceiverMood();
+
 
     isRefreshing.value = false;
     print("✅ Refresh completed!");
@@ -416,8 +453,9 @@ class CaregiverDashboardController extends GetxController {
   // ======================================================================
   String _formatTimeAgo(String timestamp) {
     try {
-      final dt = DateTime.parse(timestamp);
-      final diff = DateTime.now().difference(dt);
+      final parsedUtc = DateTime.parse(timestamp + 'Z');
+      final local = parsedUtc.toLocal();
+      final diff = DateTime.now().difference(local);
 
       if (diff.inMinutes < 1) return "Just now";
       if (diff.inHours < 1) return "${diff.inMinutes}m ago";
@@ -427,9 +465,23 @@ class CaregiverDashboardController extends GetxController {
       return timestamp;
     }
   }
+
+  bool _mapReady = false;
+  DateTime? _lastCameraMove;
+
+
   void _animateMap() {
-    if (mapCtrl == null) return;       // map not created yet
-    if (lat.value == 0.0 && lng.value == 0.0) return;  // invalid location
+    if (!_mapReady) return;
+    if (mapCtrl == null) return;
+    if (lat.value == 0.0 || lng.value == 0.0) return;
+
+    // throttle camera moves (VERY IMPORTANT)
+    if (_lastCameraMove != null &&
+        DateTime.now().difference(_lastCameraMove!).inSeconds < 2) {
+      return;
+    }
+
+    _lastCameraMove = DateTime.now();
 
     try {
       mapCtrl!.animateCamera(
@@ -439,9 +491,10 @@ class CaregiverDashboardController extends GetxController {
         ),
       );
     } catch (e) {
-      print("ANIMATE ERROR: $e");
+      debugPrint("⚠️ animateCamera skipped safely: $e");
     }
   }
+
   final batery = Battery();
 
   Future<void> sendBatteryToSupabase(String userId) async {
