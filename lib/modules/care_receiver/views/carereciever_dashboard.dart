@@ -76,10 +76,10 @@ class ReceiverDashboardScreen extends StatelessWidget {
                 /// TASKS
                 TaskSection( receiverIdOverride: controller.supabase.auth.currentUser!.id,),
 
-                SizedBox(height: h * 0.045),
+                // SizedBox(height: h * 0.045),
 
                 /// SOS
-                sosButton(w, h),
+                // sosButton(w, h),
 
                 SizedBox(height: h * 0.04),
               ],

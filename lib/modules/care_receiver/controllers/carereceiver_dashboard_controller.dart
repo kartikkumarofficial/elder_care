@@ -340,13 +340,69 @@ class ReceiverDashboardController extends GetxController {
   // ─────────────────────────────────────────────
   Future<void> sendSOS() async {
     final user = supabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      debugPrint("❌ SOS failed: user null");
+      return;
+    }
 
-    await supabase.from('sos_alerts').insert({
-      'user_id': user.id,
-      'message': 'Emergency SOS triggered',
-    });
+    debugPrint("🚨 SEND SOS tapped by ${user.id}");
 
-    debugPrint("🚨 SOS sent");
+    double? lat;
+    double? lng;
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final permission = await Geolocator.checkPermission();
+
+      if (serviceEnabled &&
+          (permission == LocationPermission.always ||
+              permission == LocationPermission.whileInUse)) {
+
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 6),
+        );
+
+        lat = position.latitude;
+        lng = position.longitude;
+
+        debugPrint("📍 SOS location fetched: $lat, $lng");
+      } else {
+        debugPrint("⚠️ SOS location skipped (permission/service)");
+      }
+    } catch (e) {
+      debugPrint("⚠️ SOS location error: $e");
+    }
+
+    try {
+      final res = await supabase.from('sos_alerts').insert({
+        'user_id': user.id,
+        'lat': lat,
+        'lng': lng,
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'message': 'Emergency SOS triggered',
+      });
+
+      debugPrint("✅ SOS INSERT RESPONSE: $res");
+
+      Get.snackbar(
+        "SOS Sent",
+        "Caregiver has been notified",
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
+      );
+    } catch (e) {
+      debugPrint("❌ SOS INSERT FAILED: $e");
+
+      Get.snackbar(
+        "SOS Failed",
+        "Unable to notify caregiver",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
+
+
 }
