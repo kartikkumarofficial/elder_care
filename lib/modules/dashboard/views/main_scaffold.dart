@@ -1,6 +1,8 @@
 
 import 'package:elder_care/modules/care_receiver/views/schedule_screen.dart';
-import 'package:elder_care/modules/chat/views/chat_screen.dart';
+import 'package:elder_care/modules/care_receiver/widgets/sos_button.dart';
+import 'package:elder_care/modules/care_receiver/widgets/sos_floating_button.dart';
+import 'package:elder_care/modules/chat/views/chat_placeholder_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 
+import '../../care_receiver/controllers/carereceiver_dashboard_controller.dart';
 import '../../caregiver/views/caregiver_dashboard.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../controllers/nav_controller.dart';
@@ -99,6 +102,10 @@ class _MainScaffoldState extends State<MainScaffold> {
         backgroundColor: const Color(0xFF121212),
         body: screens[navController.selectedIndex.value],
         bottomNavigationBar: user.role == "caregiver" ? CareGiverBottomNavBar():CareReceiverBottomNavBar(),
+        floatingActionButton: user.role == 'receiver'
+            ? SOSFab(Get.put(ReceiverDashboardController()))
+            : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       );
     });
   }

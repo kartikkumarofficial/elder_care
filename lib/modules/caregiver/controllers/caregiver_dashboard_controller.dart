@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -49,13 +51,17 @@ class CaregiverDashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    debugPrint("👨‍⚕️ CaregiverDashboardController INIT");
     loadReceiver();
+
+
   }
 
   @override
   void onClose() {
     locationChannel?.unsubscribe();
     vitalsChannel?.unsubscribe();
+    sosChannel?.unsubscribe();
     super.onClose();
   }
 
@@ -109,9 +115,11 @@ class CaregiverDashboardController extends GetxController {
   // LOAD RECEIVER LINK
   // ======================================================================
   Future<void> loadReceiver() async {
+    debugPrint("🔗 loadReceiver started");
     isLoading.value = true;
 
     final uid = supabase.auth.currentUser?.id;
+    debugPrint("👤 Caregiver UID: $uid");
 
     if (uid == null) {
       name.value = "User not logged in";
@@ -137,6 +145,7 @@ class CaregiverDashboardController extends GetxController {
       }
 
       receiverId.value = link["receiver_id"];
+      debugPrint("🧑‍🦳 Receiver ID linked: ${receiverId.value}");
 
       await fetchReceiverProfile();
       await fetchReceiverMood();
@@ -145,6 +154,8 @@ class CaregiverDashboardController extends GetxController {
       await fetchLatestVitals();
       await fetchLatestSteps();
 
+
+      subscribeToSOS();
       subscribeToStepsRealtime();
       subscribeToLocationRealtime();
       subscribeToVitalsRealtime();
@@ -449,12 +460,11 @@ class CaregiverDashboardController extends GetxController {
   }
 
   // ======================================================================
-  // UTILS
-  // ======================================================================
+// UTILS
+// ======================================================================
   String _formatTimeAgo(String timestamp) {
     try {
-      final parsedUtc = DateTime.parse(timestamp + 'Z');
-      final local = parsedUtc.toLocal();
+      final local = DateTime.parse(timestamp).toLocal();
       final diff = DateTime.now().difference(local);
 
       if (diff.inMinutes < 1) return "Just now";
@@ -465,6 +475,7 @@ class CaregiverDashboardController extends GetxController {
       return timestamp;
     }
   }
+
 
   bool _mapReady = false;
   DateTime? _lastCameraMove;
@@ -552,6 +563,102 @@ class CaregiverDashboardController extends GetxController {
         steps.value = newSteps.toString();
       },
     ).subscribe();
+  }
+
+// sos implementation
+  RealtimeChannel? sosChannel;
+
+  void subscribeToSOS() {
+    if (receiverId.value.isEmpty) {
+      debugPrint("🚨 SOS subscribe skipped: receiverId empty");
+      return;
+    }
+
+    debugPrint("🚨 Subscribing to SOS for receiver ${receiverId.value}");
+
+    sosChannel?.unsubscribe();
+
+    sosChannel = supabase.channel('sos_${receiverId.value}');
+
+    sosChannel!
+        .onPostgresChanges(
+      event: PostgresChangeEvent.insert,
+      schema: 'public',
+      table: 'sos_alerts',
+      filter: PostgresChangeFilter(
+        column: 'user_id',
+        value: receiverId.value,
+        type: PostgresChangeFilterType.eq,
+      ),
+      callback: (payload) {
+        debugPrint("🚨 SOS PAYLOAD RECEIVED: ${payload.newRecord}");
+        _showSOSDialog(payload.newRecord);
+      },
+    ).subscribe();
+
+    debugPrint("✅ SOS channel subscribed");
+  }
+
+
+
+
+
+  void _showSOSDialog(Map<String, dynamic> sos) {
+    if (Get.context == null) {
+      debugPrint("⚠️ SOS dialog skipped: no context");
+      return;
+    }
+
+    if (Get.isDialogOpen == true) {
+      debugPrint("⚠️ SOS dialog already open");
+      return;
+    }
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFeaf4f2), Colors.white],
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.warning_amber_rounded, size: 48, color: Colors.red),
+              const SizedBox(height: 12),
+              Text(
+                "Emergency Alert",
+                style: GoogleFonts.nunito(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "The care receiver has triggered an SOS.",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.nunito(),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Get.back(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text("View Location",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
+              )
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
   }
 
 

@@ -23,10 +23,10 @@ class ChatPlaceholderScreen extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Get.back(),
-        ),
+        // leading: IconButton(
+        //   icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        //   onPressed: () => Get.back(),
+        // ),
       ),
       extendBodyBehindAppBar: true,
       body: Container(
