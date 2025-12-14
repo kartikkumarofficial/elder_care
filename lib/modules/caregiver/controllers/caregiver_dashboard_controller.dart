@@ -8,6 +8,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/emergency_alert_service.dart';
+
 class CaregiverDashboardController extends GetxController {
   final supabase = Supabase.instance.client;
   // ----------------------------- VITAL HISTORY FOR CHARTS -----------------------------
@@ -592,6 +594,9 @@ class CaregiverDashboardController extends GetxController {
       ),
       callback: (payload) {
         debugPrint("🚨 SOS PAYLOAD RECEIVED: ${payload.newRecord}");
+
+        EmergencyAlertService.trigger();
+
         _showSOSDialog(payload.newRecord);
       },
     ).subscribe();
@@ -644,7 +649,10 @@ class CaregiverDashboardController extends GetxController {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => Get.back(),
+                onPressed: () {
+                  EmergencyAlertService.stop();
+                  Get.back();
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   shape: RoundedRectangleBorder(

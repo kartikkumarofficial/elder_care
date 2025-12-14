@@ -1,17 +1,27 @@
 
 import 'package:elder_care/modules/splash/views/splash_screen.dart';
 import 'package:elder_care/core/bindings/bindings.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/utils/constants.dart';
+import 'core/services/notification_service.dart';
+import 'firebase_options.dart';
 
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
+  // await Firebase.initializeApp(
+  //     options: DefaultFirebaseOptions.currentPlatform);
+  // await NotificationService.init();
+  // FirebaseMessaging.onBackgroundMessage(
+  //   _firebaseMessagingBackgroundHandler,
+  // );
+
 
   await Supabase.initialize(
     url: constants.supabaseUrl,
@@ -41,3 +51,10 @@ class MyApp extends StatelessWidget {
 }
 
 
+// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+//   await Firebase.initializeApp(
+//     options: DefaultFirebaseOptions.currentPlatform,
+//   );
+//   debugPrint("🔔 BG MESSAGE: ${message.messageId}");
+// }
+//
