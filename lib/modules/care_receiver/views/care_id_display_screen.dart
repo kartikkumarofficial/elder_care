@@ -129,7 +129,7 @@ class CareIdDisplayScreen extends StatelessWidget {
               width: double.infinity,
               height: h * 0.065,
               child: ElevatedButton(
-                onPressed: () => Get.offAll(() => CareReceiverDashboard()),
+                onPressed: () => Get.offAll(() => ReceiverDashboardScreen()),
                 style: ElevatedButton.styleFrom(
                   backgroundColor:  Color(0xFF7AB7A7),
                   foregroundColor: Colors.white,

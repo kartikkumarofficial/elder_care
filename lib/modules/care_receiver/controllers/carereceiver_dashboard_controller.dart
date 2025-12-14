@@ -1,159 +1,352 @@
 import 'dart:async';
+
+import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedometer/pedometer.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// import '../models/task_model.dart';
-import '../../../core/services/location_service.dart';
-
-
-class CareReceiverDashboardController extends GetxController {
+class ReceiverDashboardController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
-  final LocationService _locationService = LocationService();
 
-  Timer? _locationUpdateTimer;
-
-  // -----------------------------
-  // UI Observables
-  // -----------------------------
-  final isLoading = true.obs;
+  // ─────────────────────────────────────────────
+  // USER INFO
+  // ─────────────────────────────────────────────
   final userName = ''.obs;
-  final careId = ''.obs;
 
+  String get greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  }
 
+  // ─────────────────────────────────────────────
+  // MOOD
+  // ─────────────────────────────────────────────
+  final selectedMood = ''.obs;
+  final moodSubmittedToday = false.obs;
 
-  // Location sharing state
+  // ─────────────────────────────────────────────
+  // DEVICE STATUS
+  // ─────────────────────────────────────────────
+  final Battery _battery = Battery();
+  final batteryLevel = 0.obs;
+  final isCharging = false.obs;
+  final isDeviceConnected = false.obs;
+  DateTime? _lastDeviceSync;
+
+  // ─────────────────────────────────────────────
+  // LOCATION SHARING
+  // ─────────────────────────────────────────────
+  Timer? _locationTimer;
+  bool _locationStarted = false;
   final isSharingLocation = false.obs;
   final locationStatusMessage = "Initializing...".obs;
 
+  // ─────────────────────────────────────────────
+  // STEPS
+  // ─────────────────────────────────────────────
+  StreamSubscription<StepCount>? _stepSub;
+  Timer? _stepsFlushTimer;
+  bool _stepsStarted = false;
+  int _latestSteps = 0;
+
+  // ─────────────────────────────────────────────
+  // UI STATE
+  // ─────────────────────────────────────────────
+  final isLoading = false.obs;
+
+  // ─────────────────────────────────────────────
+  // INIT
+  // ─────────────────────────────────────────────
   @override
   void onInit() {
     super.onInit();
-    refreshAllData(); // Full startup routine
+    debugPrint("🚀 ReceiverDashboardController initialized");
+    loadDashboard();
   }
 
   @override
   void onClose() {
-    _locationUpdateTimer?.cancel();
+    debugPrint("🧹 ReceiverDashboardController disposed");
+    _stepSub?.cancel();
+    _stepsFlushTimer?.cancel();
+    _locationTimer?.cancel();
     super.onClose();
   }
 
-  // =========================================================
-  // PUBLIC → Called by RefreshIndicator to reload all sections
-  // =========================================================
-  Future<void> refreshAllData() async {
-    print('[CareReceiverDashboard] Refreshing all data...');
-
-    // Prevent duplicate timers
-    _locationUpdateTimer?.cancel();
-
-    await Future.wait([
-      fetchInitialData(),
-      startAutomaticLocationSharing(),
-    ]);
-
-    print('[CareReceiverDashboard] Refresh complete.');
-  }
-
-  // =========================================================
-  // START AUTOMATIC BACKGROUND LOCATION SHARING
-  // =========================================================
-  Future<void> startAutomaticLocationSharing() async {
-    bool permissionGranted = await _locationService.requestPermissions();
-
-    if (!permissionGranted) {
-      isSharingLocation.value = false;
-      locationStatusMessage.value = "Permission denied. Unable to share location.";
-      return;
-    }
-
-    isSharingLocation.value = true;
-    locationStatusMessage.value = "Sharing location...";
-
-    // Initial update
-    await _locationService.updateLocationInSupabase();
-
-    // Update every 2 minutes
-    _locationUpdateTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
-      _locationService.updateLocationInSupabase();
-      locationStatusMessage.value =
-      "Updated at ${TimeOfDay.now().format(Get.context!)}";
-    });
-  }
-
-  // =========================================================
-  // FETCH USER PROFILE + CARE ID
-  // =========================================================
-  Future<void> fetchInitialData() async {
-    isLoading.value = true;
+  // ─────────────────────────────────────────────
+  // DASHBOARD LOAD
+  // ─────────────────────────────────────────────
+  Future<void> loadDashboard() async {
+    if (isLoading.value) return;
 
     try {
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) {
-        isLoading.value = false;
+      isLoading.value = true;
+      debugPrint("🔄 Loading receiver dashboard");
+
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        debugPrint("❌ No authenticated user");
         return;
       }
 
-      // Fetch profile
       final profile = await supabase
           .from('users')
-          .select('full_name, care_id')
-          .eq('id', currentUser.id)
-          .single();
+          .select('full_name')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      userName.value = profile['full_name'] ?? "User";
-      careId.value = profile['care_id'] ?? "N/A";
+      userName.value = profile?['full_name'] ?? '';
 
+      await checkTodayMood();
+      await syncDeviceStatus();
+      await refreshDeviceConnectionStatus();
+      await startAutomaticLocationSharing();
+      await startStepTracking();
+
+      debugPrint("✅ Dashboard load complete");
     } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Could not load dashboard data.",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      debugPrint("❌ ReceiverDashboard load error: $e");
     } finally {
       isLoading.value = false;
     }
   }
 
-  // =========================================================
-  // FETCH REMINDER TASKS
-  // =========================================================
+  // ─────────────────────────────────────────────
+  // MOOD
+  // ─────────────────────────────────────────────
+  Future<void> checkTodayMood() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
 
+    final today = DateTime.now().toIso8601String().substring(0, 10);
 
-  // =========================================================
-  // TOGGLE TASK COMPLETION
-  // =========================================================
+    final res = await supabase
+        .from('mood_tracking')
+        .select('mood')
+        .eq('user_id', user.id)
+        .eq('mood_date', today)
+        .maybeSingle();
 
-
-  // =========================================================
-  // ADD NEW TASK
-  // =========================================================
-
-
-  //pedometer - tracking steps and sending to supabase
-  RxInt steps = 0.obs;
-
-  Future<void> uploadStepsToSupabase(int steps) async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
-
-    await Supabase.instance.client
-        .from("steps_data")
-        .insert({
-      "user_id": userId,
-      "steps": steps,
-    });
+    if (res != null) {
+      selectedMood.value = res['mood'];
+      moodSubmittedToday.value = true;
+      debugPrint("🙂 Mood loaded: ${res['mood']}");
+    } else {
+      moodSubmittedToday.value = false;
+      debugPrint("🙂 No mood for today yet");
+    }
   }
 
+  Future<void> submitMood(String mood) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
 
-  void initStepTracking() {
-    Pedometer.stepCountStream.listen((event) async {
-      steps.value = event.steps;
+    final today = DateTime.now().toIso8601String().substring(0, 10);
 
-      await uploadStepsToSupabase(event.steps);
-    });
+    selectedMood.value = mood;
+    moodSubmittedToday.value = true;
+
+    await supabase.from('mood_tracking').upsert(
+      {
+        'user_id': user.id,
+        'mood': mood,
+        'mood_date': today,
+      },
+      onConflict: 'user_id,mood_date',
+    );
+
+    debugPrint("🙂 Mood updated → $mood");
   }
 
+  // ─────────────────────────────────────────────
+  // DEVICE STATUS
+  // ─────────────────────────────────────────────
+  Future<void> syncDeviceStatus() async {
+    if (_lastDeviceSync != null &&
+        DateTime.now().difference(_lastDeviceSync!).inMinutes < 5) {
+      return;
+    }
+
+    _lastDeviceSync = DateTime.now();
+
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final level = await _battery.batteryLevel;
+    final chargingState = await _battery.batteryState;
+
+    batteryLevel.value = level;
+    isCharging.value = chargingState == BatteryState.charging;
+
+    await supabase.from('device_status').upsert(
+      {
+        'user_id': user.id,
+        'battery_level': level,
+        'charging': isCharging.value,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'user_id',
+    );
+
+    debugPrint("🔋 Battery: $level% | Charging: ${isCharging.value}");
+  }
+
+  Future<void> refreshDeviceConnectionStatus() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final res = await supabase
+        .from('device_status')
+        .select('updated_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+    if (res == null) {
+      isDeviceConnected.value = false;
+      debugPrint("📡 Device offline");
+      return;
+    }
+
+    final last = DateTime.parse(res['updated_at']).toLocal();
+    isDeviceConnected.value =
+        DateTime.now().difference(last).inMinutes <= 10;
+
+    debugPrint("📡 Device connected: ${isDeviceConnected.value}");
+  }
+
+  // ─────────────────────────────────────────────
+  // LOCATION SHARING (LOGGED)
+  // ─────────────────────────────────────────────
+  Future<void> startAutomaticLocationSharing() async {
+    if (_locationStarted) return;
+    _locationStarted = true;
+
+    debugPrint("📍 Starting location sharing");
+
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      locationStatusMessage.value = "Enable GPS";
+      debugPrint("❌ Location services disabled");
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      locationStatusMessage.value = "Permission denied";
+      debugPrint("❌ Location permission denied");
+      return;
+    }
+
+    debugPrint("✅ Location permission granted: $permission");
+    isSharingLocation.value = true;
+    locationStatusMessage.value = "Sharing location";
+
+    await _sendLocationOnce();
+
+    _locationTimer = Timer.periodic(
+      const Duration(minutes: 2),
+          (_) => _sendLocationOnce(),
+    );
+  }
+
+  Future<void> _sendLocationOnce() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    debugPrint(
+        "📍 Uploading location → lat: ${position.latitude}, lng: ${position.longitude}");
+
+    await supabase.from('user_locations').upsert(
+      {
+        'user_id': user.id,
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'user_id',
+    );
+
+    debugPrint("📍 Location upload successful");
+  }
+
+  // ─────────────────────────────────────────────
+  // STEPS
+  // ─────────────────────────────────────────────
+  Future<void> startStepTracking() async {
+    if (_stepsStarted) return;
+    _stepsStarted = true;
+
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final permission = await Permission.activityRecognition.request();
+    if (!permission.isGranted) {
+      debugPrint("❌ Step permission denied");
+      return;
+    }
+
+    _stepSub = Pedometer.stepCountStream.listen((event) {
+      _latestSteps = event.steps;
+    });
+
+    _stepsFlushTimer = Timer.periodic(
+      const Duration(minutes: 5),
+          (_) => _flushStepsToDB(),
+    );
+
+    debugPrint("🚶 Step tracking started");
+  }
+
+  Future<void> _flushStepsToDB() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final now = DateTime.now();
+    final dateKey =
+    DateTime(now.year, now.month, now.day).toIso8601String().substring(0, 10);
+
+    await supabase.from('steps_data').upsert(
+      {
+        'user_id': user.id,
+        'date': dateKey,
+        'steps': _latestSteps,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'user_id,date',
+    );
+
+    debugPrint("🚶 Steps synced: $_latestSteps");
+  }
+
+  // ─────────────────────────────────────────────
+  // SOS
+  // ─────────────────────────────────────────────
+  Future<void> sendSOS() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    await supabase.from('sos_alerts').insert({
+      'user_id': user.id,
+      'message': 'Emergency SOS triggered',
+    });
+
+    debugPrint("🚨 SOS sent");
+  }
 }

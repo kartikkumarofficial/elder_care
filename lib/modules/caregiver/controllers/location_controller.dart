@@ -1,5 +1,6 @@
 // modules/location/controllers/location_controller.dart
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -34,8 +35,8 @@ class LocationController extends GetxController {
     super.onInit();
     _startTimeAgoTimer();
     fetchAll();
-    // Poll for location every 10s — adjust as needed (or subscribe to realtime)
-    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => fetchLocation());
+    // Poll for location every 120s
+    _pollTimer = Timer.periodic(const Duration(seconds: 120), (_) => fetchLocation());
   }
 
   @override
@@ -83,17 +84,37 @@ class LocationController extends GetxController {
 
   Future<void> fetchLocation({bool isRefresh = false}) async {
     try {
+      print("📡 Fetching location for linkedUserId: $linkedUserId");
       final data = await _locationService.getLocationOfLinkedUser(linkedUserId);
       if (data != null && data['latitude'] != null && data['longitude'] != null) {
         final lat = (data['latitude'] as num).toDouble();
         final lng = (data['longitude'] as num).toDouble();
         receiverLocation.value = LatLng(lat, lng);
-
         if (data['updated_at'] != null) {
-          final parsed = DateTime.tryParse(data['updated_at']);
-          lastUpdatedAt.value = parsed ?? DateTime.now();
+          final raw = data['updated_at'] as String;
+
+          // 🪵 LOG 1: raw value from DB
+          debugPrint("🕒 RAW updated_at from DB: $raw");
+
+          // 🔒 Force UTC parsing (Supabase sends UTC but without Z)
+          final parsedUtc = DateTime.parse(raw + 'Z');
+
+          // 🪵 LOG 2: parsed as UTC
+          debugPrint("🕒 Parsed as UTC: $parsedUtc");
+
+          final localTime = parsedUtc.toLocal();
+
+          // 🪵 LOG 3: converted to local time
+          debugPrint("🕒 Converted to Local: $localTime");
+
+          // 🪵 LOG 4: current local time
+          debugPrint("🕒 Now (local): ${DateTime.now()}");
+
+          lastUpdatedAt.value = localTime;
           _updateTimeAgo();
         }
+
+
 
         // center map on update only if user hasn't panned the map (we keep it simple and center)
         if (gmapController != null) {

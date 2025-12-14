@@ -45,55 +45,43 @@ class LocationService {
   /* -------------------------------------------------------------------------- */
 
   /// Called on RECEIVER SIDE every X seconds or when using background tracking.
+  /// Update receiver location (receiver side)
   Future<void> updateLocationInSupabase() async {
     final user = _supabase.auth.currentUser;
-    if (user == null) {
-      print('[LocationService] Cannot update location, user not logged in.');
-      return;
-    }
+    if (user == null) return;
 
-    try {
-      print('[LocationService] Getting current location...');
-      final loc = await _location.getLocation();
-      print('[LocationService] Location fetched: lat=${loc.latitude}, lng=${loc.longitude}');
+    final loc = await _location.getLocation();
 
-      await _supabase.from('locations').upsert({
-        'user_id': user.id,
-        'latitude': loc.latitude,
-        'longitude': loc.longitude,
-        'updated_at': DateTime.now().toIso8601String(),
-      });
+    await _supabase.from('user_locations').upsert({
+      'user_id': user.id,
+      'latitude': loc.latitude,
+      'longitude': loc.longitude,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'user_id');
 
-      print('[LocationService] Location updated successfully in Supabase.');
-    } catch (e) {
-      print('[LocationService] Error updating location: $e');
-    }
+    print('[LocationService] Location updated: ${loc.latitude}, ${loc.longitude}');
   }
+
 
   /* -------------------------------------------------------------------------- */
   /*                       3) Fetch Receiver Location (Caregiver Side)          */
   /* -------------------------------------------------------------------------- */
 
   /// Fetches the MOST RECENT location of the linked user.
+  /// Fetch receiver location (caregiver side)
   Future<Map<String, dynamic>?> getLocationOfLinkedUser(String linkedUserId) async {
-    try {
-      print('[LocationService] Fetching latest location for $linkedUserId...');
+    print('[LocationService] Fetching latest location for $linkedUserId...');
 
-      final response = await _supabase
-          .from('locations')
-          .select()
-          .eq('user_id', linkedUserId)
-          .order('updated_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
+    final res = await _supabase
+        .from('user_locations') // ✅ FIXED
+        .select()
+        .eq('user_id', linkedUserId)
+        .maybeSingle();
 
-      print('[LocationService] Fetched location: $response');
-      return response;
-    } catch (e) {
-      print('[LocationService] Error fetching linked user location: $e');
-      return null;
-    }
+    print('[LocationService] Fetched location: $res');
+    return res;
   }
+
 
   /* -------------------------------------------------------------------------- */
   /*                      4) Fetch Saved Geofence from Supabase                 */
@@ -175,4 +163,26 @@ class LocationService {
       return false;
     }
   }
+  /* -------------------------------------------------------------------------- */
+  /*                     🔹 Simple Helper: Get Current Location                  */
+  /* -------------------------------------------------------------------------- */
+
+  /// Returns the current device location WITHOUT updating Supabase.
+  /// Used for SOS alert and other features that need raw coordinates.
+  Future<LocationData?> getCurrentLocation() async {
+    try {
+      // Ensure permission
+      final permissionGranted = await requestPermissions();
+      if (!permissionGranted) return null;
+
+      // Fetch location
+      final loc = await _location.getLocation();
+      print('[LocationService] Current location: ${loc.latitude}, ${loc.longitude}');
+      return loc;
+    } catch (e) {
+      print('[LocationService] Error getting location: $e');
+      return null;
+    }
+  }
+
 }
