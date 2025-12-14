@@ -340,50 +340,38 @@ class ReceiverDashboardController extends GetxController {
   // ─────────────────────────────────────────────
   Future<void> sendSOS() async {
     final user = supabase.auth.currentUser;
-    if (user == null) {
-      debugPrint("❌ SOS failed: user null");
-      return;
-    }
+    if (user == null) return;
 
     debugPrint("🚨 SEND SOS tapped by ${user.id}");
 
-    double? lat;
-    double? lng;
-
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      final permission = await Geolocator.checkPermission();
+      Position? position =
+          await Geolocator.getLastKnownPosition() ??
+              await Geolocator.getCurrentPosition(
+                desiredAccuracy: LocationAccuracy.high,
+                timeLimit: const Duration(seconds: 8),
+              );
 
-      if (serviceEnabled &&
-          (permission == LocationPermission.always ||
-              permission == LocationPermission.whileInUse)) {
-
-        final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
-          timeLimit: const Duration(seconds: 6),
+      if (position == null) {
+        Get.snackbar(
+          "Location unavailable",
+          "Unable to fetch location",
+          snackPosition: SnackPosition.BOTTOM,
         );
-
-        lat = position.latitude;
-        lng = position.longitude;
-
-        debugPrint("📍 SOS location fetched: $lat, $lng");
-      } else {
-        debugPrint("⚠️ SOS location skipped (permission/service)");
+        return;
       }
-    } catch (e) {
-      debugPrint("⚠️ SOS location error: $e");
-    }
 
-    try {
+      debugPrint("📍 SOS location fetched: ${position.latitude}, ${position.longitude}");
+
       final res = await supabase.from('sos_alerts').insert({
         'user_id': user.id,
-        'lat': lat,
-        'lng': lng,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'lat': position.latitude,
+        'lng': position.longitude,
         'message': 'Emergency SOS triggered',
+        'handled': false,
       });
 
-      debugPrint("✅ SOS INSERT RESPONSE: $res");
+      debugPrint("✅ SOS INSERT SUCCESS: $res");
 
       Get.snackbar(
         "SOS Sent",
@@ -395,14 +383,14 @@ class ReceiverDashboardController extends GetxController {
       );
     } catch (e) {
       debugPrint("❌ SOS INSERT FAILED: $e");
-
       Get.snackbar(
-        "SOS Failed",
-        "Unable to notify caregiver",
+        "Error",
+        "Failed to send SOS",
         snackPosition: SnackPosition.BOTTOM,
       );
     }
   }
+
 
 
 }
