@@ -11,9 +11,6 @@ import '../../dashboard/controllers/nav_controller.dart';
 
 const Color kTeal = Color(0xFF7AB7A7);
 
-
-
-
 class TaskSection extends StatelessWidget {
   final String? receiverIdOverride;
 
@@ -49,9 +46,7 @@ class TaskSection extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(20.0),
         child: Text(
-          receiverIdOverride != null
-              ? "No tasks available"
-              : "No receiver linked yet",
+          receiverIdOverride != null ? "No tasks available" : "No receiver linked yet",
           style: GoogleFonts.nunito(color: Colors.grey, fontSize: 16),
         ),
       );
@@ -235,7 +230,7 @@ class TaskSection extends StatelessWidget {
                             ),
                           ),
 
-                          /// ⋮ MORE ICON
+                          ///  MORE ICON
                           GestureDetector(
                             onTap: () => _openDetailsDialog(context, t),
                             child: Padding(
@@ -363,8 +358,8 @@ class TaskDetailsDialog extends StatelessWidget {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
-                  // immediate delete, no confirm
                   controller.deleteTaskConfirmed(task.id!);
+                  Get.back();
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                 child: Text('Delete', style: GoogleFonts.nunito(color: Colors.white)),
