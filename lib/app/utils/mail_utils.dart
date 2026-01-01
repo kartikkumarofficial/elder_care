@@ -1,5 +1,3 @@
-// lib/app/utils/mail_utils.dart
-
 import 'package:url_launcher/url_launcher.dart';
 import 'package:get/get.dart';
 
