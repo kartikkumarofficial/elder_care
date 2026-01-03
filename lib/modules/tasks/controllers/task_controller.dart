@@ -143,8 +143,7 @@ class TaskController extends GetxController {
           );
 
           await AlarmService.startForegroundService();
-          final pending =
-          await AlarmService.debugPendingNotifications();
+          final pending = await AlarmService.debugPendingNotifications();
           debugPrint('Pending alarms: ${pending.length}');
         }}catch(e){
           debugPrint('Alarm failed: $e');
