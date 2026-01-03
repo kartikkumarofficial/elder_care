@@ -9,7 +9,8 @@ import '../../modules/tasks/views/alarm_ring_screen.dart';
 import '../../modules/tasks/views/alarm_screen.dart';
 
 class AlarmService {
-  static final _plugin = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _plugin =
+  FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
     tz.initializeTimeZones();
@@ -22,36 +23,43 @@ class AlarmService {
       const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: (details) {
         if (details.payload != null) {
-          Get.to(() => AlarmRingScreen(title: details.payload!));
+          final parts = details.payload!.split('||');
+
+          final label = parts.isNotEmpty ? parts[0] : '';
+          final time = parts.length > 1 ? parts[1] : '';
+
+          Get.to(() => AlarmScreen(
+            label: label,
+            time: time,
+          ));
         }
       },
     );
 
-    //  CREATE FOREGROUND SERVICE CHANNEL
     final androidPlugin =
     _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidPlugin != null) {
+      // Foreground service channel
       await androidPlugin.createNotificationChannel(
         const AndroidNotificationChannel(
-          'foreground_service', // MUST match service channel
+          'foreground_service',
           'Background Monitoring',
-          description:
-          'Keeps ElderCare alarms running in the background',
-          importance: Importance.low, // ⚠️ MUST NOT be null
+          description: 'Keeps ElderCare alarms running',
+          importance: Importance.low,
         ),
       );
-    }
-    if (androidPlugin != null) {
+
+      // Alarm channel
       await androidPlugin.createNotificationChannel(
         AndroidNotificationChannel(
-          'task_alarm_v2',
+          'task_alarm_v3',
           'Task Alarms',
           description: 'Alarm notifications for tasks',
           importance: Importance.max,
           playSound: true,
-          sound: const RawResourceAndroidNotificationSound('soothing_alarm'),
+          sound: const RawResourceAndroidNotificationSound('alarm'),
           enableVibration: true,
           vibrationPattern: Int64List.fromList([0, 500, 500, 500, 500]),
         ),
@@ -65,14 +73,6 @@ class AlarmService {
     await androidPlugin?.requestExactAlarmsPermission();
   }
 
-
-  //  DEBUG (temporary)
-  static Future<List<PendingNotificationRequest>>
-  debugPendingNotifications() async {
-    return _plugin.pendingNotificationRequests();
-  }
-
-  //  START foreground service
   static Future<void> startForegroundService() async {
     final androidPlugin =
     _plugin.resolvePlatformSpecificImplementation<
@@ -80,29 +80,20 @@ class AlarmService {
 
     if (androidPlugin == null) return;
 
-    const notificationDetails = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'foreground_service', // MUST exist
+    await androidPlugin.startForegroundService(
+      9999,
+      'ElderCare active',
+      'Monitoring scheduled tasks',
+      notificationDetails: const AndroidNotificationDetails(
+        'foreground_service',
         'Background Monitoring',
-        channelDescription:
-        'Keeps ElderCare alarms running in background',
         importance: Importance.low,
         priority: Priority.low,
         ongoing: true,
       ),
     );
-
-    await androidPlugin.startForegroundService(
-      9999,
-      'ElderCare active',
-      'Monitoring scheduled tasks',
-      notificationDetails: notificationDetails.android
-    );
   }
 
-
-
-  //  STOP foreground service
   static Future<void> stopForegroundService() async {
     await _plugin
         .resolvePlatformSpecificImplementation<
@@ -110,43 +101,46 @@ class AlarmService {
         ?.stopForegroundService();
   }
 
-  //  Schedule alarm
   static Future<void> schedule({
     required int id,
     required String title,
     required DateTime dateTime,
     required bool vibrate,
   }) async {
+    final formattedTime =
+        '${dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12}'
+        ':${dateTime.minute.toString().padLeft(2, '0')} '
+        '${dateTime.hour >= 12 ? 'PM' : 'AM'}';
+
+    final payload = '$title||$formattedTime';
+
     await _plugin.zonedSchedule(
       id,
       'Task Reminder',
       title,
       tz.TZDateTime.from(dateTime, tz.local),
-      payload: title,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          'task_alarm_v2',
+          'task_alarm_v3',
           'Task Alarms',
           importance: Importance.max,
           priority: Priority.high,
           category: AndroidNotificationCategory.alarm,
           playSound: true,
           audioAttributesUsage: AudioAttributesUsage.alarm,
-          sound: const RawResourceAndroidNotificationSound('soothing_alarm'),
+          sound: const RawResourceAndroidNotificationSound('alarm'),
+          visibility: NotificationVisibility.public,
+          fullScreenIntent: true,
           enableVibration: vibrate,
           vibrationPattern: vibrate
               ? Int64List.fromList([0, 500, 500, 500, 500])
               : null,
-          visibility: NotificationVisibility.public,
-          fullScreenIntent: true,
         ),
       ),
+      payload: payload,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
-
-
-
 
   static Future<void> scheduleWithRepeat({
     required int baseId,
@@ -156,7 +150,6 @@ class AlarmService {
     required String repeatType,
     required List<String> repeatDays,
   }) async {
-    // always schedule first alarm
     await schedule(
       id: baseId,
       title: title,
@@ -216,7 +209,10 @@ class AlarmService {
     }
   }
 
-
+  static Future<List<PendingNotificationRequest>>
+  debugPendingNotifications() async {
+    return _plugin.pendingNotificationRequests();
+  }
 
   static Future<void> cancel(int id) async {
     await _plugin.cancel(id);
