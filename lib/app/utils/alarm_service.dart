@@ -122,6 +122,7 @@ class AlarmService {
       'Task Reminder',
       title,
       tz.TZDateTime.from(dateTime, tz.local),
+      payload: title,
       NotificationDetails(
         android: AndroidNotificationDetails(
           'task_alarm_v2',
@@ -130,6 +131,7 @@ class AlarmService {
           priority: Priority.high,
           category: AndroidNotificationCategory.alarm,
           playSound: true,
+          audioAttributesUsage: AudioAttributesUsage.alarm,
           sound: const RawResourceAndroidNotificationSound('soothing_alarm'),
           enableVibration: vibrate,
           vibrationPattern: vibrate
