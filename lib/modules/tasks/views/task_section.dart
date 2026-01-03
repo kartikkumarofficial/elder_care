@@ -8,6 +8,8 @@ import 'package:day_night_time_picker/day_night_time_picker.dart';
 import '../controllers/task_controller.dart';
 import '../../../core/models/task_model.dart';
 import '../../dashboard/controllers/nav_controller.dart';
+import '../widgets/day_chips.dart';
+import '../widgets/repeat_card.dart';
 
 const Color kTeal = Color(0xFF7AB7A7);
 
@@ -224,6 +226,18 @@ class TaskSection extends StatelessWidget {
                                         color: Colors.black54, // black as requested
                                       ),
                                     ],
+                                    if (t.vibrate) ...[
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.vibration, size: 16,
+                                        color: Colors.grey,),
+                                    ],
+                                    if (t.repeatType != 'none') ...[
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.repeat, size: 16,
+                                        color: Colors.grey,),
+                                    ],
+
+
                                   ],
                                 ),
                               ],
@@ -605,63 +619,64 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                 )),
               if (widget.controller.showAlarmCheckbox())
                 Obx(() => GestureDetector(
-                  onTap: () => setState(() {
-                    _showRepeatOptions = !_showRepeatOptions;
-                  }),
-                  child: Container(
+                  onTap: () => setState(() => _showRepeatOptions = !_showRepeatOptions),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
                     margin: const EdgeInsets.only(top: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: _showRepeatOptions ? kTeal.withOpacity(0.4) : Colors.transparent,
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       children: [
                         Icon(Icons.repeat, color: kTeal),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _repeatLabel(widget.controller),
-                            style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+                            style: GoogleFonts.nunito(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14.5,
+                            ),
                           ),
                         ),
-                        Icon(Icons.keyboard_arrow_down),
+                        AnimatedRotation(
+                          turns: _showRepeatOptions ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 220),
+                          child: const Icon(Icons.keyboard_arrow_down),
+                        ),
                       ],
                     ),
                   ),
                 )),
+
               if (_showRepeatOptions)
-                Column(children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, -0.05),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: !_showRepeatOptions
+                      ? const SizedBox.shrink()
+                      : _RepeatOptions(controller: widget.controller),
+                ),
 
-                  _repeatTile('Tomorrow', () {
-                    widget.controller.repeatType.value = 'tomorrow';
-                    widget.controller.repeatDays.clear();
-                  }),
 
-                  _repeatTile('Daily', () {
-                    widget.controller.repeatType.value = 'daily';
-                    widget.controller.repeatDays.clear();
-                  }),
-
-                  _repeatTile('Custom', () {
-                    widget.controller.repeatType.value = 'custom';
-                  }),
-
-                  if (widget.controller.repeatType.value == 'custom')
-                    Wrap(
-                      spacing: 8,
-                      children: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-                          .map((d) => ChoiceChip(
-                        label: Text(d),
-                        selected: widget.controller.repeatDays.contains(d),
-                        onSelected: (v) {
-                          v
-                              ? widget.controller.repeatDays.add(d)
-                              : widget.controller.repeatDays.remove(d);
-                        },
-                      )).toList(),
-                    ),
-                ]),
 
 
 
@@ -750,4 +765,49 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
   }
 
 
+}
+class _RepeatOptions extends StatelessWidget {
+  final TaskController controller;
+  const _RepeatOptions({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey('repeat-options'),
+      children: [
+        const SizedBox(height: 8),
+
+        RepeatCard(
+          label: 'Tomorrow',
+          selected: controller.repeatType.value == 'tomorrow',
+          onTap: () {
+            controller.repeatType.value = 'tomorrow';
+            controller.repeatDays.clear();
+          },
+        ),
+
+        RepeatCard(
+          label: 'Daily',
+          selected: controller.repeatType.value == 'daily',
+          onTap: () {
+            controller.repeatType.value = 'daily';
+            controller.repeatDays.clear();
+          },
+        ),
+
+        RepeatCard(
+          label: 'Custom',
+          selected: controller.repeatType.value == 'custom',
+          onTap: () {
+            controller.repeatType.value = 'custom';
+          },
+        ),
+
+        if (controller.repeatType.value == 'custom') ...[
+          const SizedBox(height: 10),
+          CustomDayChips(controller: controller),
+        ],
+      ],
+    );
+  }
 }

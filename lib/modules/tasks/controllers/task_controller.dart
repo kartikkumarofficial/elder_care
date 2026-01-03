@@ -67,8 +67,8 @@ class TaskController extends GetxController {
     }
 
     withDate.sort((a, b) {
-      final da = DateTime.tryParse(a.datetime!);
-      final db = DateTime.tryParse(b.datetime!);
+      final da = DateTime.tryParse(a.datetime!)?.toLocal();
+      final db = DateTime.tryParse(b.datetime!)?.toLocal();
       if (da == null && db == null) return 0;
       if (da == null) return 1;
       if (db == null) return -1;
@@ -110,7 +110,8 @@ class TaskController extends GetxController {
     final model = TaskModel(
       receiverId: currentReceiverId!,
       title: titleController.text.trim(),
-      datetime: dt?.toIso8601String(),
+      datetime: dt?.toUtc().toIso8601String(),
+
       alarmEnabled: alarmEnabled.value,
       repeatType: repeatType.value,
       repeatDays: repeatDays,
@@ -132,12 +133,15 @@ class TaskController extends GetxController {
         tasks.assignAll(_sortTasks(tasks));
 
         try{if (alarmEnabled.value && dt != null) {
-          await AlarmService.schedule(
-            id: created.id!,
+          await AlarmService.scheduleWithRepeat(
+            baseId: created.id!,
             title: created.title,
             dateTime: dt,
             vibrate: vibrate.value,
+            repeatType: repeatType.value,
+            repeatDays: repeatDays.toList(),
           );
+
           await AlarmService.startForegroundService();
           final pending =
           await AlarmService.debugPendingNotifications();
@@ -168,7 +172,7 @@ class TaskController extends GetxController {
     // parse datetime into pieces
     if (t.datetime != null) {
       try {
-        final dt = DateTime.parse(t.datetime!);
+        final dt = DateTime.parse(t.datetime!).toLocal();
         pickedDate = DateTime(dt.year, dt.month, dt.day);
         pickedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
         dateController.text = dt.toIso8601String();
@@ -200,7 +204,8 @@ class TaskController extends GetxController {
       id: editingId,
       receiverId: currentReceiverId!,
       title: titleController.text.trim(),
-      datetime: dt?.toIso8601String(),
+      datetime: dt?.toUtc().toIso8601String(),
+
       alarmEnabled: alarmEnabled.value,
       repeatType: repeatType.value,
       repeatDays: repeatDays,
@@ -226,12 +231,15 @@ class TaskController extends GetxController {
         await AlarmService.cancel(updated.id!);
 
         if (alarmEnabled.value && dt != null) {
-          await AlarmService.schedule(
-            id: updated.id!,
+          await AlarmService.scheduleWithRepeat(
+            baseId: updated.id!,
             title: updated.title,
             dateTime: dt,
-            vibrate: vibrate.value
+            vibrate: vibrate.value,
+            repeatType: repeatType.value,
+            repeatDays: repeatDays.toList(),
           );
+
         }
 
         await AlarmService.startForegroundService();
