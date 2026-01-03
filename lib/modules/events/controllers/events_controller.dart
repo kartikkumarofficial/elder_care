@@ -111,9 +111,14 @@ class EventsController extends GetxController {
   }
 
   DateTime? _combinedDateTime() {
-    if (pickedDate == null || pickedTime == null) return null;
-    return DateTime(pickedDate!.year, pickedDate!.month, pickedDate!.day, pickedTime!.hour, pickedTime!.minute);
+    if (pickedDate == null && pickedTime == null) return null;
+
+    final d = pickedDate ?? DateTime.now();
+    final t = pickedTime ?? const TimeOfDay(hour: 9, minute: 0);
+
+    return DateTime(d.year, d.month, d.day, t.hour, t.minute);
   }
+
 
   bool _isFutureSelected() {
     final combined = _combinedDateTime();

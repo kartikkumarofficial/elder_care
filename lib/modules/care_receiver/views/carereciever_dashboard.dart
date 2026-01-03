@@ -95,6 +95,7 @@ class ReceiverDashboardScreen extends StatelessWidget {
     return Padding(
       padding:  EdgeInsets.symmetric(horizontal: w*0.05),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment:CrossAxisAlignment.start,
         children: [
           Row(
