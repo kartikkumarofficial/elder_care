@@ -8,6 +8,9 @@
     final String? datetime; // ISO string, optional
     final bool alarmEnabled;
     final String? createdAt; // ISO string
+    final String repeatType;        // NEW
+    final List<String> repeatDays;  // NEW
+    final bool vibrate;
 
     TaskModel({
       this.id,
@@ -16,6 +19,9 @@
       this.datetime,
       this.alarmEnabled = false,
       this.createdAt,
+      this.repeatType = 'none',
+      this.repeatDays = const [],
+      this.vibrate = false,
     });
 
     Map<String, dynamic> toMap() {
@@ -26,6 +32,10 @@
         'datetime': datetime,
         'alarm_enabled': alarmEnabled,
         'created_at': createdAt,
+        'repeat_type': repeatType,
+        'repeat_days': repeatDays,
+        'vibrate': vibrate,
+
       };
     }
     Map<String, dynamic> toUpdateMap() {
@@ -34,6 +44,10 @@
         'title': title,
         'datetime': datetime,
         'alarm_enabled': alarmEnabled,
+        'repeat_type': repeatType,
+        'repeat_days': repeatDays,
+        'vibrate': vibrate,
+
       };
     }
 
@@ -50,6 +64,9 @@
             ? m['alarm_enabled'] as bool
             : (m['alarm_enabled'].toString().toLowerCase() == 'true')),
         createdAt: m['created_at'] == null ? null : m['created_at'].toString(),
+        repeatType: m['repeat_type'] ?? 'none',
+        repeatDays: List<String>.from(m['repeat_days'] ?? []),
+        vibrate: m['vibrate'] ?? false,
       );
     }
   }

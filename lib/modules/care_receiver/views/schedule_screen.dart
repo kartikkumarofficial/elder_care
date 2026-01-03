@@ -27,28 +27,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      return Column(
-        children: [
-          scheduleHeader(
-            completed: controller.completedCount,
-            total: controller.totalCount,
-          ),
+    return Scaffold(
+      body: Obx(() {
+        return Column(
+          children: [
+            scheduleHeader(
+              completed: controller.completedCount,
+              total: controller.totalCount,
+            ),
+      
+            const SizedBox(height: 16),
+            dateSelector(controller),
+      
+            const SizedBox(height: 12),
+            Expanded(child: _scheduleBody()),
+          ],
+        );
+      }),
+    );}
 
-          const SizedBox(height: 16),
-          dateSelector(controller),
 
-          const SizedBox(height: 12),
-          Expanded(child: _scheduleBody()),
-        ],
-      );
-    });}
-
-
-
-    // ─────────────────────────────────────────────
-    // BODY
-    // ─────────────────────────────────────────────
 
     Widget _scheduleBody() {
       return Obx(() {
@@ -79,9 +77,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       });
     }
 
-    // ─────────────────────────────────────────────
-    // TIMELINE TILE
-    // ─────────────────────────────────────────────
 
     Widget _timelineTile(TimelineItem item, bool isPast) {
       final bg = item.type == TimelineType.event
@@ -141,57 +136,126 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       );
     }
 
-    // ─────────────────────────────────────────────
-    // ACTIONS
-    // ─────────────────────────────────────────────
 
-    void _openActions(TimelineItem item) {
-      Get.dialog(
-        Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+  void _openActions(TimelineItem item) {
+    Get.dialog(
+      Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: const LinearGradient(
+              colors: [Color(0xFFEAF4F2), Colors.white],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              /// Title
               Text(
                 item.type == TimelineType.task ? 'Task' : 'Event',
                 style: GoogleFonts.nunito(
                   fontSize: 20,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black87,
                 ),
               ),
+
               const SizedBox(height: 16),
 
+              /// Divider
+              Container(
+                height: 1,
+                color: Colors.black.withOpacity(0.06),
+              ),
+
+              const SizedBox(height: 18),
+
+              /// MARK COMPLETED (only for task)
               if (item.type == TimelineType.task)
-                ElevatedButton(
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await controller.deleteItem(item);
+                      await SoundUtils.playDone();
+                      Get.back();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kTeal,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Mark Completed',
+                      style: GoogleFonts.nunito(
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+
+              if (item.type == TimelineType.task) const SizedBox(height: 10),
+
+              /// DELETE
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
                   onPressed: () async {
                     await controller.deleteItem(item);
-                    await SoundUtils.playDone();
                     Get.back();
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: kTeal),
-                  child: const Text('Mark Completed'),
-                ),
-
-              const SizedBox(height: 8),
-
-              TextButton(
-                onPressed: () async {
-                  await controller.deleteItem(item);
-                  Get.back();
-                },
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    side: BorderSide(color: Colors.red.withOpacity(0.6)),
+                  ),
+                  child: Text(
+                    'Delete',
+                    style: GoogleFonts.nunito(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.redAccent,
+                    ),
+                  ),
                 ),
               ),
-            ]),
+
+              const SizedBox(height: 6),
+
+              /// CANCEL
+              TextButton(
+                onPressed: () => Get.back(),
+                child: Text(
+                  'Cancel',
+                  style: GoogleFonts.nunito(
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      );
-    }
+      ),
+    );
   }
+
+
+
+
+}
 
 
 

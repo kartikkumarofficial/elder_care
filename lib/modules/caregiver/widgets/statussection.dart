@@ -19,24 +19,26 @@ Widget StatusSection() {
       child: Row(
         children: [
           // ================= LEFT : MOOD =================
-          Expanded(
-            child: Row(
-              children: [
-                Text(
-                  _emojiOnlyForMood(mood, hasMood),
-                  style: const TextStyle(fontSize: 20),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _labelForMood(mood, hasMood),
-                  style: GoogleFonts.manrope(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+          Flexible(
+            child: FittedBox(
+              child: Row(
+                children: [
+                  Text(
+                    _emojiOnlyForMood(mood, hasMood),
+                    style: const TextStyle(fontSize: 20),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    _labelForMood(mood, hasMood),
+                    style: GoogleFonts.manrope(
+                      fontSize: Get.width*0.04,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                    overflow: TextOverflow.fade,
+                  ),
+                ],
+              ),
             ),
           ),
 

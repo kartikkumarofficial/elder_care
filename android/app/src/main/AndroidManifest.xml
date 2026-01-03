@@ -2,32 +2,58 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.elder_care">
 
-    <!-- Permissions -->
+    <!-- ===================== -->
+    <!-- Required Permissions -->
+    <!-- ===================== -->
+
+    <!-- Location -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Foreground service (REQUIRED for background alarms) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Notifications (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
+
+    <!-- Exact alarms (Android 14+) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- Reboot reschedule -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Camera -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Legacy storage (kept as-is) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+<!--    alarm-->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 
 
+    <!-- ===================== -->
+    <!-- Application -->
+    <!-- ===================== -->
 
     <application
         android:name="${applicationName}"
         android:label="elder_care"
         android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true"><!-- may comment out later just wrote this to get rid of the warning-->
+        android:enableOnBackInvokedCallback="true">
 
-
-<!--    Google Maps Api-->
+        <!-- Google Maps API -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_api_key"/>
+            android:value="@string/google_maps_api_key" />
 
+        <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -38,45 +64,60 @@
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
 
-            <!-- Flutter Theme -->
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
 
-            <!-- Launcher -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- 🔥 Single OAuth + Reset Callback Handler -->
+            <!-- Supabase OAuth / Reset -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
-
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <!-- Supabase OAuth: Google/Facebook/Apple -->
-                <data
-                    android:scheme="io.supabase.flutter"
-                    android:host="login-callback" />
-
-                <!-- Supabase Password Reset -->
-                <data
-                    android:scheme="io.supabase.flutter"
-                    android:host="reset-callback" />
+                <data android:scheme="io.supabase.flutter" android:host="login-callback" />
+                <data android:scheme="io.supabase.flutter" android:host="reset-callback" />
             </intent-filter>
-
         </activity>
 
-        <!-- Flutter Embedding -->
+        <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- ===================== -->
+        <!-- flutter_local_notifications -->
+        <!-- ===================== -->
+
+        <!-- Alarm trigger -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false" />
+
+        <!-- Reboot reschedule -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 🔥 Foreground Service -->
+        <service
+            android:name="com.dexterous.flutterlocalnotifications.ForegroundService"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="health|dataSync" />
+
     </application>
 
-    <!-- Flutter ProcessText plugin -->
+    <!-- Process text -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT" />

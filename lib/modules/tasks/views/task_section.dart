@@ -262,11 +262,17 @@ class TaskSection extends StatelessWidget {
   String _friendlyDate(String iso) {
     try {
       final d = DateTime.parse(iso).toLocal();
-      return '${d.day}/${d.month}/${d.year} • ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+      final hour12 = d.hour % 12 == 0 ? 12 : d.hour % 12;
+      final minute = d.minute.toString().padLeft(2, '0');
+      final period = d.hour >= 12 ? 'PM' : 'AM';
+
+      return '${d.day}/${d.month}/${d.year} • $hour12:$minute $period';
     } catch (_) {
       return iso;
     }
   }
+
 
   void _openAddDialog(BuildContext ctx, {required bool isEdit}) {
     showDialog(
@@ -400,6 +406,7 @@ class _EditDeleteDialog extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               controller.deleteTaskConfirmed(task.id!);
+              Get.back();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: Text('Delete', style: GoogleFonts.nunito(color: Colors.white)),
@@ -424,6 +431,7 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
   final _form = GlobalKey<FormState>();
   final DateTime start = DateTime.now();
   bool loading = false;
+  bool _showRepeatOptions = false;
 
   // small fixed timeline height to avoid overflow
   static const double _timelineHeight = 92;
@@ -561,14 +569,105 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
 
               // Alarm checkbox — visible only when both date & time selected
               if (widget.controller.showAlarmCheckbox())
-                Row(children: [
-                  Obx(() => Checkbox(
-                    value: widget.controller.alarmEnabled.value,
-                    onChanged: (v) => widget.controller.alarmEnabled.value = v ?? false,
-                  )),
-                  SizedBox(width: 8),
-                  Text('Set alarm', style: GoogleFonts.nunito()),
+                Obx(() => Container(
+                  // margin: const EdgeInsets.only(top: 6),
+                  // padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    // color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      Checkbox(
+                        value: widget.controller.alarmEnabled.value,
+                        activeColor: kTeal,
+                        onChanged: (v) =>
+                        widget.controller.alarmEnabled.value = v ?? false,
+                      ),
+                      Text(
+                        'Set alarm',
+                        style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                )),
+              if (widget.controller.showAlarmCheckbox())
+                Obx(() => Row(
+                  children: [
+                    Checkbox(
+                      value: widget.controller.vibrate.value,
+                      activeColor: kTeal,
+                      onChanged: (v) =>
+                      widget.controller.vibrate.value = v ?? false,
+                    ),
+                    Text('Vibrate', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+                  ],
+                )),
+              if (widget.controller.showAlarmCheckbox())
+                Obx(() => GestureDetector(
+                  onTap: () => setState(() {
+                    _showRepeatOptions = !_showRepeatOptions;
+                  }),
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.repeat, color: kTeal),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _repeatLabel(widget.controller),
+                            style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Icon(Icons.keyboard_arrow_down),
+                      ],
+                    ),
+                  ),
+                )),
+              if (_showRepeatOptions)
+                Column(children: [
+
+                  _repeatTile('Tomorrow', () {
+                    widget.controller.repeatType.value = 'tomorrow';
+                    widget.controller.repeatDays.clear();
+                  }),
+
+                  _repeatTile('Daily', () {
+                    widget.controller.repeatType.value = 'daily';
+                    widget.controller.repeatDays.clear();
+                  }),
+
+                  _repeatTile('Custom', () {
+                    widget.controller.repeatType.value = 'custom';
+                  }),
+
+                  if (widget.controller.repeatType.value == 'custom')
+                    Wrap(
+                      spacing: 8,
+                      children: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+                          .map((d) => ChoiceChip(
+                        label: Text(d),
+                        selected: widget.controller.repeatDays.contains(d),
+                        onSelected: (v) {
+                          v
+                              ? widget.controller.repeatDays.add(d)
+                              : widget.controller.repeatDays.remove(d);
+                        },
+                      )).toList(),
+                    ),
                 ]),
+
+
+
+
+
+
 
               SizedBox(height: 12),
 
@@ -634,4 +733,21 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(w * 0.05), borderSide: BorderSide(color: kTeal, width: 1.3)),
     );
   }
+  String _repeatLabel(TaskController c) {
+    switch (c.repeatType.value) {
+      case 'daily': return 'Repeat: Daily';
+      case 'tomorrow': return 'Repeat: Tomorrow';
+      case 'custom': return 'Repeat: ${c.repeatDays.join(', ')}';
+      default: return 'Repeat: Never';
+    }
+  }
+  Widget _repeatTile(String text, VoidCallback onTap) {
+    return ListTile(
+      dense: true,
+      title: Text(text, style: GoogleFonts.nunito()),
+      onTap: onTap,
+    );
+  }
+
+
 }
