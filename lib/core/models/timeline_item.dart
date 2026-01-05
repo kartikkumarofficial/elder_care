@@ -2,18 +2,11 @@ enum TimelineType { task, event }
 
 class TimelineItem {
   final TimelineType type;
-
-  // common
   final int id;
   final String title;
   final DateTime time;
-
-  // task-only
   final bool alarmEnabled;
-
-  // event-only
-  final String? category;
-  final String? notes;
+  final bool isCompleted;
 
   TimelineItem({
     required this.type,
@@ -21,7 +14,17 @@ class TimelineItem {
     required this.title,
     required this.time,
     this.alarmEnabled = false,
-    this.category,
-    this.notes,
+    this.isCompleted = false,
   });
+
+  TimelineItem copyWith({bool? isCompleted}) {
+    return TimelineItem(
+      type: type,
+      id: id,
+      title: title,
+      time: time,
+      alarmEnabled: alarmEnabled,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
+  }
 }

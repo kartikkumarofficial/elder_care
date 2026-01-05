@@ -5,6 +5,7 @@ import '../../modules/care_receiver/controllers/schedule_controller.dart';
 import '../../modules/dashboard/controllers/dashboard_controller.dart';
 import '../../modules/caregiver/controllers/caregiver_dashboard_controller.dart';
 import '../../modules/dashboard/controllers/nav_controller.dart';
+import '../../modules/tasks/controllers/task_controller.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -15,6 +16,7 @@ class InitialBinding extends Bindings {
     Get.put(() => CaregiverDashboardController(),permanent: true);
     Get.lazyPut(() => DashboardController());
     Get.lazyPut<ScheduleController>(() => ScheduleController(), fenix: true);
+    Get.put(TaskController(), permanent: true);
 
 
   }
