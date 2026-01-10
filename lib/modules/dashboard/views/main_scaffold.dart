@@ -6,9 +6,7 @@ import 'package:elder_care/modules/chat/views/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../auth/controllers/auth_controller.dart';
-
 import '../../care_receiver/controllers/carereceiver_dashboard_controller.dart';
 import '../../care_receiver/controllers/schedule_controller.dart';
 import '../../caregiver/views/caregiver_dashboard.dart';
@@ -47,7 +45,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     user.role == "caregiver"
         ? [
       CaregiverDashboard(),
-      // ChatPlaceholderScreen(),
+      ChatPlaceholderScreen(),
       // ChatScreen(),
       LocationScreen(
         linkedUserId: (navController.linkedReceiverId.value.isNotEmpty)
