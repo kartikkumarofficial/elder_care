@@ -70,7 +70,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       extendBody: true,
       // backgroundColor: const Color(0xFF121212),
 
-      /// ✅ ONLY THIS depends on Rx selectedIndex
+
       body: Obx(() {
         return screens[navController.selectedIndex.value];
       }),
@@ -137,6 +137,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         if (index == 0) {
           return SOSFab(Get.put(ReceiverDashboardController()));
         }
+
 
         // 📅 Schedule → Add Task only
         if (index == 2) {
