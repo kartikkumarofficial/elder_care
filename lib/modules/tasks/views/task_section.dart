@@ -711,7 +711,7 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                     await widget.controller.addTask();
                   }
                   setState(() => loading = false);
-                  Navigator.pop(context);
+                  Navigator.pop(context,true);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kTeal,
