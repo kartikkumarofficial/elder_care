@@ -9,8 +9,10 @@ import '../../caregiver/widgets/statussection.dart';
 import '../../events/views/eventssection.dart';
 import '../../tasks/views/task_section.dart';
 import '../controllers/carereceiver_dashboard_controller.dart';
+import '../widgets/context_strip.dart';
 import '../widgets/mood_dialog.dart';
 import '../widgets/mood_section.dart';
+import '../widgets/reciever_status_chip.dart';
 import '../widgets/sos_button.dart';
 
 class ReceiverDashboardScreen extends StatefulWidget {
@@ -91,18 +93,42 @@ class _ReceiverDashboardScreenState extends State<ReceiverDashboardScreen> {
                 SizedBox(height: h * 0.01),
                 ReceiverHeaderSection(w,h),
 
-                // SizedBox(height: h * 0.03),
 
-                /// MOOD
-                // moodSection(w, h),
-
-                // SizedBox(height: h * 0.03),
+                SizedBox(height: h * 0.001),
 
                 /// DEVICE STATUS
-                BatterySection(),
+                ReceiverStatusChips(),
 
 
-                SizedBox(height: h * 0.03),
+                SizedBox(height: h * 0.01),
+
+                // sample data rn
+                ContextStrip(
+                  items: [
+                    ContextStripItem(
+                      icon: Icons.event,
+                      title: "Upcoming",
+                      subtitle: "Doctor appointment at 6:00 PM",
+                      color: Colors.teal,
+                      onTap: () {
+                        // Navigate to events
+                      },
+                    ),
+                    ContextStripItem(
+                      icon: Icons.medication,
+                      title: "Reminder",
+                      subtitle: "You haven’t taken your morning medicines",
+                      color: Colors.orange,
+                    ),
+                    ContextStripItem(
+                      icon: Icons.check_circle,
+                      title: "All set",
+                      subtitle: "You’re doing great today 😊",
+                      color: Colors.green,
+                    ),
+                  ],
+                ),
+
 
                 /// EVENTS
                 EventSectionModern(),
