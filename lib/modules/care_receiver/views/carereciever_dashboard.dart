@@ -9,16 +9,52 @@ import '../../caregiver/widgets/statussection.dart';
 import '../../events/views/eventssection.dart';
 import '../../tasks/views/task_section.dart';
 import '../controllers/carereceiver_dashboard_controller.dart';
+import '../widgets/mood_dialog.dart';
 import '../widgets/mood_section.dart';
 import '../widgets/sos_button.dart';
 
-class ReceiverDashboardScreen extends StatelessWidget {
-  final ReceiverDashboardController controller = Get.put(ReceiverDashboardController(),permanent: true);
+class ReceiverDashboardScreen extends StatefulWidget {
+
   ReceiverDashboardScreen({Key? key}) : super(key: key);
 
+  @override
+  State<ReceiverDashboardScreen> createState() => _ReceiverDashboardScreenState();
+}
+
+class _ReceiverDashboardScreenState extends State<ReceiverDashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    ever(controller.shouldShowMoodDialog, (bool show) {
+      if (show && !_dialogShown && mounted) {
+        _dialogShown = true;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          MoodDialog.show(context);
+        });
+      }
+    });
+  }
+
+
+  final ReceiverDashboardController controller = Get.put(ReceiverDashboardController(),permanent: true);
+  bool _dialogShown = false;
 
   @override
   Widget build(BuildContext context) {
+
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (!controller.isLoading.value &&
+    //       controller.shouldShowMoodDialog.value &&
+    //       !_dialogShown) {
+    //     _dialogShown = true;
+    //     showMoodDialog(context);
+    //   }
+    // });
+
+
+
     final h = Get.height;
     final w = Get.width;
 
@@ -55,12 +91,12 @@ class ReceiverDashboardScreen extends StatelessWidget {
                 SizedBox(height: h * 0.01),
                 ReceiverHeaderSection(w,h),
 
-                SizedBox(height: h * 0.03),
+                // SizedBox(height: h * 0.03),
 
                 /// MOOD
-                moodSection(w, h),
+                // moodSection(w, h),
 
-                SizedBox(height: h * 0.03),
+                // SizedBox(height: h * 0.03),
 
                 /// DEVICE STATUS
                 BatterySection(),
@@ -89,7 +125,6 @@ class ReceiverDashboardScreen extends StatelessWidget {
       ),
     );
   }
-
 
   Widget ReceiverHeaderSection(double w , double h){
     return Padding(
@@ -126,18 +161,4 @@ class ReceiverDashboardScreen extends StatelessWidget {
       ),
     );
   }
-
-
-
-  //header
-
-
-  // MOOD SECTION
-
-
-
-  // ─────────────────────────────────────────────
-  // SOS BUTTON
-  // ─────────────────────────────────────────────
-
 }

@@ -1,0 +1,156 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
+
+import '../controllers/carereceiver_dashboard_controller.dart';
+
+class MoodDialog {
+  static void show(BuildContext context) {
+    final controller = Get.find<ReceiverDashboardController>();
+    final w = Get.width;
+    final h = Get.height;
+
+    final moods = {
+      'very_sad': '😣',
+      'sad': '😔',
+      'neutral': '😐',
+      'happy': '😃',
+      'very_happy': '😄',
+    };
+
+    Get.dialog(
+      Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: w * 0.8,
+            padding: EdgeInsets.symmetric(
+              horizontal: w * 0.055,
+              vertical: h * 0.028,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              color: const Color(0xFFF9FCFB),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.14),
+                  blurRadius: 26,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                /// LOTTIE SPACE (KEPT)
+                ClipRect(
+                  child: SizedBox(
+                    height: h*0.12,
+                    width: w*0.7,
+                    child: Transform.scale(
+                      scale: 1.7,
+                      child: Lottie.asset(
+                        'assets/lottie/wellbeing.json',
+                        repeat: true,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // SizedBox(height: h * 0.01),
+
+                /// FRIENDLY MED BADGE
+          
+
+                // SizedBox(height: h * 0.012),
+
+                /// TITLE (FRIENDLIER)
+                Text(
+                  "Just checking in with you",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.nunito(
+                    fontSize: w * 0.048,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF2F5D58),
+                  ),
+                ),
+
+                SizedBox(height: h * 0.006),
+
+                /// SUBTITLE (HUMAN)
+                Text(
+                  "How are you feeling right now?",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.nunito(
+                    fontSize: w * 0.034,
+                    color: Colors.black54,
+                  ),
+                ),
+
+                SizedBox(height: h * 0.028),
+
+                /// MOOD EMOJIS
+                Obx(
+                      () => Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: w * 0.032,
+                    runSpacing: h * 0.02,
+                    children: moods.entries.map((e) {
+                      final isSelected =
+                          controller.selectedMood.value == e.key;
+
+                      return GestureDetector(
+                        onTap: () => controller.submitMood(e.key),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutBack,
+                          padding: EdgeInsets.all(w * 0.04),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isSelected
+                                ? const Color(0xFF7AB7A7)
+                                .withAlpha(35)
+                                : Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black
+                                    .withOpacity(isSelected ? 0.18 : 0.1),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            e.value,
+                            style: TextStyle(fontSize: w * 0.088),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+
+                SizedBox(height: h * 0.026),
+
+                /// FOOTNOTE (REASSURING)
+                FittedBox(
+                  child: Text(
+                    "This helps your caregiver understand you better",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.nunito(
+                      fontSize: w * 0.03,
+                      color: Colors.black45,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: true,
+    );
+  }
+}

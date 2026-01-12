@@ -115,53 +115,54 @@ class ReceiverDashboardController extends GetxController {
       isLoading.value = false;
     }
   }
+  //for mood section - commented
 
   // ─────────────────────────────────────────────
   // MOOD
   // ─────────────────────────────────────────────
-  Future<void> checkTodayMood() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
+  // Future<void> checkTodayMood() async {
+  //   final user = supabase.auth.currentUser;
+  //   if (user == null) return;
+  //
+  //   final today = DateTime.now().toIso8601String().substring(0, 10);
+  //
+  //   final res = await supabase
+  //       .from('mood_tracking')
+  //       .select('mood')
+  //       .eq('user_id', user.id)
+  //       .eq('mood_date', today)
+  //       .maybeSingle();
+  //
+  //   if (res != null) {
+  //     selectedMood.value = res['mood'];
+  //     moodSubmittedToday.value = true;
+  //     debugPrint("🙂 Mood loaded: ${res['mood']}");
+  //   } else {
+  //     moodSubmittedToday.value = false;
+  //     debugPrint("🙂 No mood for today yet");
+  //   }
+  // }
 
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-
-    final res = await supabase
-        .from('mood_tracking')
-        .select('mood')
-        .eq('user_id', user.id)
-        .eq('mood_date', today)
-        .maybeSingle();
-
-    if (res != null) {
-      selectedMood.value = res['mood'];
-      moodSubmittedToday.value = true;
-      debugPrint("🙂 Mood loaded: ${res['mood']}");
-    } else {
-      moodSubmittedToday.value = false;
-      debugPrint("🙂 No mood for today yet");
-    }
-  }
-
-  Future<void> submitMood(String mood) async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-
-    selectedMood.value = mood;
-    moodSubmittedToday.value = true;
-
-    await supabase.from('mood_tracking').upsert(
-      {
-        'user_id': user.id,
-        'mood': mood,
-        'mood_date': today,
-      },
-      onConflict: 'user_id,mood_date',
-    );
-
-    debugPrint("🙂 Mood updated → $mood");
-  }
+  // Future<void> submitMood(String mood) async {
+  //   final user = supabase.auth.currentUser;
+  //   if (user == null) return;
+  //
+  //   final today = DateTime.now().toIso8601String().substring(0, 10);
+  //
+  //   selectedMood.value = mood;
+  //   moodSubmittedToday.value = true;
+  //
+  //   await supabase.from('mood_tracking').upsert(
+  //     {
+  //       'user_id': user.id,
+  //       'mood': mood,
+  //       'mood_date': today,
+  //     },
+  //     onConflict: 'user_id,mood_date',
+  //   );
+  //
+  //   debugPrint("🙂 Mood updated → $mood");
+  // }
 
   // ─────────────────────────────────────────────
   // DEVICE STATUS
@@ -390,6 +391,73 @@ class ReceiverDashboardController extends GetxController {
       );
     }
   }
+
+  // ─────────────────────────────────────────────
+// MOOD DIALOG CONTROL (2-HOUR LOGIC)
+// ─────────────────────────────────────────────
+  final shouldShowMoodDialog = false.obs;
+  DateTime? _lastMoodSubmissionTime;
+  Future<void> checkTodayMood() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+
+    final res = await supabase
+        .from('mood_tracking')
+        .select('mood, updated_at')
+        .eq('user_id', user.id)
+        .eq('mood_date', today)
+        .maybeSingle();
+
+    if (res != null) {
+      selectedMood.value = res['mood'];
+      moodSubmittedToday.value = true;
+
+      _lastMoodSubmissionTime =
+          DateTime.parse(res['updated_at']).toLocal();
+
+      final diff =
+      DateTime.now().difference(_lastMoodSubmissionTime!);
+
+      // 🔥 ONLY show dialog if 2+ hours passed
+      shouldShowMoodDialog.value = diff.inHours >= 2;
+
+      debugPrint(
+          "🙂 Mood exists | Last updated ${diff.inMinutes} mins ago");
+    } else {
+      moodSubmittedToday.value = false;
+      shouldShowMoodDialog.value = true; // First time today
+      debugPrint("🙂 No mood yet today → dialog allowed");
+    }
+  }
+
+
+  Future<void> submitMood(String mood) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+
+    selectedMood.value = mood;
+    moodSubmittedToday.value = true;
+    shouldShowMoodDialog.value = false;
+    _lastMoodSubmissionTime = DateTime.now();
+
+    await supabase.from('mood_tracking').upsert(
+      {
+        'user_id': user.id,
+        'mood': mood,
+        'mood_date': today,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'user_id,mood_date',
+    );
+
+    Get.back(); // 👈 closes dialog
+    debugPrint("🙂 Mood updated → $mood");
+  }
+
 
 
 
