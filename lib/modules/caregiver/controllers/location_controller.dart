@@ -1,4 +1,3 @@
-// modules/location/controllers/location_controller.dart
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';

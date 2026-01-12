@@ -36,7 +36,7 @@ class ReceiverDashboardController extends GetxController {
   final batteryLevel = 0.obs;
   final isCharging = false.obs;
   final isDeviceConnected = false.obs;
-  DateTime? _lastDeviceSync;
+  DateTime? lastDeviceSync;
 
   // ─────────────────────────────────────────────
   // LOCATION SHARING
@@ -168,12 +168,12 @@ class ReceiverDashboardController extends GetxController {
   // DEVICE STATUS
   // ─────────────────────────────────────────────
   Future<void> syncDeviceStatus() async {
-    if (_lastDeviceSync != null &&
-        DateTime.now().difference(_lastDeviceSync!).inMinutes < 5) {
+    if (lastDeviceSync != null &&
+        DateTime.now().difference(lastDeviceSync!).inMinutes < 5) {
       return;
     }
 
-    _lastDeviceSync = DateTime.now();
+    lastDeviceSync = DateTime.now();
 
     final user = supabase.auth.currentUser;
     if (user == null) return;
@@ -457,6 +457,7 @@ class ReceiverDashboardController extends GetxController {
     Get.back(); // 👈 closes dialog
     debugPrint("🙂 Mood updated → $mood");
   }
+
 
 
 
