@@ -8,6 +8,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'activity_controller.dart';
+
 class ReceiverDashboardController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
 
@@ -193,6 +195,7 @@ class ReceiverDashboardController extends GetxController {
       },
       onConflict: 'user_id',
     );
+    Get.find<ActivityController>().markActive();
 
     debugPrint("🔋 Battery: $level% | Charging: ${isCharging.value}");
   }
@@ -283,6 +286,8 @@ class ReceiverDashboardController extends GetxController {
       },
       onConflict: 'user_id',
     );
+    Get.find<ActivityController>().markActive();
+
 
     debugPrint("📍 Location upload successful");
   }
@@ -332,6 +337,7 @@ class ReceiverDashboardController extends GetxController {
       },
       onConflict: 'user_id,date',
     );
+    Get.find<ActivityController>().markActive(syncToServer: false);
 
     debugPrint("🚶 Steps synced: $_latestSteps");
   }
@@ -371,6 +377,7 @@ class ReceiverDashboardController extends GetxController {
         'message': 'Emergency SOS triggered',
         'handled': false,
       });
+      Get.find<ActivityController>().markActive(syncToServer: false);
 
       debugPrint("✅ SOS INSERT SUCCESS: $res");
 

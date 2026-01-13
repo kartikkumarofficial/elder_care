@@ -38,6 +38,7 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 
 
+
     <!-- ===================== -->
     <!-- Application -->
     <!-- ===================== -->
@@ -46,7 +47,8 @@
         android:name="${applicationName}"
         android:label="elder_care"
         android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true">
+        android:enableOnBackInvokedCallback="true"
+        android:usesCleartextTraffic="true">
 
         <!-- Google Maps API -->
         <meta-data

@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/utils/alarm_service.dart';
 import 'app/utils/constants.dart';
+import 'core/app_lifecycle_handler.dart';
 import 'core/services/notification_service.dart';
 import 'firebase_options.dart';
 
@@ -24,6 +25,9 @@ void main() async{
   // );
 
 
+
+  WidgetsBinding.instance
+      .addObserver(AppLifecycleHandler());
   await AlarmService.init();
   await Supabase.initialize(
     url: constants.supabaseUrl,

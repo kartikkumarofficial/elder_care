@@ -9,7 +9,9 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/controllers/auth_controller.dart';
+import '../../care_receiver/controllers/activity_controller.dart';
 import '../../care_receiver/controllers/carereceiver_dashboard_controller.dart';
+import '../../care_receiver/controllers/reciever_location_controller.dart';
 import '../../care_receiver/controllers/schedule_controller.dart';
 import '../../caregiver/views/caregiver_dashboard.dart';
 import '../../tasks/controllers/task_controller.dart';
@@ -40,10 +42,23 @@ class _MainScaffoldState extends State<MainScaffold> {
   void initState() {
     super.initState();
 
+    final user = authController.user.value;
+
+    if (user != null && user.role == 'receiver') {
+      if (!Get.isRegistered<ReceiverLocationController>()) {
+        Get.put(ReceiverLocationController(), permanent: true);
+      }
+    }
     // Ensure controllers are available (NO recreation later)
     if (!Get.isRegistered<ReceiverDashboardController>()) {
       Get.lazyPut(() => ReceiverDashboardController());
     }
+    if (user?.role == 'receiver') {
+      if (!Get.isRegistered<ActivityController>()) {
+        Get.put(ActivityController(), permanent: true);
+      }
+    }
+
 
     caregiverScreens = [
       CaregiverDashboard(),
