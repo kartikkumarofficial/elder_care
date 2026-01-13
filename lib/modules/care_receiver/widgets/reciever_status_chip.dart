@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../controllers/activity_controller.dart';
 import '../controllers/carereceiver_dashboard_controller.dart';
 
 class ReceiverStatusChips extends StatefulWidget {
@@ -13,7 +14,7 @@ class ReceiverStatusChips extends StatefulWidget {
 
 class _ReceiverStatusChipsState extends State<ReceiverStatusChips> {
   final ReceiverDashboardController controller = Get.find();
-
+  final ActivityController activity = Get.find();
   final isSyncing = false.obs;
   final now = DateTime.now().obs;
 
@@ -43,9 +44,10 @@ class _ReceiverStatusChipsState extends State<ReceiverStatusChips> {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: w * 0.03),
       child: Obx(() {
-        final connected = controller.isDeviceConnected.value;
+        final connected = activity.isOnline.value;
         final battery = controller.batteryLevel.value;
-        final lastSync = controller.lastDeviceSync;
+        final lastSync = activity.lastActivityAt;
+
 
         return Container(
           padding: const EdgeInsets.all(10),
@@ -61,8 +63,11 @@ class _ReceiverStatusChipsState extends State<ReceiverStatusChips> {
                   h,
                   icon: Icons.circle,
                   iconColor: connected ? Colors.green : Colors.red,
-                  label: connected ? "Online" : "Offline",
+                  label: connected
+                      ? "Connected"
+                      : activity.lastSeenText.value,
                 ),
+
               ),
 
               const SizedBox(width: 8),
