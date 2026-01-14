@@ -35,6 +35,8 @@ class _MainScaffoldState extends State<MainScaffold> {
   final SupabaseClient client = Supabase.instance.client;
 
 
+  Color kTeal = Color(0xFF7AB7A7);
+
   late final List<Widget> caregiverScreens;
   late final List<Widget> receiverScreens;
 
