@@ -75,7 +75,11 @@ class _ChatScreenState extends State<ChatScreen> {
             SizedBox(width: Get.width * 0.05),
             CircleAvatar(
               radius: 20,
-              backgroundImage: controller.partnerImage.value != null
+              // backgroundImage: controller.partnerImage.value != null
+              //     ? NetworkImage(controller.partnerImage.value!)
+              //     : null,
+              backgroundImage: controller.partnerImage.value != null &&
+                  controller.partnerImage.value!.isNotEmpty
                   ? NetworkImage(controller.partnerImage.value!)
                   : null,
               backgroundColor: Colors.teal.shade100,
