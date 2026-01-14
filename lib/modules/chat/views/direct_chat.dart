@@ -24,9 +24,10 @@ class DirectChatScreen extends StatelessWidget {
       return ChatScreen(
         chatId: controller.chatId!,
         partnerId: controller.partnerId!,
-        partnerName: "Care Partner",
-        partnerImage: null,
+        partnerName: controller.partnerName!,
+        partnerImage: controller.partnerImage,
       );
+
     });
   }
 }
@@ -39,6 +40,8 @@ class DirectChatResolverController extends GetxController {
   final isLoading = true.obs;
   final error = RxnString();
 
+  String? partnerName;
+  String? partnerImage;
   String? chatId;
   String? partnerId;
 
@@ -48,11 +51,13 @@ class DirectChatResolverController extends GetxController {
     resolve();
   }
 
+
   Future<void> resolve() async {
     try {
       final me = auth.user.value!;
       final myId = me.id;
 
+      // 1️⃣ Fetch care link
       final link = me.role == 'receiver'
           ? await supabase
           .from('care_links')
@@ -70,10 +75,25 @@ class DirectChatResolverController extends GetxController {
         return;
       }
 
-      partnerId =
-      me.role == 'receiver' ? link['caregiver_id'] : link['receiver_id'];
+      // 2️⃣ SET partnerId FIRST ✅
+      partnerId = me.role == 'receiver'
+          ? link['caregiver_id']
+          : link['receiver_id'];
 
-      // 2️⃣ Find existing chat between BOTH users
+      // 3️⃣ Fetch partner user data ✅
+      final partner = await supabase
+          .from('users')
+          .select('full_name, profile_image')
+          .eq('id', partnerId!)
+          .single();
+
+      partnerName = partner['full_name'];
+      partnerImage = partner['profile_image'];
+
+      print('Partner ID: $partnerId');
+      print('Partner Name: $partnerName');
+
+      // 4️⃣ Find existing chat
       final existing = await supabase.rpc(
         'get_direct_chat',
         params: {
@@ -87,7 +107,7 @@ class DirectChatResolverController extends GetxController {
         return;
       }
 
-      // 3️⃣ Create chat
+      // 5️⃣ Create new chat
       final chat =
       await supabase.from('chats').insert({}).select().single();
 
@@ -103,4 +123,5 @@ class DirectChatResolverController extends GetxController {
       isLoading.value = false;
     }
   }
+
 }
