@@ -3,15 +3,17 @@ import 'package:meta/meta.dart';
 @immutable
 class TaskModel {
   final int? id;
-  final String receiverId; // uuid as String
+  final String receiverId;
   final String title;
-  final String? datetime; // ISO string
+  final String? datetime;
   final bool alarmEnabled;
   final bool vibrate;
-  final String repeatType;        // none | daily | weekly | custom
-  final List<String> repeatDays;  // ['mon','wed']
-  final bool isCompleted;         // ✅ NEW
-  final String? createdAt;        // ISO string
+  final String repeatType;
+  final List<String> repeatDays;
+  final bool isCompleted;
+  final String? createdAt;
+  final String taskType;
+
 
   const TaskModel({
     this.id,
@@ -24,11 +26,10 @@ class TaskModel {
     this.repeatDays = const [],
     this.isCompleted = false,
     this.createdAt,
+    this.taskType = 'normal'
   });
 
-  // ─────────────────────────────────────────────
-  // INSERT MAP
-  // ─────────────────────────────────────────────
+  // Insert Map
 
   Map<String, dynamic> toMap() {
     return {
@@ -42,12 +43,12 @@ class TaskModel {
       'repeat_days': repeatDays,
       'is_completed': isCompleted,
       'created_at': createdAt,
+      'task_type': taskType,
+
     };
   }
 
-  // ─────────────────────────────────────────────
-  // UPDATE MAP
-  // ─────────────────────────────────────────────
+  // Update map
 
   Map<String, dynamic> toUpdateMap() {
     return {
@@ -58,12 +59,12 @@ class TaskModel {
       'repeat_type': repeatType,
       'repeat_days': repeatDays,
       'is_completed': isCompleted,
+      'task_type': taskType,
+
     };
   }
 
-  // ─────────────────────────────────────────────
-  // FROM DB
-  // ─────────────────────────────────────────────
+  // From DB
 
   factory TaskModel.fromMap(Map<String, dynamic> m) {
     return TaskModel(
@@ -91,12 +92,13 @@ class TaskModel {
 
       createdAt:
       m['created_at'] == null ? null : m['created_at'].toString(),
+      taskType: m['task_type'] ?? 'normal',
+
     );
   }
 
-  // ─────────────────────────────────────────────
-  // COPY WITH (OPTIONAL BUT USEFUL)
-  // ─────────────────────────────────────────────
+  // COPY WITH
+
 
   TaskModel copyWith({
     String? title,
@@ -106,6 +108,9 @@ class TaskModel {
     String? repeatType,
     List<String>? repeatDays,
     bool? isCompleted,
+    String? taskType,
+
+
   }) {
     return TaskModel(
       id: id,
@@ -118,6 +123,7 @@ class TaskModel {
       repeatDays: repeatDays ?? this.repeatDays,
       isCompleted: isCompleted ?? this.isCompleted,
       createdAt: createdAt,
+      taskType: taskType ?? this.taskType,
     );
   }
 }

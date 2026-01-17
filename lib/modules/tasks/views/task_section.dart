@@ -1,4 +1,4 @@
-// lib/presentation/widgets/tasks/task_section.dart
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -218,19 +218,17 @@ class TaskSection extends StatelessWidget {
                                       ),
                                     ),
 
+
                                     if (t.alarmEnabled) ...[
                                       SizedBox(width: 6),
-                                      Icon(
-                                        Icons.alarm,
-                                        size: 16,
-                                        color: Colors.black54, // black as requested
-                                      ),
+                                      Icon(Icons.alarm, size: 16, color: Colors.black54),
                                     ],
-                                    if (t.vibrate) ...[
-                                      const SizedBox(width: 6),
-                                      const Icon(Icons.vibration, size: 16,
-                                        color: Colors.grey,),
+
+                                    if (t.taskType == 'medicine') ...[
+                                      SizedBox(width: 6),
+                                      Icon(Icons.medication, size: 16, color: Colors.grey),
                                     ],
+
                                     if (t.repeatType != 'none') ...[
                                       const SizedBox(width: 6),
                                       const Icon(Icons.repeat, size: 16,
@@ -247,11 +245,18 @@ class TaskSection extends StatelessWidget {
                           ///  MORE ICON
                           GestureDetector(
                             onTap: () => _openDetailsDialog(context, t),
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
+                            child: Container(
+                              height: 40,
+                              width: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Color(0xFFE3E7EA)),
+                              ),
                               child: Icon(
-                                Icons.more_vert,
-                                color: Colors.grey.shade800,
+                                Icons.task_alt_rounded,
+                                size: 20,
+                                color: Colors.black87,
                               ),
                             ),
                           ),
@@ -581,42 +586,53 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
 
               SizedBox(height: 12),
 
-              // Alarm checkbox — visible only when both date & time selected
+
+
+
+
+              // visible only when both date & time selected
+
+              // reminder
               if (widget.controller.showAlarmCheckbox())
-                Obx(() => Container(
-                  // margin: const EdgeInsets.only(top: 6),
-                  // padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    // color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      Checkbox(
-                        value: widget.controller.alarmEnabled.value,
-                        activeColor: kTeal,
-                        onChanged: (v) =>
-                        widget.controller.alarmEnabled.value = v ?? false,
-                      ),
-                      Text(
-                        'Set alarm',
-                        style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                )),
-              if (widget.controller.showAlarmCheckbox())
-                Obx(() => Row(
+                Obx(() => Column(
                   children: [
-                    Checkbox(
-                      value: widget.controller.vibrate.value,
-                      activeColor: kTeal,
-                      onChanged: (v) =>
-                      widget.controller.vibrate.value = v ?? false,
+
+                    /// 🔔 REMINDER (replaces Set alarm + Vibrate)
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: widget.controller.reminderEnabled.value,
+                          activeColor: kTeal,
+                          onChanged: (v) =>
+                          widget.controller.reminderEnabled.value = v ?? false,
+                        ),
+                        Text(
+                          'Reminder',
+                          style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
-                    Text('Vibrate', style: GoogleFonts.nunito(fontWeight: FontWeight.w600)),
+
+                    /// 💊 MEDICINE (TAG ONLY)
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: widget.controller.isMedicine.value,
+                          activeColor: kTeal,
+                          onChanged: (v) =>
+                          widget.controller.isMedicine.value = v ?? false,
+                        ),
+                        Text(
+                          'Medicine',
+                          style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
                   ],
                 )),
+
+
+              // medicine
               if (widget.controller.showAlarmCheckbox())
                 Obx(() => GestureDetector(
                   onTap: () => setState(() => _showRepeatOptions = !_showRepeatOptions),
@@ -656,6 +672,7 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                   ),
                 )),
 
+              // repeat
               if (_showRepeatOptions)
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 260),

@@ -16,10 +16,13 @@ class TaskController extends GetxController {
   final dateController = TextEditingController(); // iso string of combined date+time
   DateTime? pickedDate;
   TimeOfDay? pickedTime;
-  RxBool alarmEnabled = false.obs;
-  RxString repeatType = 'none'.obs; // none | daily | tomorrow | custom
+  // RxBool alarmEnabled = false.obs;
+  RxString repeatType = 'none'.obs;
   RxList<String> repeatDays = <String>[].obs;
-  RxBool vibrate = false.obs;
+  RxBool reminderEnabled = false.obs;
+  RxBool isMedicine = false.obs;
+
+
 
   int? editingId;
   String? currentReceiverId;
@@ -36,11 +39,11 @@ class TaskController extends GetxController {
     dateController.clear();
     pickedDate = null;
     pickedTime = null;
-    alarmEnabled.value = false;
     editingId = null;
     repeatType.value = 'none';
     repeatDays.clear();
-    vibrate.value = false;
+    reminderEnabled.value = false;
+    isMedicine.value = false;
   }
 
   DateTime? _combinedDateTime() {
@@ -112,11 +115,16 @@ class TaskController extends GetxController {
       title: titleController.text.trim(),
       datetime: dt?.toUtc().toIso8601String(),
 
-      alarmEnabled: alarmEnabled.value,
+      alarmEnabled: reminderEnabled.value,
+      vibrate: reminderEnabled.value,
+
+      taskType: isMedicine.value ? 'medicine' : 'normal',
+
       repeatType: repeatType.value,
       repeatDays: repeatDays,
-      vibrate: vibrate.value,
     );
+
+
 
     try {
       final res = await supabase
@@ -132,12 +140,12 @@ class TaskController extends GetxController {
         tasks.insert(0, created);
         tasks.assignAll(_sortTasks(tasks));
 
-        try{if (alarmEnabled.value && dt != null) {
+        try{if (reminderEnabled.value && dt != null) {
           await AlarmService.scheduleWithRepeat(
             baseId: created.id!,
             title: created.title,
             dateTime: dt,
-            vibrate: vibrate.value,
+            vibrate: reminderEnabled.value,
             repeatType: repeatType.value,
             repeatDays: repeatDays.toList(),
           );
@@ -163,12 +171,12 @@ class TaskController extends GetxController {
   Future<void> startEdit(TaskModel t) async {
     editingId = t.id;
     titleController.text = t.title;
-    alarmEnabled.value = t.alarmEnabled;
+
     repeatType.value = t.repeatType;
     repeatDays.assignAll(t.repeatDays);
-    vibrate.value = t.vibrate;
+    reminderEnabled.value = t.alarmEnabled;
+    isMedicine.value = t.taskType == 'medicine';
 
-    // parse datetime into pieces
     if (t.datetime != null) {
       try {
         final dt = DateTime.parse(t.datetime!).toLocal();
@@ -205,10 +213,11 @@ class TaskController extends GetxController {
       title: titleController.text.trim(),
       datetime: dt?.toUtc().toIso8601String(),
 
-      alarmEnabled: alarmEnabled.value,
+      alarmEnabled: reminderEnabled.value,
+      vibrate: reminderEnabled.value,
+      taskType: isMedicine.value ? 'medicine' : 'normal',
       repeatType: repeatType.value,
       repeatDays: repeatDays,
-      vibrate: vibrate.value,
     );
 
     try {
@@ -229,12 +238,12 @@ class TaskController extends GetxController {
 
         await AlarmService.cancel(updated.id!);
 
-        if (alarmEnabled.value && dt != null) {
+        if (reminderEnabled.value && dt != null) {
           await AlarmService.scheduleWithRepeat(
             baseId: updated.id!,
             title: updated.title,
             dateTime: dt,
-            vibrate: vibrate.value,
+            vibrate: reminderEnabled.value,
             repeatType: repeatType.value,
             repeatDays: repeatDays.toList(),
           );
@@ -279,19 +288,17 @@ class TaskController extends GetxController {
   // Helpers to manage picked date/time from UI
   void setPickedDate(DateTime d) {
     pickedDate = d;
-    // if user picks date but no time yet, keep alarm disabled and hide
-    if (pickedTime == null) {
-      alarmEnabled.value = false;
-    }
   }
 
   void setPickedTime(TimeOfDay t) {
     pickedTime = t;
 
-    // ⏰ time first → auto set date to today
+    // time first → auto set date to today
     pickedDate ??= DateTime.now();
 
-    alarmEnabled.value = true;
+    if (!isMedicine.value && !reminderEnabled.value) {
+      reminderEnabled.value = true;
+    }
   }
 
 
