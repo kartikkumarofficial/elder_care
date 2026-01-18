@@ -158,7 +158,6 @@ This project is licensed under the MIT License - see the `LICENSE.md` file for d
 
 **Kartik Kumar**
 - Flutter Developer
-- Backend & Systems Enthusiast
 
 ⭐ If you find this project useful, please consider starring the repository!
 ```
