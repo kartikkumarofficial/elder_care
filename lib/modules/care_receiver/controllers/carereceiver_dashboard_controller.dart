@@ -8,6 +8,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../events/controllers/events_controller.dart';
+import '../../tasks/controllers/task_controller.dart';
 import 'activity_controller.dart';
 
 class ReceiverDashboardController extends GetxController {
@@ -399,9 +401,8 @@ class ReceiverDashboardController extends GetxController {
     }
   }
 
-  // ─────────────────────────────────────────────
 // MOOD DIALOG CONTROL (2-HOUR LOGIC)
-// ─────────────────────────────────────────────
+
   final shouldShowMoodDialog = false.obs;
   DateTime? _lastMoodSubmissionTime;
   Future<void> checkTodayMood() async {
@@ -427,7 +428,7 @@ class ReceiverDashboardController extends GetxController {
       final diff =
       DateTime.now().difference(_lastMoodSubmissionTime!);
 
-      // 🔥 ONLY show dialog if 2+ hours passed
+      //  Only show dialog if 2+ hours passed
       shouldShowMoodDialog.value = diff.inHours >= 2;
 
       debugPrint(
@@ -461,9 +462,48 @@ class ReceiverDashboardController extends GetxController {
       onConflict: 'user_id,mood_date',
     );
 
-    Get.back(); // 👈 closes dialog
+    Get.back();
     debugPrint("🙂 Mood updated → $mood");
   }
+
+  Future<void> refreshDashboard() async {
+    if (isLoading.value) return;
+
+    try {
+      isLoading.value = true;
+      debugPrint("🔄 Pull-to-refresh started");
+
+      final user = supabase.auth.currentUser;
+      if (user == null) return;
+
+      // 🔹 Device status (battery + charging)
+      await syncDeviceStatus();
+
+      // 🔹 Device connectivity (online / offline)
+      await refreshDeviceConnectionStatus();
+
+      // 🔹 Mood re-check
+      await checkTodayMood();
+
+      // 🔹 Tasks (via TaskController)
+      if (Get.isRegistered<TaskController>()) {
+        await Get.find<TaskController>()
+            .loadTasksForReceiver(user.id);
+      }
+
+      // 🔹 Events (if controller exists)
+      if (Get.isRegistered<EventsController>()) {
+        await Get.find<EventsController>().loadEvents();
+      }
+
+      debugPrint("✅ Pull-to-refresh completed");
+    } catch (e) {
+      debugPrint("❌ Refresh failed: $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
 
 
 

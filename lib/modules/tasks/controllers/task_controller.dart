@@ -16,12 +16,14 @@ class TaskController extends GetxController {
   final dateController = TextEditingController(); // iso string of combined date+time
   DateTime? pickedDate;
   TimeOfDay? pickedTime;
-  // RxBool alarmEnabled = false.obs;
   RxString repeatType = 'none'.obs;
   RxList<String> repeatDays = <String>[].obs;
   RxBool reminderEnabled = false.obs;
   RxBool isMedicine = false.obs;
 
+
+  TaskModel? _lastDeletedTask;
+  int? _lastDeletedIndex;
 
 
   int? editingId;
@@ -56,7 +58,7 @@ class TaskController extends GetxController {
   }
 
 
-  /// Sorting: upcoming tasks first (nearest first), then tasks without datetime.
+  /// Sorting: upcoming tasks first , then tasks without datetime.
   List<TaskModel> _sortTasks(List<TaskModel> list) {
     final withDate = <TaskModel>[];
     final withoutDate = <TaskModel>[];
@@ -75,7 +77,7 @@ class TaskController extends GetxController {
       if (da == null && db == null) return 0;
       if (da == null) return 1;
       if (db == null) return -1;
-      return da.compareTo(db); // nearest first
+      return da.compareTo(db);
     });
 
     return [...withDate, ...withoutDate];
@@ -268,7 +270,7 @@ class TaskController extends GetxController {
       tasks.removeWhere((t) => t.id == id);
       await AlarmService.cancel(id);
 
-// Check if any alarms still exist
+      // Checking if any alarms still exist
       final hasAnyAlarm =
       tasks.any((t) => t.alarmEnabled && t.datetime != null);
 
@@ -276,7 +278,6 @@ class TaskController extends GetxController {
         await AlarmService.stopForegroundService();
       }
 
-      // close dialog if open
       if (Get.isDialogOpen ?? false) Get.back();
       Get.snackbar('Deleted', 'Task removed');
     } catch (e) {
@@ -284,6 +285,81 @@ class TaskController extends GetxController {
       Get.snackbar('Error', 'Failed to delete task');
     }
   }
+
+
+
+
+  Future<void> deleteTaskWithUndo(TaskModel task, int index) async {
+    _lastDeletedTask = task;
+    _lastDeletedIndex = index;
+
+    // Remove from UI immediately
+    tasks.removeAt(index);
+
+    // Cancel alarm immediately
+    if (task.alarmEnabled && task.datetime != null) {
+      await AlarmService.cancel(task.id!);
+    }
+
+    // Delete from DB
+    await supabase.from('tasks').delete().eq('id', task.id!);
+
+    // Snackbar with UNDO
+    Get.snackbar(
+      'Task completed',
+      task.title,
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: Get.height*0.03),
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 4),
+      mainButton: TextButton(
+        onPressed: undoDelete,
+        child: const Text('UNDO', style: TextStyle(color: Colors.white)),
+      ),
+      backgroundColor: Colors.black87.withAlpha(90),
+      colorText: Colors.white,
+    );
+  }
+
+  Future<void> undoDelete() async {
+    if (_lastDeletedTask == null || _lastDeletedIndex == null) return;
+
+    Get.back(); // dismiss snackbar
+
+    final restored = _lastDeletedTask!;
+
+    final map = restored.toMap();
+    map.remove('id');
+
+    final res = await supabase
+        .from('tasks')
+        .insert(map)
+        .select()
+        .limit(1);
+
+    if (res.isNotEmpty) {
+      final recreated = TaskModel.fromMap(res.first);
+      tasks.insert(_lastDeletedIndex!, recreated);
+
+      if (recreated.alarmEnabled && recreated.datetime != null) {
+        final dt = DateTime.parse(recreated.datetime!).toLocal();
+        await AlarmService.scheduleWithRepeat(
+          baseId: recreated.id!,
+          title: recreated.title,
+          dateTime: dt,
+          vibrate: true,
+          repeatType: recreated.repeatType,
+          repeatDays: recreated.repeatDays,
+        );
+      }
+    }
+
+    _lastDeletedTask = null;
+    _lastDeletedIndex = null;
+  }
+
+
+
+
 
   // Helpers to manage picked date/time from UI
   void setPickedDate(DateTime d) {

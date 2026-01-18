@@ -1,15 +1,18 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:day_night_time_picker/day_night_time_picker.dart';
+import '../../../app/utils/sound_utils.dart';
 import '../controllers/task_controller.dart';
 import '../../../core/models/task_model.dart';
 import '../../dashboard/controllers/nav_controller.dart';
 import '../widgets/day_chips.dart';
 import '../widgets/repeat_card.dart';
+import '../widgets/task_tile.dart';
 
 const Color kTeal = Color(0xFF7AB7A7);
 
@@ -128,148 +131,103 @@ class TaskSection extends StatelessWidget {
                 shrinkWrap: true,
                 itemCount: list.length,
                 separatorBuilder: (_, __) => SizedBox(height: 10),
-                itemBuilder: (_, i) {
-                  final t = list[i];
-                  final parsed = t.datetime != null
-                      ? DateTime.tryParse(t.datetime!)
-                      : null;
-                  final isOverdue =
-                      parsed != null && parsed.isBefore(DateTime.now());
-              
-                  return GestureDetector(
-                    onTap: () => _openDetailsDialog(context, t),
-                    onLongPress: () => _openDetailsDialog(context, t),
-                    // {
-                    //   controller.startEdit(t);
-                    //   showDialog(
-                    //       context: context,
-                    //       builder: (_) =>
-                    //           _EditDeleteDialog(task: t, controller: controller));
-                    // },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F6F7), // soft subtle background
-                        borderRadius: BorderRadius.circular(22), // pill shape
-                        border: Border.all(
-                          color: const Color(0xFFE1E6E8),
-                          width: 1.1,
+                  itemBuilder: (_, i) {
+                    final isRemoving = false.obs;
+
+                    final t = list[i];
+
+
+                    return Dismissible(
+                      key: ValueKey(t.id),
+                      direction: DismissDirection.horizontal,
+
+                      // Swipe LEFT → RIGHT
+                      background: Container(
+                        padding: const EdgeInsets.only(left: 24),
+                        alignment: Alignment.centerLeft,
+                        decoration: BoxDecoration(
+                          color: kTeal.withAlpha(60),
+                          borderRadius: BorderRadius.circular(22),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 8,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
+                        child: const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 28,
+                        ),
                       ),
 
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
+                      // Swipe RIGHT → LEFT
+                      secondaryBackground: Container(
+                        padding: const EdgeInsets.only(right: 24),
+                        alignment: Alignment.centerRight,
+                        decoration: BoxDecoration(
+                          color: kTeal.withAlpha(60),
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        child: const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 28,
+                        ),
+                      ),
 
-                          /// 🔵 Leading icon bubble
-                          Container(
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Color(0xFFE3E7EA)),
+                      onDismissed: (_) {
+                        controller.deleteTaskWithUndo(t, i);
+                      },
+
+                      child: Obx(() {
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: [
+
+                            Container(
+                              height: Get.height*0.1,
+                              decoration: BoxDecoration(
+                                color: kTeal.withAlpha(60),
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.only(left: 24),
+                              child: const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 28,
+                              ),
                             ),
-                            child: Icon(
-                              Icons.task_alt_rounded,
-                              size: 20,
-                              color: Colors.black87,
-                            ),
-                          ),
 
-                          SizedBox(width: 14),
+                            // Foreground task tile
+                            AnimatedSlide(
+                              offset: isRemoving.value ? const Offset(-1.2, 0) : Offset.zero,
+                              duration: const Duration(milliseconds: 600),
+                              curve: Curves.easeInOutCubic,
+                              child: AnimatedOpacity(
+                                opacity: isRemoving.value ? 0 : 1,
+                                duration: const Duration(milliseconds: 400),
+                                child: GestureDetector(
+                                  onTap: () => _openDetailsDialog(context, t),
+                                  onLongPress: () => _openDetailsDialog(context, t),
+                                  child: TaskTile(
+                                    task: t,
+                                    onDone: () async {
+                                      await SoundUtils.playDone();
+                                      HapticFeedback.mediumImpact();
+                                      isRemoving.value = true;
 
-                          /// 🔤 Text + date/time section
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                /// TITLE
-                                Text(
-                                  t.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.black87,
+                                      await Future.delayed(const Duration(milliseconds: 600));
+                                      controller.deleteTaskWithUndo(t, i);
+                                    },
                                   ),
                                 ),
-
-                                SizedBox(height: 6),
-
-                                /// TIME + optional ALARM
-                                Row(
-                                  children: [
-                                    Text(
-                                      t.datetime != null
-                                          ? _friendlyDate(t.datetime!)
-                                          : "",
-                                      style: GoogleFonts.nunito(
-                                        fontSize: 13,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-
-
-                                    if (t.alarmEnabled) ...[
-                                      SizedBox(width: 6),
-                                      Icon(Icons.alarm, size: 16, color: Colors.black54),
-                                    ],
-
-                                    if (t.taskType == 'medicine') ...[
-                                      SizedBox(width: 6),
-                                      Icon(Icons.medication, size: 16, color: Colors.grey),
-                                    ],
-
-                                    if (t.repeatType != 'none') ...[
-                                      const SizedBox(width: 6),
-                                      const Icon(Icons.repeat, size: 16,
-                                        color: Colors.grey,),
-                                    ],
-
-
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          ///  MORE ICON
-                          GestureDetector(
-                            onTap: () => _openDetailsDialog(context, t),
-                            child: Container(
-                              height: 40,
-                              width: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Color(0xFFE3E7EA)),
-                              ),
-                              child: Icon(
-                                Icons.task_alt_rounded,
-                                size: 20,
-                                color: Colors.black87,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                          ],
+                        );
+                      }),
 
+                    );
 
+                  }
 
-
-
-                  );
-                },
               ),
             );
           }),
@@ -278,19 +236,28 @@ class TaskSection extends StatelessWidget {
     );
   }
 
-  String _friendlyDate(String iso) {
-    try {
-      final d = DateTime.parse(iso).toLocal();
+  Widget _dismissBgLeft() => Container(
+    alignment: Alignment.centerLeft,
+    padding: const EdgeInsets.only(left: 24),
+    decoration: BoxDecoration(
+      color: Colors.green,
+      borderRadius: BorderRadius.circular(22),
+    ),
+    child: const Icon(Icons.check_circle, color: Colors.white, size: 28),
+  );
 
-      final hour12 = d.hour % 12 == 0 ? 12 : d.hour % 12;
-      final minute = d.minute.toString().padLeft(2, '0');
-      final period = d.hour >= 12 ? 'PM' : 'AM';
+  Widget _dismissBgRight() => Container(
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.only(right: 24),
+    decoration: BoxDecoration(
+      color: Colors.green,
+      borderRadius: BorderRadius.circular(22),
+    ),
+    child: const Icon(Icons.check_circle, color: Colors.white, size: 28),
+  );
 
-      return '${d.day}/${d.month}/${d.year} • $hour12:$minute $period';
-    } catch (_) {
-      return iso;
-    }
-  }
+
+
 
 
   void _openAddDialog(BuildContext ctx, {required bool isEdit}) {
@@ -696,11 +663,6 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
 
 
 
-
-
-
-
-
               SizedBox(height: 12),
 
               ElevatedButton(
@@ -826,5 +788,14 @@ class _RepeatOptions extends StatelessWidget {
         ],
       ],
     );
+
   }
+
+
+
 }
+
+
+
+
+
