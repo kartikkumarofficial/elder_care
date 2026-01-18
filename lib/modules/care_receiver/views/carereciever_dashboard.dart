@@ -62,89 +62,92 @@ class _ReceiverDashboardScreenState extends State<ReceiverDashboardScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Container(
-        height: h,
-        width: w,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/auth/login_bg.png"),
-            fit: BoxFit.cover,
-            opacity: 0.05,
-          ),
-          gradient: LinearGradient(
-            colors: [Color(0xFFeaf4f2), Color(0xFFfdfaf6)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Obx(
-              () => controller.isLoading.value
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              // horizontal: w * 0.01,
-              vertical: h * 0.04,
-
+      body: RefreshIndicator(
+        onRefresh: ()=>ReceiverDashboardController().refreshDashboard(),
+        child: Container(
+          height: h,
+          width: w,
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("assets/auth/login_bg.png"),
+              fit: BoxFit.cover,
+              opacity: 0.05,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// GREETING
-                SizedBox(height: h * 0.01),
-                ReceiverHeaderSection(w,h),
+            gradient: LinearGradient(
+              colors: [Color(0xFFeaf4f2), Color(0xFFfdfaf6)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Obx(
+                () => controller.isLoading.value
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                // horizontal: w * 0.01,
+                vertical: h * 0.04,
+
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  /// GREETING
+                  SizedBox(height: h * 0.01),
+                  ReceiverHeaderSection(w,h),
 
 
-                SizedBox(height: h * 0.001),
+                  SizedBox(height: h * 0.001),
 
-                /// DEVICE STATUS
-                ReceiverStatusChips(),
-
-
-                SizedBox(height: h * 0.01),
-
-                // sample data rn
-                ContextStrip(
-                  items: [
-                    ContextStripItem(
-                      icon: Icons.event,
-                      title: "Upcoming",
-                      subtitle: "Doctor appointment at 6:00 PM",
-                      color: Colors.teal,
-                      onTap: () {
-                        // Navigate to events
-                      },
-                    ),
-                    ContextStripItem(
-                      icon: Icons.medication,
-                      title: "Reminder",
-                      subtitle: "You haven’t taken your morning medicines",
-                      color: Colors.orange,
-                    ),
-                    ContextStripItem(
-                      icon: Icons.check_circle,
-                      title: "All set",
-                      subtitle: "You’re doing great today 😊",
-                      color: Colors.green,
-                    ),
-                  ],
-                ),
+                  /// DEVICE STATUS
+                  ReceiverStatusChips(),
 
 
-                /// EVENTS
-                EventSectionModern(),
+                  SizedBox(height: h * 0.01),
 
-                SizedBox(height: h * 0.03),
+                  // sample data rn
+                  ContextStrip(
+                    items: [
+                      ContextStripItem(
+                        icon: Icons.event,
+                        title: "Upcoming",
+                        subtitle: "Doctor appointment at 6:00 PM",
+                        color: Colors.teal,
+                        onTap: () {
+                          // Navigate to events
+                        },
+                      ),
+                      ContextStripItem(
+                        icon: Icons.medication,
+                        title: "Reminder",
+                        subtitle: "You haven’t taken your morning medicines",
+                        color: Colors.orange,
+                      ),
+                      ContextStripItem(
+                        icon: Icons.check_circle,
+                        title: "All set",
+                        subtitle: "You’re doing great today 😊",
+                        color: Colors.green,
+                      ),
+                    ],
+                  ),
 
-                /// TASKS
-                TaskSection( receiverIdOverride: controller.supabase.auth.currentUser!.id,),
 
-                // SizedBox(height: h * 0.045),
+                  /// EVENTS
+                  EventSectionModern(),
 
-                /// SOS
-                // sosButton(w, h),
+                  SizedBox(height: h * 0.03),
 
-                SizedBox(height: h * 0.04),
-              ],
+                  /// TASKS
+                  TaskSection( receiverIdOverride: controller.supabase.auth.currentUser!.id,),
+
+                  // SizedBox(height: h * 0.045),
+
+                  /// SOS
+                  // sosButton(w, h),
+
+                  SizedBox(height: h * 0.04),
+                ],
+              ),
             ),
           ),
         ),
