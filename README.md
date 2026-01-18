@@ -1,98 +1,164 @@
-# 💙 ElderCare – Connect, Monitor, and Care
+# 💙 ElderCare
+### A Connected Care Platform for Monitoring, Safety, and Peace of Mind
 
-**ElderCare** is a modern, cross-platform application designed to bridge the gap between caregivers and care receivers. Built with a focus on real-time monitoring and ease of use, it provides peace of mind through seamless location tracking, health analytics, and task management.
+**ElderCare** is a modern, cross-platform caregiving application designed to seamlessly connect **caregivers** and **care receivers**. It enables real-time monitoring, scheduled reminders, and location awareness — helping families and caregivers ensure safety, consistency, and well-being without friction.
 
----
-## ✨ Core Features
-
-
-* 🔐 **Secure Authentication & Profiles:** User sign-up, login, and profile management powered by Supabase.
-* 📍 **Real-Time Location Tracking:** Caregivers can view the live location of their linked care receiver on a map.
-* 📊 **Health Analytics:** A simple, card-based interface to monitor the latest health vitals like heart rate and blood pressure.
-* 🚀 **Role-Based Onboarding:** A smart onboarding flow that assigns 'Caregiver' or 'Care Receiver' roles and links their accounts securely.
-* 📱 **Modern & Responsive UI:** Built with a clean, dark-themed interface that looks great on any device.
-* ⚡ **Fast & Reactive State Management:** Powered by GetX for a smooth and predictable user experience.
+Built with **Flutter**, **Supabase**, and **GetX**, ElderCare focuses on reliability, clarity, and real-world usability.
 
 ---
 
+## 🚀 Why ElderCare?
 
-## 📲 Quick Start
+Caring for elders often means juggling:
+- Medication schedules
+- Daily tasks and appointments
+- Location safety and wandering concerns
+- General health and mood awareness
+- Emergency preparedness
 
-1.  **Clone the repository**
-
-    ```bash
-    git clone [https://github.com/your-username/elder_care.git](https://github.com/your-username/elder_care.git)
-    cd elder_care
-    ```
-
-2.  **Install dependencies**
-
-    ```bash
-    flutter pub get
-    ```
-
-3.  **Set up Supabase**
-    Open the file `lib/main.dart` and replace the placeholder values with your actual Supabase URL and Anon Key.
-
-    ```dart
-    // In lib/main.dart
-    Future<void> main() async {
-      WidgetsFlutterBinding.ensureInitialized();
-
-      await Supabase.initialize(
-        url: 'YOUR_SUPABASE_URL',       // <-- PASTE YOUR URL HERE
-        anonKey: 'YOUR_SUPABASE_ANON_KEY', // <-- PASTE YOUR KEY HERE
-      );
-
-      runApp(const MyApp());
-    }
-    ```
-
-4.  **Run the app**
-
-    ```bash
-    flutter run
-    ```
+**ElderCare centralizes all of this into a single, intuitive platform**, reducing cognitive load for caregivers while empowering care receivers to maintain their independence.
 
 ---
 
-## 📂 Project Structure
+## ✨ Key Features
 
-The project follows a clean architecture to separate concerns and improve maintainability.
+- **👥 Role-Based Care System**:
+    - Smart onboarding for **Caregiver** and **Care Receiver** roles.
+    - Secure account linking between caregiver and receiver.
+    - Personalized dashboards tailored to each user's role.
+
+- **📋 Task & Medication Management**:
+    - Create, edit, and manage daily tasks and medication reminders.
+    - Scheduled reminders with repeat options (daily, custom days).
+    - Smooth swipe-to-complete gestures with undo support.
+
+- **⏰ Intelligent Reminders**:
+    - Reliable, alarm-based task reminders that work even if the app is closed.
+    - Automatic alarm cleanup when tasks are removed or completed.
+    - Utilizes a foreground service for high-priority alert delivery.
+
+- **📍 Real-Time Location & Device Monitoring**:
+    - Live location tracking for care receivers (with permission).
+    - Periodic background location updates for peace of mind.
+    - Monitor device battery level and connectivity status.
+    - Track step counts and online/offline presence.
+
+- **🚨 Emergency SOS**:
+    - A prominent, one-tap SOS button for emergencies.
+    - Instantly sends a high-priority alert and real-time location to linked caregivers.
+
+- **⚡ Smooth & Reactive UX**:
+    - Built with GetX for predictable and efficient state management.
+    - Optimistic UI updates provide a fast, responsive feel.
+    - Haptic feedback and clean animations for an intuitive user experience.
+
+---
+
+## 🧱 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | **Flutter 3.x** |
+| Backend & DB | **Supabase** (Auth, PostgreSQL, Realtime) |
+| State Management | **GetX** |
+| Location Services | `geolocator`, `permission_handler` |
+| Background Services | `flutter_background_service` |
+| Local Notifications | `flutter_local_notifications` |
+| UI | **Material 3** + Custom Widgets |
+| Image Handling | `image_picker`, `cloudinary` |
+
+---
+
+## 📲 Getting Started
+
+#### 1. Prerequisites
+- Flutter SDK (version 3.x or higher)
+- An IDE (like VS Code or Android Studio)
+- A Supabase account
+
+#### 2. Clone the Repository
+```bash
+git clone https://github.com/your-username/elder_care.git
+cd elder_care
+```
+
+#### 3. Install Dependencies
+```bash
+flutter pub get
+```
+
+#### 4. Configure Supabase
+1.  Create a new project on [Supabase](https://supabase.com).
+2.  Use the SQL schemas from the `/supabase` directory in this project to set up your tables.
+3.  Open `lib/main.dart` and initialize Supabase with your project credentials:
+```dart
+await Supabase.initialize(
+  url: 'YOUR_SUPABASE_URL',
+  anonKey: 'YOUR_SUPABASE_ANON_KEY',
+);
+```
+
+#### 5. Run the App
+```bash
+flutter run
+```
+
+---
+
+## 📁 Project Structure
+
+The project follows a feature-first architecture, organized into modules.
 
 ```
 lib/
-├── controllers/     # State management logic (AuthController, LocationController, etc.)
-├── models/          # Data models (Task, User)
-├── presentation/
-│   ├── screens/     # UI screens for each feature
-│   └── widgets/     # Reusable UI components (e.g., BottomNavBar)
-├── services/        # Business logic for APIs (LocationService, HealthDataService)
-└── main.dart        # Entry point of the application
+├── app/                # App-level config, constants, and utilities
+├── core/               # Core business logic, models, and shared controllers
+├── modules/            # Feature-based modules
+│   ├── auth/           # Authentication, onboarding, role selection
+│   ├── care_receiver/  # Features for the care receiver role
+│   ├── caregiver/      # Features for the caregiver role
+│   ├── dashboard/      # Main dashboard screen
+│   ├── events/         # Event/task creation and management
+│   ├── profile/        # User profile and settings
+│   └── splash/         # Initial splash/loading screen
+├── services/           # Background services (location, alarms)
+└── main.dart           # App entry point
 ```
 
 ---
 
-## 🌍 Future Enhancements
+## 🔐 Security & Privacy
 
-* **Medication Reminders:** A robust system for scheduling and tracking medication intake.
-* **Video & Voice Calls:** In-app communication features for easy check-ins.
-* **Emergency SOS Alerts:** An enhanced SOS system with automated alerts and calls.
-* **Detailed Health Reports:** Generate and export weekly or monthly health summaries.
-
----
-
-## 🛠️ Built With
-
-* **Flutter** 💙 - The core framework for building the cross-platform UI.
-* **Supabase** 🔐 - Handles authentication, database, and file storage.
-* **GetX** ⚡ - For powerful and lightweight state management and navigation.
-* **flutter_map** 🗺️ - For displaying interactive maps with OpenStreetMap.
-* **fl_chart** 📊 - Used for creating beautiful and dynamic charts.
-* **Image Picker** 🖼️ - For selecting profile pictures from the device gallery.
+- Authentication is managed by **Supabase Auth**.
+- **Row-Level Security (RLS)** is enabled in Supabase to ensure a user can only access their own data or the data of their linked care receiver.
+- User data is only visible to the user and their securely linked caregivers.
+- The app only requests permissions that are essential for its features (e.g., Location, Notifications).
 
 ---
 
-## 👨‍💻 Made by Kartik
+## 🤝 Contributing
 
-Connect with me for updates, forks, and collaborations!
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/your-username/elder_care/issues).
+
+1.  **Fork** the project.
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a **Pull Request**.
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see the `LICENSE.md` file for details.
+
+---
+
+## 👨‍💻 Author
+
+**Kartik Kumar**
+- Flutter Developer
+- Backend & Systems Enthusiast
+
+⭐ If you find this project useful, please consider starring the repository!
+```
