@@ -87,7 +87,13 @@ class TaskController extends GetxController {
   Future<void> loadTasksForReceiver(String receiverId) async {
     currentReceiverId = receiverId;
     try {
-      final res = await supabase.from('tasks').select().eq('receiver_id', receiverId).order('datetime', ascending: true);
+      final res = await supabase
+          .from('tasks')
+          .select()
+          .eq('receiver_id', receiverId)
+          .or('repeat_type.neq.none,is_completed.eq.false')
+          .order('datetime', ascending: true);
+
       if (res is List) {
         final list = res.map((e) => TaskModel.fromMap(Map<String, dynamic>.from(e))).toList();
         tasks.assignAll(_sortTasks(list));
@@ -116,12 +122,9 @@ class TaskController extends GetxController {
       receiverId: currentReceiverId!,
       title: titleController.text.trim(),
       datetime: dt?.toUtc().toIso8601String(),
-
       alarmEnabled: reminderEnabled.value,
       vibrate: reminderEnabled.value,
-
       taskType: isMedicine.value ? 'medicine' : 'normal',
-
       repeatType: repeatType.value,
       repeatDays: repeatDays,
     );
@@ -356,6 +359,28 @@ class TaskController extends GetxController {
     _lastDeletedTask = null;
     _lastDeletedIndex = null;
   }
+
+  Future<void> markTaskCompleted(TaskModel task, int index) async {
+    tasks.removeAt(index);
+
+    if (task.alarmEnabled && task.datetime != null) {
+      await AlarmService.cancel(task.id!);
+    }
+
+
+    await supabase
+        .from('tasks')
+        .update({'is_completed': true})
+        .eq('id', task.id!);
+
+    Get.snackbar(
+      'Task completed',
+      task.title,
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
 
 
 
