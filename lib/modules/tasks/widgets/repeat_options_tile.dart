@@ -2,6 +2,57 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../events/controllers/events_controller.dart';
+import '../controllers/task_controller.dart';
+import 'day_chips.dart';
+class RepeatOptions extends StatelessWidget {
+  final TaskController controller;
+  const RepeatOptions({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey('repeat-options'),
+      children: [
+        const SizedBox(height: 8),
+
+        RepeatCard(
+          label: 'Tomorrow',
+          selected: controller.repeatType.value == 'tomorrow',
+          onTap: () {
+            controller.repeatType.value = 'tomorrow';
+            controller.repeatDays.clear();
+          },
+        ),
+
+        RepeatCard(
+          label: 'Daily',
+          selected: controller.repeatType.value == 'daily',
+          onTap: () {
+            controller.repeatType.value = 'daily';
+            controller.repeatDays.clear();
+          },
+        ),
+
+        RepeatCard(
+          label: 'Custom',
+          selected: controller.repeatType.value == 'custom',
+          onTap: () {
+            controller.repeatType.value = 'custom';
+          },
+        ),
+
+        if (controller.repeatType.value == 'custom') ...[
+          const SizedBox(height: 10),
+          CustomDayChips(controller: controller),
+        ],
+      ],
+    );
+
+  }
+
+
+
+}
 
 class RepeatCard extends StatelessWidget {
   final String label;

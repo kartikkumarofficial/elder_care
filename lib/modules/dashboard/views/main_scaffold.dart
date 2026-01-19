@@ -16,6 +16,7 @@ import '../../care_receiver/controllers/schedule_controller.dart';
 import '../../caregiver/views/caregiver_dashboard.dart';
 import '../../tasks/controllers/task_controller.dart';
 import '../../tasks/views/task_section.dart';
+import '../../tasks/widgets/add_edit_dialog.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../controllers/nav_controller.dart';
 import '../../profile/views/profile_screen.dart';

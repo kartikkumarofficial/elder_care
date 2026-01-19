@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/models/task_model.dart';
@@ -11,10 +12,7 @@ class ScheduleController extends GetxController {
   final RxBool loading = false.obs;
   final selectedDate = DateTime.now().obs;
 
-  // ─────────────────────────────────────────────
-  // PROGRESS
-  // ─────────────────────────────────────────────
-
+  // progress
   int get totalCount =>
       timeline.where((e) => e.type == TimelineType.task).length;
 
@@ -23,10 +21,8 @@ class ScheduleController extends GetxController {
             (e) => e.type == TimelineType.task && e.isCompleted,
       ).length;
 
-  // ─────────────────────────────────────────────
-  // LOAD DATA
-  // ─────────────────────────────────────────────
 
+  // loading data
   Future<void> loadForCurrentUser(DateTime day) async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
@@ -38,11 +34,12 @@ class ScheduleController extends GetxController {
       final startOfDay = DateTime(day.year, day.month, day.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
-      // ───── TASKS (no date filter because of repeats)
+      // tasks
       final taskRes = await supabase
           .from('tasks')
           .select()
           .eq('receiver_id', user.id);
+      final dayKey = DateFormat('yyyy-MM-dd').format(day);
 
       final taskItems = (taskRes as List)
           .map((e) => TaskModel.fromMap(e))
@@ -54,11 +51,16 @@ class ScheduleController extends GetxController {
         title: task.title,
         time: DateTime.parse(task.datetime!).toLocal(),
         alarmEnabled: task.alarmEnabled,
-        isCompleted: task.isCompleted,
-      ))
+
+
+          isCompleted: task.repeatType == 'none'
+          ? task.isCompleted
+              : task.completedDates.contains(dayKey),
+
+    ))
           .toList();
 
-      // ───── EVENTS (using created_at as fallback)
+      // EVENTS
       final eventRes = await supabase
           .from('events')
           .select()
@@ -85,20 +87,17 @@ class ScheduleController extends GetxController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // VISIBILITY LOGIC (CRITICAL FIX)
-  // ─────────────────────────────────────────────
 
+  // visibility logic
   bool _shouldAppear(TaskModel task, DateTime day) {
     if (task.datetime == null) return false;
 
-    final taskStartDateTime =
-    DateTime.parse(task.datetime!).toLocal();
+    final taskStart = DateTime.parse(task.datetime!).toLocal();
 
     final taskStartDate = DateTime(
-      taskStartDateTime.year,
-      taskStartDateTime.month,
-      taskStartDateTime.day,
+      taskStart.year,
+      taskStart.month,
+      taskStart.day,
     );
 
     final targetDate = DateTime(
@@ -107,13 +106,17 @@ class ScheduleController extends GetxController {
       day.day,
     );
 
-    // ❌ Never show before task start date
+    //  Never show before task creation date
     if (targetDate.isBefore(taskStartDate)) return false;
 
     switch (task.repeatType) {
+      case 'none':
+        return _sameDay(taskStartDate, targetDate);
+
       case 'tomorrow':
         final tomorrow = taskStartDate.add(const Duration(days: 1));
-        return _sameDay(tomorrow, targetDate);
+        return _sameDay(taskStartDate, targetDate) ||
+            _sameDay(tomorrow, targetDate);
 
       case 'daily':
         return true;
@@ -122,15 +125,19 @@ class ScheduleController extends GetxController {
         return taskStartDate.weekday == targetDate.weekday;
 
       case 'custom':
-        return task.repeatDays
-            .contains(_weekday(targetDate.weekday));
+        final weekday = _weekday(targetDate.weekday);
 
-      case 'none':
+        final normalizedDays = task.repeatDays
+            .map((d) => d.toLowerCase().trim())
+            .toList();
+
+        return normalizedDays.contains(weekday);
+
       default:
-        return _sameDay(taskStartDate, targetDate);
+        return false;
     }
-
   }
+
 
   String _weekday(int d) =>
       ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][d - 1];
@@ -138,25 +145,43 @@ class ScheduleController extends GetxController {
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  // ─────────────────────────────────────────────
-  // COMPLETE TASK
-  // ─────────────────────────────────────────────
-
+  // complete task
   Future<void> markTaskCompleted(TimelineItem item) async {
-    await supabase
+    final dayKey =
+    DateFormat('yyyy-MM-dd').format(selectedDate.value);
+
+    final taskRes = await supabase
         .from('tasks')
-        .update({'is_completed': true})
-        .eq('id', item.id);
+        .select('repeat_type, completed_dates')
+        .eq('id', item.id)
+        .single();
+
+    final repeatType = taskRes['repeat_type'];
+    final dates =
+    List<String>.from(taskRes['completed_dates'] ?? []);
+
+    if (repeatType == 'none') {
+      // one-time task → permanent completion
+      await supabase
+          .from('tasks')
+          .update({'is_completed': true})
+          .eq('id', item.id);
+    } else {
+      // repeating task → day-only completion
+      if (!dates.contains(dayKey)) dates.add(dayKey);
+
+      await supabase
+          .from('tasks')
+          .update({'completed_dates': dates})
+          .eq('id', item.id);
+    }
 
     final index = timeline.indexOf(item);
     timeline[index] =
         timeline[index].copyWith(isCompleted: true);
   }
 
-  // ─────────────────────────────────────────────
-  // DELETE
-  // ─────────────────────────────────────────────
-
+  // delete task
   Future<void> deleteItem(TimelineItem item) async {
     final table =
     item.type == TimelineType.task ? 'tasks' : 'events';
@@ -164,4 +189,5 @@ class ScheduleController extends GetxController {
     await supabase.from(table).delete().eq('id', item.id);
     timeline.remove(item);
   }
+
 }
