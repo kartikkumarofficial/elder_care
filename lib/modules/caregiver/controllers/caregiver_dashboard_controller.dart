@@ -9,6 +9,7 @@ import 'package:pedometer/pedometer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/emergency_alert_service.dart';
+import '../../dashboard/controllers/nav_controller.dart';
 
 class CaregiverDashboardController extends GetxController {
   final supabase = Supabase.instance.client;
@@ -54,10 +55,21 @@ class CaregiverDashboardController extends GetxController {
   void onInit() {
     super.onInit();
     debugPrint("👨‍⚕️ CaregiverDashboardController INIT");
-    loadReceiver();
+
+
+    final uid = supabase.auth.currentUser?.id;
+    debugPrint("🔗 Auth UID used for care_links query: $uid");
+
 
 
   }
+  @override
+  void onReady() {
+    super.onReady();
+    loadReceiver();
+    debugPrint("🔗 loadReceiver() CALLED");
+  }
+
 
   @override
   void onClose() {
@@ -147,7 +159,11 @@ class CaregiverDashboardController extends GetxController {
       }
 
       receiverId.value = link["receiver_id"];
+
+      Get.find<NavController>().linkedReceiverId.value = receiverId.value;
+
       debugPrint("🧑‍🦳 Receiver ID linked: ${receiverId.value}");
+
 
       await fetchReceiverProfile();
       await fetchReceiverMood();
@@ -259,6 +275,7 @@ class CaregiverDashboardController extends GetxController {
       isMapReady.value = true; // let UI render even on error
     }
   }
+
 
 
   // ======================================================================

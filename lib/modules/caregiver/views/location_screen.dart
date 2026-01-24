@@ -3,164 +3,64 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../dashboard/controllers/nav_controller.dart';
+import '../controllers/caregiver_dashboard_controller.dart';
 import '../controllers/location_controller.dart';
 
 class LocationScreen extends StatelessWidget {
-  final String? linkedUserId;
-  const LocationScreen({super.key, required this.linkedUserId});
+  const LocationScreen({super.key});
+
 
   @override
   Widget build(BuildContext context) {
-    if (linkedUserId == null || linkedUserId!.isEmpty) {
-      return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.warning_amber_rounded, size: 60, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(
-                  "No caregiver linked yet.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    debugPrint("🗺️ LocationScreen BUILD");
 
-    final controller = Get.put(LocationController(linkedUserId: linkedUserId!));
+    final CaregiverDashboardController dashboard = Get.find<CaregiverDashboardController>();
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFeaf4f2), Color(0xFFfdfaf6)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
 
-          // MAP WITH TAP HANDLER =========================================
-          Obx(() {
-            if (controller.isLoading.value &&
-                controller.receiverLocation.value == null) {
-              return const Center(child: CircularProgressIndicator());
-            }
+    return Obx(() {
 
-            final initial = controller.receiverLocation.value ??
-                LatLng(20.5937, 78.9629);
 
-            return GoogleMap(
-              initialCameraPosition:
-              CameraPosition(target: initial, zoom: 15),
-              onMapCreated: controller.onMapCreated,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              markers: _markers(controller),
-              circles: _circles(controller),
 
-              // ⭐ TAP TO SELECT SAFE ZONE CENTER
-              onTap: (pos) {
-                controller.safeCenter.value = pos;
-                Get.snackbar(
-                  "Safe Zone Center Selected",
-                  "Tap Save to confirm this location.",
-                  snackPosition: SnackPosition.BOTTOM,
-                );
-              },
-            );
-          }),
+      final linkedUserId = dashboard.receiverId.value;
 
-          // FLOATING APPBAR ================================================
-          Positioned(
-            top: 40,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: Colors.white.withOpacity(0.75),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // BACK BUTTON
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF7AB7A7).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.all(6),
-                      child: const Icon(Icons.arrow_back,
-                          color: Color(0xFF7AB7A7)),
-                    ),
-                  ),
+      debugPrint("🗺️ linkedReceiverId = ${linkedUserId}");
 
+      // Receiver not linked yet
+      if (linkedUserId.isEmpty) {
+
+        return Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.warning_amber_rounded,
+                      size: 60, color: Colors.grey),
+                  SizedBox(height: 16),
                   Text(
-                    "Receiver’s Location",
-                    style: GoogleFonts.nunito(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
-                  ),
-
-                  GestureDetector(
-                    onTap: () => controller.fetchLocation(isRefresh: true),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF7AB7A7).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.all(6),
-                      child: const Icon(Icons.refresh,
-                          color: Color(0xFF7AB7A7)),
-                    ),
+                    "No receiver linked yet.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18),
                   ),
                 ],
               ),
             ),
           ),
+        );
+      }
 
-          // SAFE ZONE PANEL ===============================================
-          Positioned(
-            bottom: Get.height * 0.13,
-            left: 16,
-            right: 16,
-            child: _topStatusCard(controller),
-          ),
+      // ✅ receiver IS linked → create controller
+      final controller = Get.put(
+        LocationController(linkedUserId: linkedUserId),
+        tag: linkedUserId,
+      );
 
-          // DISTANCE CHIP ================================================
-          Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
-            child: _distanceChip(controller),
-          ),
-        ],
-      ),
-    );
+      return _LocationMapUI(controller);
+    });
   }
+
 
   // MARKERS =============================================================
   Set<Marker> _markers(LocationController c) {
@@ -440,4 +340,133 @@ class LocationScreen extends StatelessWidget {
       }),
     );
   }
+  Widget _LocationMapUI(LocationController controller) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFeaf4f2), Color(0xFFfdfaf6)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+
+          // MAP WITH TAP HANDLER =========================================
+          Obx(() {
+            if (controller.isLoading.value &&
+                controller.receiverLocation.value == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final initial = controller.receiverLocation.value ??
+                LatLng(20.5937, 78.9629);
+
+            return GoogleMap(
+              initialCameraPosition:
+              CameraPosition(target: initial, zoom: 15),
+              onMapCreated: controller.onMapCreated,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              markers: _markers(controller),
+              circles: _circles(controller),
+
+              // ⭐ TAP TO SELECT SAFE ZONE CENTER
+              onTap: (pos) {
+                controller.safeCenter.value = pos;
+                Get.snackbar(
+                  "Safe Zone Center Selected",
+                  "Tap Save to confirm this location.",
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              },
+            );
+          }),
+
+          // FLOATING APPBAR ================================================
+          Positioned(
+            top: 40,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: Colors.white.withOpacity(0.75),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // BACK BUTTON
+                  GestureDetector(
+                    onTap: () => Get.back(),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7AB7A7).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: const Icon(Icons.arrow_back,
+                          color: Color(0xFF7AB7A7)),
+                    ),
+                  ),
+
+                  Text(
+                    "Receiver’s Location",
+                    style: GoogleFonts.nunito(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  GestureDetector(
+                    onTap: () => controller.fetchLocation(isRefresh: true),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7AB7A7).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: const Icon(Icons.refresh,
+                          color: Color(0xFF7AB7A7)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // SAFE ZONE PANEL ===============================================
+          Positioned(
+            bottom: Get.height * 0.13,
+            left: 16,
+            right: 16,
+            child: _topStatusCard(controller),
+          ),
+
+          // DISTANCE CHIP ================================================
+          Positioned(
+            bottom: 20,
+            left: 16,
+            right: 16,
+            child: _distanceChip(controller),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+
