@@ -51,7 +51,7 @@ class LocationScreen extends StatelessWidget {
         );
       }
 
-      // ✅ receiver IS linked → create controller
+      //  receiver IS linked → create controller
       final controller = Get.put(
         LocationController(linkedUserId: linkedUserId),
         tag: linkedUserId,
@@ -62,7 +62,7 @@ class LocationScreen extends StatelessWidget {
   }
 
 
-  // MARKERS =============================================================
+  // MARKERS
   Set<Marker> _markers(LocationController c) {
     final set = <Marker>{};
 
@@ -91,7 +91,7 @@ class LocationScreen extends StatelessWidget {
     return set;
   }
 
-  // CIRCLES =============================================================
+  // CIRCLES
   Set<Circle> _circles(LocationController c) {
     final set = <Circle>{};
 
@@ -111,7 +111,7 @@ class LocationScreen extends StatelessWidget {
     return set;
   }
 
-  // SAFE ZONE PANEL ======================================================
+  // safe zone panel
   Widget _topStatusCard(LocationController c) {
     return Card(
       elevation: 10,
@@ -186,7 +186,7 @@ class LocationScreen extends StatelessWidget {
     );
   }
 
-  // DISTANCE CHIP ========================================================
+  // distance chip
   Widget _distanceChip(LocationController c) {
     return Obx(() {
       if (!c.geofenceActive.value ||
@@ -217,7 +217,7 @@ class LocationScreen extends StatelessWidget {
     });
   }
 
-  // BOTTOM SHEET ========================================================
+  // bottom sheet
   void _openGeofenceEditor(LocationController c) {
     showModalBottomSheet(
       context: Get.context!,
@@ -229,7 +229,7 @@ class LocationScreen extends StatelessWidget {
     );
   }
 
-  // SAFE ZONE EDITOR =====================================================
+  // SAFE ZONE EDITOR
   Widget _geofenceEditorUI(LocationController c) {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -264,7 +264,7 @@ class LocationScreen extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // ⭐ SELECT LOCATION + USE RECEIVER LOCATION (SIDE-BY-SIDE)
+            // SELECT LOCATION + USE RECEIVER LOCATION (SIDE-BY-SIDE)
             Row(
               children: [
                 Expanded(
@@ -307,7 +307,7 @@ class LocationScreen extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // SAVE BUTTON WITH FALLBACK VALIDATION ========================
+            // SAVE BUTTON WITH FALLBACK VALIDATION
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF7AB7A7),
