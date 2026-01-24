@@ -13,6 +13,7 @@ import '../../care_receiver/controllers/activity_controller.dart';
 import '../../care_receiver/controllers/carereceiver_dashboard_controller.dart';
 import '../../care_receiver/controllers/reciever_location_controller.dart';
 import '../../care_receiver/controllers/schedule_controller.dart';
+import '../../caregiver/controllers/caregiver_dashboard_controller.dart';
 import '../../caregiver/views/caregiver_dashboard.dart';
 import '../../tasks/controllers/task_controller.dart';
 import '../../tasks/views/task_section.dart';
@@ -44,51 +45,83 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   void initState() {
     super.initState();
+    debugPrint("🏗️ MainScaffold INIT");
 
     final user = authController.user.value;
+    debugPrint("🏗️ User at MainScaffold init: ${user?.id} | role=${user?.role}");
 
-    if (user != null && user.role == 'receiver') {
+    // 1️⃣ Global controllers (ONCE)
+    if (!Get.isRegistered<TaskController>()) {
+      Get.put(TaskController(), permanent: true);
+    }
+
+    if (!Get.isRegistered<CaregiverDashboardController>()) {
+      debugPrint("🧠 Registering CaregiverDashboardController");
+      Get.put(CaregiverDashboardController());
+    } else {
+      debugPrint("♻️ CaregiverDashboardController ALREADY registered");
+    }
+
+
+    if (!Get.isRegistered<ReceiverDashboardController>()) {
+      Get.put(ReceiverDashboardController(), permanent: true);
+    }
+
+    // 2️⃣ Caregiver task wiring (SINGLE SOURCE OF TRUTH)
+    if (user?.role == 'caregiver') {
+      debugPrint("🧵 Wiring caregiver task listeners");
+      final caregiverController = Get.find<CaregiverDashboardController>();
+      final taskController = Get.find<TaskController>();
+
+      // Load immediately if already linked
+      final rid = caregiverController.receiverId.value;
+      if (rid != null && rid.isNotEmpty) {
+        taskController.loadTasksForReceiver(rid);
+      }
+
+      // Load when receiver gets linked later
+      ever<String?>(caregiverController.receiverId, (rid) {
+        debugPrint("📡 receiverId changed → $rid");
+
+        if (rid == null || rid.isEmpty) {
+          debugPrint("⚠️ receiverId empty, skipping task load");
+          return;
+        }
+
+        if (taskController.currentReceiverId != rid) {
+          debugPrint("📥 Loading tasks for receiver $rid");
+          taskController.loadTasksForReceiver(rid);
+        }
+      });
+
+    }
+
+    // 3️⃣ Receiver-only controllers
+    if (user?.role == 'receiver') {
       if (!Get.isRegistered<ReceiverLocationController>()) {
         Get.put(ReceiverLocationController(), permanent: true);
       }
-    }
-    // Ensure controllers are available (NO recreation later)
-    if (!Get.isRegistered<ReceiverDashboardController>()) {
-      Get.lazyPut(() => ReceiverDashboardController());
-    }
-    if (user?.role == 'receiver') {
       if (!Get.isRegistered<ActivityController>()) {
         Get.put(ActivityController(), permanent: true);
       }
     }
 
-
+    // 4️⃣ Screens (NO DATA PASSED)
     caregiverScreens = [
       CaregiverDashboard(),
-      // ChatPlaceholderScreen(),
-      DirectChatScreen(),
-      LocationScreen(
-        linkedUserId: (navController.linkedReceiverId.value.isNotEmpty)
-            ? navController.linkedReceiverId.value
-            : null,
-      ),
+      const DirectChatScreen(),
+      const LocationScreen(),
       ProfileScreen(),
     ];
 
     receiverScreens = [
       ReceiverDashboardScreen(),
-
-      // Chat
-      // ChatPlaceholderScreen(),
-
-      // ChatScreen(),
-      DirectChatScreen(),
-      ScheduleScreen(),
-
-      // Profile
+      const DirectChatScreen(),
+      const ScheduleScreen(),
       ProfileScreen(),
     ];
   }
+
 
   @override
   Widget build(BuildContext context) {

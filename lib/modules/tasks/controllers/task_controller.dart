@@ -6,6 +6,7 @@ import '../../../core/models/task_model.dart';
 
 
 class TaskController extends GetxController {
+
   final supabase = Supabase.instance.client;
 
   // Holds the tasks for the currently loaded receiver
@@ -86,6 +87,7 @@ class TaskController extends GetxController {
   /// Load tasks for a specific receiver (call from dashboard with receiverId)
   Future<void> loadTasksForReceiver(String receiverId) async {
     currentReceiverId = receiverId;
+    debugPrint('🧩 Loading tasks for receiver: $receiverId');
     try {
       final res = await supabase
           .from('tasks')

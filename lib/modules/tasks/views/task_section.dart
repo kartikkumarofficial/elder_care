@@ -23,7 +23,8 @@ class TaskSection extends StatelessWidget {
 
   TaskSection({Key? key, this.receiverIdOverride}) : super(key: key);
 
-  final TaskController controller = Get.find<TaskController>();
+  // final TaskController controller = Get.find<TaskController>();
+  final TaskController controller = Get.put(TaskController(),permanent: true);
   final NavController nav = Get.find<NavController>();
 
   @override
