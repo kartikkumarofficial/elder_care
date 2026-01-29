@@ -20,8 +20,6 @@ class LocationScreen extends StatelessWidget {
 
     return Obx(() {
 
-
-
       final linkedUserId = dashboard.receiverId.value;
 
       debugPrint("🗺️ linkedReceiverId = ${linkedUserId}");
