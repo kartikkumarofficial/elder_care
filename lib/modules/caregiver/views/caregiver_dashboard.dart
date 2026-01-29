@@ -1,5 +1,7 @@
 
-  import 'package:flutter/foundation.dart';
+  import 'package:elder_care/modules/care_receiver/controllers/activity_controller.dart';
+import 'package:elder_care/modules/care_receiver/widgets/reciever_status_chip.dart';
+import 'package:flutter/foundation.dart';
   import 'package:flutter/gestures.dart';
   import 'package:flutter/material.dart';
   import 'package:get/get.dart';
@@ -21,6 +23,7 @@ import '../widgets/healthstatussection.dart';
   }
 
   class _CaregiverDashboardState extends State<CaregiverDashboard> {
+    final activity = Get.put(ActivityController());
 
     // final controller = Get.put(CaregiverDashboardController());
     final controller = Get.find<CaregiverDashboardController>();
@@ -210,6 +213,7 @@ import '../widgets/healthstatussection.dart';
 
                 // const SizedBox(height: 30),
                 SizedBox(height:srch*0.01),
+                // ReceiverStatusChips(),
                 StatusSection(),
                 SizedBox(height:srch*0.01),
                 healthStatusSection(),
