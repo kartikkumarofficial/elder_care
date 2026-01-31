@@ -3,12 +3,14 @@ class UserModel {
   String? fullName;
   String? email;
   String? role;
+  String? phone;
   String? careId;
   DateTime? createdAt;
   String? profileImage;
 
   UserModel({
     required this.id,
+    this.phone,
     this.fullName,
     this.email,
     this.role,
@@ -23,6 +25,7 @@ class UserModel {
       fullName: json['full_name'],
       email: json['email'],
       role: json['role'],
+      phone: json['phone'],
       careId: json['care_id'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -36,6 +39,7 @@ class UserModel {
       "id": id,
       "full_name": fullName,
       "email": email,
+      "phone":phone,
       "role": role,
       "care_id": careId,
       "created_at": createdAt?.toIso8601String(),

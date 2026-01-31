@@ -1,3 +1,4 @@
+import 'package:elder_care/app/utils/phone_call.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -98,7 +99,9 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         )),
         actions: [
-          IconButton(icon: const Icon(Icons.call), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.call), onPressed: () {
+            makePhoneCall("");
+          }),
           IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
         ],
       ),
@@ -124,7 +127,7 @@ class _ChatScreenState extends State<ChatScreen> {
               /// CHAT LIST
               ListView.builder(
                 controller: scrollController,
-                physics: const BouncingScrollPhysics(),
+                physics: AlwaysScrollableScrollPhysics(),
                 padding:  EdgeInsets.fromLTRB(Get.width*0.002, 16, Get.width*0.002, Get.height*0.2),
                 itemCount: controller.messages.length,
                 itemBuilder: (_, i) {
