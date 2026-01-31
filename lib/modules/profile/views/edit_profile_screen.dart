@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:country_code_picker/country_code_picker.dart';
+import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,6 +17,7 @@ class EditProfileScreen extends StatelessWidget {
     final w = Get.width;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -107,6 +110,9 @@ class EditProfileScreen extends StatelessWidget {
               SizedBox(height: h * 0.02),
 
               buildField("Email", controller.emailController, w, email: true),
+
+              SizedBox(height: h * 0.02),
+              buildPhoneField(w),
               SizedBox(height: h * 0.04),
 
               Obx(() {
@@ -151,6 +157,103 @@ class EditProfileScreen extends StatelessWidget {
     );
   }
 
+  Widget buildPhoneField(double w) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Phone Number",
+          style: GoogleFonts.nunito(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: w * 0.14,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(w * 0.04),
+          ),
+          child: Row(
+            children: [
+              /// COUNTRY PICKER BUTTON
+              GestureDetector(
+                onTap: _openCountryPicker,
+                child: Obx(() => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      right: BorderSide(color: Colors.grey.shade300),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        controller.selectedCountryCode.value,
+                        style: GoogleFonts.nunito(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 18,
+                        color: Colors.black54,
+                      ),
+                    ],
+                  ),
+                )),
+              ),
+
+
+              /// PHONE INPUT
+              Expanded(
+                child: TextField(
+                  controller: controller.phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    hintText: "Enter phone number",
+                    border: InputBorder.none,
+                    contentPadding:
+                    EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  void _openCountryPicker() {
+    showCountryPicker(
+      context: Get.context!,
+      showPhoneCode: true,
+      countryListTheme: CountryListThemeData(
+        borderRadius: BorderRadius.circular(20),
+        inputDecoration: InputDecoration(
+          hintText: "Search country",
+          filled: true,
+          fillColor: Colors.grey.shade100,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      onSelect: (country) {
+        controller.selectedCountryCode.value = "+${country.phoneCode}";
+        // controller.selectedCountryFlag.value = country.flagEmoji;
+      },
+    );
+  }
+
+
+
+
   Widget buildField(String label, TextEditingController controller, double w,
       {bool email = false}) {
     return Column(
@@ -165,7 +268,7 @@ class EditProfileScreen extends StatelessWidget {
           keyboardType: email ? TextInputType.emailAddress : TextInputType.text,
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.grey.shade100,
+            fillColor: Colors.grey.shade200,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(w * 0.04),
               borderSide: BorderSide.none,
@@ -178,3 +281,15 @@ class EditProfileScreen extends StatelessWidget {
     );
   }
 }
+
+
+BoxDecoration inputFieldDecoration(double w) {
+  return BoxDecoration(
+    color: const Color(0xFFF6F8F7), // slightly darker than bg
+    borderRadius: BorderRadius.circular(w * 0.04),
+    border: Border.all(
+      color: Colors.black.withOpacity(0.06),
+    ),
+  );
+}
+

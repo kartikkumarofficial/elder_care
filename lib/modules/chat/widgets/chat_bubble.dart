@@ -17,20 +17,24 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bubbleColor =
-    isMe ? const Color(0xFF7AB7A7) : Colors.white;
-    final textColor = isMe ? Colors.white : Colors.black87;
+    final outgoingColor = const Color(0xFF6FB3A6); // teal
+    final incomingColor = const Color(0xFFF9FAFA);
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        margin: EdgeInsets.only(
+          left: isMe ? 60 : 14,
+          right: isMe ? 14 : 60,
+          top: 6,
+          bottom: 6,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.72,
+          maxWidth: MediaQuery.of(context).size.width * 0.65,
         ),
         decoration: BoxDecoration(
-          color: bubbleColor,
+          color: isMe ? outgoingColor : incomingColor,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
@@ -39,24 +43,28 @@ class ChatBubble extends StatelessWidget {
             bottomRight:
             isMe ? const Radius.circular(4) : const Radius.circular(18),
           ),
+          border: isMe
+              ? null
+              : Border.all(color: Colors.black.withOpacity(0.05)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.025),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment:
           isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               message,
               style: GoogleFonts.nunito(
                 fontSize: 15,
-                color: textColor,
                 height: 1.4,
+                color: isMe ? Colors.white : Colors.black87,
               ),
             ),
             const SizedBox(height: 4),
@@ -66,23 +74,23 @@ class ChatBubble extends StatelessWidget {
                 Text(
                   _formatTime(time),
                   style: GoogleFonts.nunito(
-                    fontSize: 11,
-                    color: isMe
-                        ? Colors.white70
-                        : Colors.black45,
+                    fontSize: 10.5,
+                    color:
+                    isMe ? Colors.white70 : Colors.black45,
                   ),
                 ),
                 if (isMe) ...[
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   Icon(
                     isSeen ? Icons.done_all : Icons.done,
                     size: 14,
-                    color:
-                    isSeen ? Colors.blue.shade200 : Colors.white70,
+                    color: isSeen
+                        ? Colors.white.withOpacity(0.9)
+                        : Colors.white60,
                   ),
-                ]
+                ],
               ],
-            )
+            ),
           ],
         ),
       ),
