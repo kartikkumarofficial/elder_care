@@ -133,7 +133,7 @@ class _ReceiverDashboardScreenState extends State<ReceiverDashboardScreen> {
 
 
                   /// EVENTS
-                  EventSectionModern(),
+                  EventSection(),
 
                   SizedBox(height: h * 0.03),
 

@@ -41,7 +41,7 @@
               /// 🌿 BACKGROUND
               Positioned.fill(
                 child: Image.asset(
-                  'assets/images/schedule_bg.jpg',
+                  'assets/images/schedule.png',
                   fit: BoxFit.cover,
                 ),
               ),

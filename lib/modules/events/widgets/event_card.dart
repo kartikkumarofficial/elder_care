@@ -1,0 +1,174 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../../core/models/event_model.dart';
+import '../controllers/events_controller.dart';
+import '../views/eventssection.dart';
+import 'event_details_dialog.dart';
+
+
+
+class EventCardCompact extends StatelessWidget {
+  final EventModel event;
+  const EventCardCompact({Key? key, required this.event}) : super(key: key);
+
+  String _friendlyDate(String iso) {
+    try {
+      final d = DateTime.parse(iso);
+      return '${d.day}/${d.month}/${d.year} • ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso;
+    }
+  }
+
+  IconData _iconForCategory(String c) {
+    switch (c) {
+      case 'Medication':
+        return Icons.medication;
+      case 'Appointment':
+        return Icons.medical_services;
+      case 'Vitals':
+        return Icons.favorite;
+      case 'Activity':
+        return Icons.directions_walk;
+      case 'Reminder':
+        return Icons.notifications;
+      default:
+        return Icons.event;
+    }
+  }
+
+  Color _colorForCategory(String c) {
+    switch (c) {
+      case 'Medication':
+        return Colors.orange.shade300;
+      case 'Appointment':
+        return Colors.blue.shade300;
+      case 'Vitals':
+        return Colors.red.shade300;
+      case 'Activity':
+        return Colors.green.shade300;
+      case 'Reminder':
+        return Colors.purple.shade300;
+      default:
+        return kTealLight;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ctl = Get.find<EventsController>();
+
+    return GestureDetector(
+      onTap: () {
+        showDialog(context: context, builder: (_) => EventDetailsDialog(event: event));
+      },
+      onLongPress: () {
+        ctl.startEdit(event);
+        showDialog(context: context, builder: (_) => EventDetailsDialog(event: event));
+      },
+      child: Container(
+        width: Get.width * 0.7,
+        height: Get.height * 0.14,
+        margin: EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F6F7),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFE1E6E8)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+
+        padding: EdgeInsets.all(Get.width * 0.035),
+        child: Row(
+          children: [
+            // Left side Icon bubble
+            Container(
+              width: Get.width * 0.14,
+              height: Get.width * 0.14,
+              decoration: BoxDecoration(
+                color: _colorForCategory(event.category).withOpacity(0.9),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: _colorForCategory(event.category).withOpacity(0.35),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Icon(
+                _iconForCategory(event.category),
+                color: Colors.white,
+                size: Get.width * 0.075,
+              ),
+            ),
+
+            SizedBox(width: 14),
+
+            // Right side text
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      fontWeight: FontWeight.w800,
+                      fontSize: Get.width * 0.042,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  SizedBox(height: 6),
+
+                  Text(
+                    _friendlyDate(event.datetime),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      color: Colors.black54,
+                      fontSize: Get.width * 0.0335,
+                    ),
+                  ),
+
+                  Spacer(),
+
+                  // Category chip
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(65),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: kTealLight.withOpacity(0.6)),
+                        ),
+                        child: Text(
+                          event.category,
+                          style: GoogleFonts.nunito(
+                            fontSize: Get.width * 0.0335,
+                            color: kTeal,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

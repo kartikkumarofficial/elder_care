@@ -219,7 +219,7 @@ import '../widgets/healthstatussection.dart';
                 healthStatusSection(),
                 // SizedBox(height:srch*0.01),
                 SizedBox(height: srch * 0.015),
-                EventSectionModern(),
+                EventSection(),
                 SizedBox(height: srch * 0.02),
 
                 TaskSection(),
