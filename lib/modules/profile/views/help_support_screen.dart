@@ -330,7 +330,7 @@ class HelpSupportScreen extends StatelessWidget {
                 ],
               ),
 
-              SizedBox(height: 10),
+              SizedBox(height: Get.height*0.02),
             ],
           ),
         );
