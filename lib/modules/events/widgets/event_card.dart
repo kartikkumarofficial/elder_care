@@ -22,22 +22,34 @@ class EventCardCompact extends StatelessWidget {
     }
   }
 
-  IconData _iconForCategory(String c) {
+  Widget _iconForCategory(String c, double size) {
     switch (c) {
       case 'Medication':
-        return Icons.medication;
+        return Image.asset(
+          'assets/images/pill.png',
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          color: Colors.white,
+        );
+
       case 'Appointment':
-        return Icons.medical_services;
+        return Icon(Icons.medical_services, color: Colors.white, size: size);
+
       case 'Vitals':
-        return Icons.favorite;
+        return Icon(Icons.favorite, color: Colors.white, size: size);
+
       case 'Activity':
-        return Icons.directions_walk;
+        return Icon(Icons.directions_walk, color: Colors.white, size: size);
+
       case 'Reminder':
-        return Icons.notifications;
+        return Icon(Icons.notifications, color: Colors.white, size: size);
+
       default:
-        return Icons.event;
+        return Icon(Icons.event, color: Colors.white, size: size);
     }
   }
+
 
   Color _colorForCategory(String c) {
     switch (c) {
@@ -103,14 +115,15 @@ class EventCardCompact extends StatelessWidget {
                   )
                 ],
               ),
-              child: Icon(
-                _iconForCategory(event.category),
-                color: Colors.white,
-                size: Get.width * 0.075,
-              ),
+          child: Center(
+            child: _iconForCategory(
+              event.category,
+              Get.width * 0.075,
+            ),
+          ),
             ),
 
-            SizedBox(width: 14),
+          SizedBox(width: 14),
 
             // Right side text
             Expanded(
