@@ -124,6 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
           return Stack(
             children: [
+              _chatBackground(),
               /// CHAT LIST
               ListView.builder(
                 controller: scrollController,
@@ -208,4 +209,16 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
+}
+
+Widget _chatBackground() {
+  return Positioned.fill(
+    child: Opacity(
+      opacity: 0.3,
+      child: Image.asset(
+        'assets/images/chat_bgg.png',
+        fit: BoxFit.cover,
+      ),
+    ),
+  );
 }

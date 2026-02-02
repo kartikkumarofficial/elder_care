@@ -494,6 +494,9 @@ class ReceiverDashboardController extends GetxController {
       // 🔹 Events (if controller exists)
       if (Get.isRegistered<EventsController>()) {
         await Get.find<EventsController>().loadEvents();
+      }else{
+        Get.put(EventsController());
+        await Get.find<EventsController>().loadEvents();
       }
 
       debugPrint("✅ Pull-to-refresh completed");

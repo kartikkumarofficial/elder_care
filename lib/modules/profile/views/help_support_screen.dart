@@ -60,17 +60,6 @@ class HelpSupportScreen extends StatelessWidget {
           children: [
             SizedBox(height: h * 0.02),
             Expanded(child: _buildMainContent(context, h, w)),
-            Obx(
-                  () =>
-                  Padding(
-                    padding: EdgeInsets.only(bottom: h * 0.02),
-                    child: Text(
-                      'Version ${controller.appVersion.value}',
-                      style: GoogleFonts.nunito(
-                          color: Colors.black54, fontSize: w * 0.034),
-                    ),
-                  ),
-            ),
           ],
         ),
       ),
@@ -216,8 +205,17 @@ class HelpSupportScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12)),
             ),
           ),
+          SizedBox(height: h * 0.015),
+          Text(
+            // 'Version ${controller.appVersion.value}',
+            'Version 1.0.0',
+            style: GoogleFonts.nunito(
+                color: Colors.black54, fontSize: Get.height * 0.015),
+          ),
 
-          SizedBox(height: h * 0.04),
+
+
+          SizedBox(height: h * 0.02),
         ],
       ),
     );
@@ -244,6 +242,7 @@ class HelpSupportScreen extends StatelessWidget {
                   Icons.keyboard_arrow_up_outlined, color: Colors.black45),
             ),
             Divider(height: 1),
+
           ],
         ),
       ),
@@ -330,7 +329,9 @@ class HelpSupportScreen extends StatelessWidget {
                 ],
               ),
 
-              SizedBox(height: Get.height*0.02),
+
+
+              SizedBox(height: Get.height*0.03),
             ],
           ),
         );

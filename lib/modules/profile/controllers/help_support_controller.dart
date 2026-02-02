@@ -98,7 +98,8 @@ class HelpSupportController extends GetxController {
   Future<void> _loadPackageInfo() async {
     try {
       final info = await PackageInfo.fromPlatform();
-      appVersion.value = '${info.version}+${info.buildNumber}';
+      // appVersion.value = '${info.version}+${info.buildNumber}';
+      appVersion.value = '1.0.0';
     } catch (_) {
       appVersion.value = 'Unknown';
     }
