@@ -240,7 +240,15 @@
       final isCompleted = isTask && item.isCompleted;
 
       final now = DateTime.now();
-      final isPast = item.time.isBefore(now);
+      final selectedDate = controller.selectedDate.value;
+
+      final isToday =
+          selectedDate.year == now.year &&
+              selectedDate.month == now.month &&
+              selectedDate.day == now.day;
+
+      final isPast = isToday && item.time.isBefore(now);
+
 
       final bg = isCompleted
           ? kTeal.withOpacity(0.18)
@@ -323,15 +331,15 @@
                 ),
                 child: Text(
                   item.title,
+                  maxLines: 2,                 // 👈 LIMIT TO 2 LINES
+                  overflow: TextOverflow.ellipsis, // 👈 SHOW ...
                   style: GoogleFonts.nunito(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    // decoration: isCompleted ? TextDecoration.lineThrough : null,
-                    color: isCompleted
-                        ? kTeal
-                        : Colors.black87,
+                    color: isCompleted ? kTeal : Colors.black87,
                   ),
                 ),
+
 
               ),
             ),

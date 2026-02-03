@@ -66,7 +66,7 @@ class MoodDialog {
 
                 SizedBox(height: h * 0.006),
 
-                /// SUBTITLE (HUMAN)
+                /// SUBTITLE
                 Text(
                   "How are you feeling right now?",
                   textAlign: TextAlign.center,
@@ -121,7 +121,7 @@ class MoodDialog {
 
                 SizedBox(height: h * 0.026),
 
-                /// FOOTNOTE (REASSURING)
+                /// FOOTNOTE
                 FittedBox(
                   child: Text(
                     "This helps your caregiver understand you better",
