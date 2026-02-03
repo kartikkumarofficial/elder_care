@@ -9,8 +9,9 @@ import 'add_edit_event_dialog.dart';
 
 class EventDetailsDialog extends StatelessWidget {
   final EventModel event;
+  final EventsController controller = Get.find<EventsController>();
 
-  const EventDetailsDialog({
+   EventDetailsDialog({
     Key? key,
     required this.event,
   }) : super(key: key);

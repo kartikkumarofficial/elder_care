@@ -15,9 +15,7 @@ import 'activity_controller.dart';
 class ReceiverDashboardController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // ─────────────────────────────────────────────
-  // USER INFO
-  // ─────────────────────────────────────────────
+  // user info
   final userName = ''.obs;
 
   String get greeting {
@@ -27,45 +25,54 @@ class ReceiverDashboardController extends GetxController {
     return "Good Evening";
   }
 
-  // ─────────────────────────────────────────────
-  // MOOD
-  // ─────────────────────────────────────────────
+  // mood
   final selectedMood = ''.obs;
   final moodSubmittedToday = false.obs;
+  
+// MOOD CONFIG (ORDERED: HAPPY → SAD)
 
-  // ─────────────────────────────────────────────
+  final List<Map<String, String>> moodOptions = [
+    {'key': 'very_happy', 'emoji': '😄'},
+    {'key': 'happy', 'emoji': '😃'},
+    {'key': 'neutral', 'emoji': '😐'},
+    {'key': 'sad', 'emoji': '😔'},
+    {'key': 'very_sad', 'emoji': '😣'},
+  ];
+
+
+
   // DEVICE STATUS
-  // ─────────────────────────────────────────────
+  
   final Battery _battery = Battery();
   final batteryLevel = 0.obs;
   final isCharging = false.obs;
   final isDeviceConnected = false.obs;
   DateTime? lastDeviceSync;
 
-  // ─────────────────────────────────────────────
+  
   // LOCATION SHARING
-  // ─────────────────────────────────────────────
+  
   Timer? _locationTimer;
   bool _locationStarted = false;
   final isSharingLocation = false.obs;
   final locationStatusMessage = "Initializing...".obs;
 
-  // ─────────────────────────────────────────────
+  
   // STEPS
-  // ─────────────────────────────────────────────
+  
   StreamSubscription<StepCount>? _stepSub;
   Timer? _stepsFlushTimer;
   bool _stepsStarted = false;
   int _latestSteps = 0;
 
-  // ─────────────────────────────────────────────
+  
   // UI STATE
-  // ─────────────────────────────────────────────
+  
   final isLoading = false.obs;
 
-  // ─────────────────────────────────────────────
+  
   // INIT
-  // ─────────────────────────────────────────────
+  
   @override
   void onInit() {
     super.onInit();
@@ -82,9 +89,9 @@ class ReceiverDashboardController extends GetxController {
     super.onClose();
   }
 
-  // ─────────────────────────────────────────────
+  
   // DASHBOARD LOAD
-  // ─────────────────────────────────────────────
+  
   Future<void> loadDashboard() async {
     if (isLoading.value) return;
 
@@ -121,9 +128,9 @@ class ReceiverDashboardController extends GetxController {
   }
   //for mood section - commented
 
-  // ─────────────────────────────────────────────
+  
   // MOOD
-  // ─────────────────────────────────────────────
+  
   // Future<void> checkTodayMood() async {
   //   final user = supabase.auth.currentUser;
   //   if (user == null) return;
@@ -168,9 +175,9 @@ class ReceiverDashboardController extends GetxController {
   //   debugPrint("🙂 Mood updated → $mood");
   // }
 
-  // ─────────────────────────────────────────────
+  
   // DEVICE STATUS
-  // ─────────────────────────────────────────────
+  
   Future<void> syncDeviceStatus() async {
     if (lastDeviceSync != null &&
         DateTime.now().difference(lastDeviceSync!).inMinutes < 5) {
@@ -225,9 +232,9 @@ class ReceiverDashboardController extends GetxController {
     debugPrint("📡 Device connected: ${isDeviceConnected.value}");
   }
 
-  // ─────────────────────────────────────────────
+  
   // LOCATION SHARING (LOGGED)
-  // ─────────────────────────────────────────────
+  
   Future<void> startAutomaticLocationSharing() async {
     if (_locationStarted) return;
     _locationStarted = true;
@@ -294,9 +301,9 @@ class ReceiverDashboardController extends GetxController {
     debugPrint("📍 Location upload successful");
   }
 
-  // ─────────────────────────────────────────────
+  
   // STEPS
-  // ─────────────────────────────────────────────
+  
   Future<void> startStepTracking() async {
     if (_stepsStarted) return;
     _stepsStarted = true;
@@ -344,9 +351,9 @@ class ReceiverDashboardController extends GetxController {
     debugPrint("🚶 Steps synced: $_latestSteps");
   }
 
-  // ─────────────────────────────────────────────
+  
   // SOS
-  // ─────────────────────────────────────────────
+  
   Future<void> sendSOS() async {
     final user = supabase.auth.currentUser;
     if (user == null) return;

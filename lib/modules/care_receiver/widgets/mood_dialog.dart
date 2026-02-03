@@ -11,13 +11,7 @@ class MoodDialog {
     final w = Get.width;
     final h = Get.height;
 
-    final moods = {
-      'very_sad': '😣',
-      'sad': '😔',
-      'neutral': '😐',
-      'happy': '😃',
-      'very_happy': '😄',
-    };
+
 
     Get.dialog(
       Center(
@@ -46,12 +40,12 @@ class MoodDialog {
                 /// LOTTIE SPACE (KEPT)
                 ClipRect(
                   child: SizedBox(
-                    height: h*0.12,
-                    width: w*0.7,
+                    height: h*0.15,
+                    width: w*0.5,
                     child: Transform.scale(
-                      scale: 1.7,
+                      scale: 1,
                       child: Lottie.asset(
-                        'assets/lottie/wellbeing.json',
+                        'assets/lottie/Happy_Dog.json',
                         repeat: true,
                         fit: BoxFit.contain,
                       ),
@@ -59,14 +53,7 @@ class MoodDialog {
                   ),
                 ),
 
-                // SizedBox(height: h * 0.01),
 
-                /// FRIENDLY MED BADGE
-          
-
-                // SizedBox(height: h * 0.012),
-
-                /// TITLE (FRIENDLIER)
                 Text(
                   "Just checking in with you",
                   textAlign: TextAlign.center,
@@ -97,12 +84,13 @@ class MoodDialog {
                     alignment: WrapAlignment.center,
                     spacing: w * 0.032,
                     runSpacing: h * 0.02,
-                    children: moods.entries.map((e) {
-                      final isSelected =
-                          controller.selectedMood.value == e.key;
+                    children: controller.moodOptions.map((mood) {
+                      final key = mood['key']!;
+                      final emoji = mood['emoji']!;
+                      final isSelected = controller.selectedMood.value == key;
 
                       return GestureDetector(
-                        onTap: () => controller.submitMood(e.key),
+                        onTap: () => controller.submitMood(key),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 220),
                           curve: Curves.easeOutBack,
@@ -110,20 +98,18 @@ class MoodDialog {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: isSelected
-                                ? const Color(0xFF7AB7A7)
-                                .withAlpha(35)
+                                ? const Color(0xFF7AB7A7).withAlpha(35)
                                 : Colors.white,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black
-                                    .withOpacity(isSelected ? 0.18 : 0.1),
+                                color: Colors.black.withOpacity(isSelected ? 0.18 : 0.1),
                                 blurRadius: 12,
                                 offset: const Offset(0, 6),
                               ),
                             ],
                           ),
                           child: Text(
-                            e.value,
+                            emoji,
                             style: TextStyle(fontSize: w * 0.088),
                           ),
                         ),
@@ -131,6 +117,7 @@ class MoodDialog {
                     }).toList(),
                   ),
                 ),
+
 
                 SizedBox(height: h * 0.026),
 
