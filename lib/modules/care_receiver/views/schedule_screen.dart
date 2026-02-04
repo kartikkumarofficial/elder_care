@@ -9,6 +9,8 @@
   import '../widgets/animated_ring_progress.dart';
 
   const Color kTeal = Color(0xFF7AB7A7);
+  final w = Get.width;
+  final h = Get.height;
 
   class ScheduleScreen extends StatefulWidget {
     const ScheduleScreen({Key? key}) : super(key: key);
@@ -38,7 +40,7 @@
           extendBodyBehindAppBar: true,
           body: Stack(
             children: [
-              /// 🌿 BACKGROUND
+              ///  BACKGROUND
               Positioned.fill(
                 child: Image.asset(
                   'assets/images/schedule.png',
@@ -46,7 +48,7 @@
                 ),
               ),
 
-              /// 🌫 OVERLAY
+              ///  OVERLAY
               Positioned.fill(
                 child: Container(
                   decoration: const BoxDecoration(
@@ -66,7 +68,6 @@
               Obx(() {
                 return Column(
                   children: [
-
                     _scheduleHeader(),
                     const SizedBox(height: 12),
                     _dateSelector(),
@@ -82,9 +83,9 @@
       );
     }
 
-    // ─────────────────────────────────────────────
+    
     // HEADER
-    // ─────────────────────────────────────────────
+    
 
     Widget _scheduleHeader() {
       final completed = controller.completedCount;
@@ -92,7 +93,12 @@
       final percent = total == 0 ? 0.0 : completed / total;
 
       return Container(
-        padding: const EdgeInsets.fromLTRB(20, 30, 20, 24),
+        padding: EdgeInsets.fromLTRB(
+          w * 0.05,
+          h * 0.035,
+          w * 0.05,
+          h * 0.028,
+        ),
         decoration: const BoxDecoration(
           color: Color(0xFFEAF4F2),
           borderRadius: BorderRadius.vertical(
@@ -109,11 +115,11 @@
                   Text(
                     "Schedule",
                     style: GoogleFonts.nunito(
-                      fontSize: 26,
+                      fontSize: w * 0.065,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: h * 0.008),
                   Text(
                     "$completed / $total completed",
                     style: GoogleFonts.nunito(
@@ -148,7 +154,7 @@
       final today = DateTime.now();
 
       return SizedBox(
-        height: 90,
+        height: h * 0.105,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -164,8 +170,8 @@
                 controller.loadForCurrentUser(date);
               },
               child: Container(
-                width: 60,
-                margin: const EdgeInsets.only(right: 12),
+                width: w*0.15,
+                  margin: EdgeInsets.only(right: w * 0.03),
                 decoration: BoxDecoration(
                   color: isSelected ? kTeal : Colors.white,
                   borderRadius: BorderRadius.circular(18),
@@ -184,7 +190,7 @@
                     Text(
                       date.day.toString(),
                       style: GoogleFonts.nunito(
-                        fontSize: 18,
+                        fontSize: w * 0.045,
                         fontWeight: FontWeight.bold,
                         color:
                         isSelected ? Colors.white : Colors.black,
@@ -199,9 +205,9 @@
       );
     }
 
-    // ─────────────────────────────────────────────
+    
     // BODY
-    // ─────────────────────────────────────────────
+    
 
     Widget _scheduleBody() {
       if (controller.loading.value) {
@@ -218,7 +224,12 @@
       }
 
       return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+        padding: EdgeInsets.fromLTRB(
+          w * 0.05,
+          h * 0.012,
+          w * 0.05,
+          h * 0.04,
+        ),
         itemCount: controller.timeline.length,
         itemBuilder: (_, i) {
           final item = controller.timeline[i];
@@ -230,9 +241,9 @@
       );
     }
 
-    // ─────────────────────────────────────────────
+    
     // TIMELINE TILE
-    // ─────────────────────────────────────────────
+
 
     Widget _timelineTile(TimelineItem item, bool isLast, bool isFirst)
    {
@@ -251,100 +262,104 @@
 
 
       final bg = isCompleted
-          ? kTeal.withOpacity(0.18)
+          ? kTeal.withAlpha(36)
           : item.type == TimelineType.event
           ? const Color(0xFFEFF3FF)
           : const Color(0xFFFFF1E6);
 
 
-      return GestureDetector(
-        onTap: () => _openActions(item),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// TIME
-            SizedBox(
-              width: Get.width*0.18,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 22),
-                child: Text(
-                  DateFormat.jm().format(item.time),
-                  style: GoogleFonts.nunito(color: Colors.black54),
-                ),
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// TIME
+          SizedBox(
+            width: Get.width*0.18,
+            child: Padding(
+              padding:  EdgeInsets.only(top: h * 0.028),
+              child: Text(
+                DateFormat.jm().format(item.time),
+                style: GoogleFonts.nunito(color: Colors.black54,fontSize:  w * 0.035,),
               ),
             ),
+          ),
 
 
-            Column(
-              children: [
-                Container(
-                  height: 22,
-                  width: 2,
-                  color: isPast ? kTeal : Colors.grey.shade300,
-                ),
+          Column(
+            children: [
+              // top line
 
+              Container(
+                height: h * 0.028,
+                width: 2,
+                color: isPast ? kTeal : Colors.grey.shade300,
+              ),
 
-                Container(
-                  height: 16,
-                  width: 16,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isCompleted ? kTeal : (isPast ? kTeal : Colors.white),
-                    border: Border.all(color: kTeal, width: 2),
-                  ),
-                  child: isCompleted
-                      ? const Icon(
-                    Icons.check,
-                    size: 12,
-                    color: Colors.white,
-                  )
-                      : null,
-                ),
-
-
-                /// MAIN LINE
-                Container(
-                  height: 50,
-                  width: 2,
-                  color: isPast ? kTeal : Colors.grey.shade300,
-                ),
-              ],
-            ),
-
-            const SizedBox(width: 14),
-
-            /// CARD
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 18),
-                padding: const EdgeInsets.all(16),
+              // dot
+              Container(
+                height: w * 0.045,
+                width: w * 0.045,
                 decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(4),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  shape: BoxShape.circle,
+                  color: isCompleted
+                      ? kTeal
+                      : (isPast ? kTeal : Colors.white),
+                  border: Border.all(color: kTeal, width: 2),
                 ),
-                child: Text(
-                  item.title,
-                  maxLines: 2,                 // 👈 LIMIT TO 2 LINES
-                  overflow: TextOverflow.ellipsis, // 👈 SHOW ...
-                  style: GoogleFonts.nunito(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: isCompleted ? kTeal : Colors.black87,
+                child: isCompleted
+                    ? const Icon(Icons.check, size: 12, color: Colors.white)
+                    : null,
+              ),
+
+              // bottom line
+              if (!isLast)
+                Container(
+                  height: h * 0.06,
+                  width: 2,
+                  color: isPast ? kTeal : Colors.grey.shade300,
+                ),
+            ],
+          ),
+
+
+          SizedBox(width: w*0.035),
+
+          /// CARD
+
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _openActions(item),
+                child: Container(
+
+                  margin: EdgeInsets.only(bottom: h * 0.02,top: h*0.01),
+                  padding:  EdgeInsets.all(w*0.04),
+                  decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  child: Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: isCompleted ? kTeal : Colors.black87,
+                    ),
+
+
+
                 ),
-
-
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 
