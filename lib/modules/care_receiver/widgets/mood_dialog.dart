@@ -1,3 +1,4 @@
+import 'package:elder_care/modules/care_receiver/views/schedule_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -97,9 +98,8 @@ class MoodDialog {
                           padding: EdgeInsets.all(w * 0.04),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isSelected
-                                ? const Color(0xFF7AB7A7).withAlpha(35)
-                                : Colors.white,
+                            color: isSelected ? Color(0xFFE6F3EF) : Colors.white,
+
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(isSelected ? 0.18 : 0.1),
@@ -108,9 +108,14 @@ class MoodDialog {
                               ),
                             ],
                           ),
-                          child: Text(
-                            emoji,
-                            style: TextStyle(fontSize: w * 0.088),
+                          child: AnimatedScale(
+                            scale: isSelected ? 1.1 : 1.0,
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeOutBack,
+                            child: Text(
+                              emoji,
+                              style: TextStyle(fontSize: w * 0.088),
+                            ),
                           ),
                         ),
                       );

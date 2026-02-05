@@ -11,7 +11,7 @@ import '../views/eventssection.dart';
 
 
 
-/// ADD / EDIT DIALOG
+
 
 class AddEditEventDialog extends StatefulWidget {
   final bool isEdit;
@@ -37,8 +37,7 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
   Future<void> _showTimePicker() async {
     final initial = widget.controller.pickedTime ?? TimeOfDay.now();
 
-    // The day_night_time_picker package often expects Navigator.push(showPicker(...))
-    // We'll push the route returned by showPicker so it opens reliably.
+
     await Navigator.of(context).push(
       showPicker(
         context: context,

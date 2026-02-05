@@ -20,7 +20,7 @@ class EventDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctl = Get.find<EventsController>();
+    // final controller = Get.find<EventsController>();
 
     DateTime? dt;
     try {
@@ -130,13 +130,13 @@ class EventDetailsDialog extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          ctl.startEdit(event);
+                          controller.startEdit(event);
                           Navigator.pop(context);
                           showDialog(
                             context: context,
                             builder: (_) => AddEditEventDialog(
                               isEdit: true,
-                              controller: ctl,
+                              controller: controller,
                             ),
                           );
                         },
@@ -161,7 +161,7 @@ class EventDetailsDialog extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          ctl.deleteEventConfirmed(event.id!);
+                          controller.deleteEventConfirmed(event.id!);
                           Get.back();
                         },
                         style: ElevatedButton.styleFrom(
