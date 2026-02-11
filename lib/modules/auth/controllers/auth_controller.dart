@@ -55,9 +55,9 @@ class AuthController extends GetxController {
     super.onClose();
   }
 
-  // -----------------------------
-  // 🔥 AUTH STATE LISTENER
-  // -----------------------------
+  
+  // AUTH STATE LISTENER
+  
   void initAuthListener() {
     // Ensure we don't attach multiple listeners accidentally
     _authSubscription?.cancel();
@@ -99,9 +99,9 @@ class AuthController extends GetxController {
     });
   }
 
-  // -----------------------------
+  
   // 👤 SIGN UP
-  // -----------------------------
+  
   Future<void> signUp() async {
     isLoading.value = true;
     try {
@@ -142,9 +142,9 @@ class AuthController extends GetxController {
     }
   }
 
-  // -----------------------------
+  
   // 🔐 LOGIN (EMAIL + PASSWORD)
-  // -----------------------------
+  
   Future<void> logIn() async {
     isLoading.value = true;
     wrongPassword.value = false;
@@ -182,9 +182,9 @@ class AuthController extends GetxController {
     }
   }
 
-  // -----------------------------
+  
   // 🤳 GOOGLE LOGIN
-  // -----------------------------
+  
   Future<void> signInWithGoogle() async {
     try {
       await supabase.auth.signInWithOAuth(
@@ -205,9 +205,9 @@ class AuthController extends GetxController {
     }
   }
 
-  // -----------------------------
+  
   // 📘 FACEBOOK LOGIN
-  // -----------------------------
+  
   Future<void> signInWithFacebook() async {
     try {
       await supabase.auth.signInWithOAuth(
@@ -225,9 +225,9 @@ class AuthController extends GetxController {
     }
   }
 
-  // -----------------------------
+  
   // 🔧 Insert user in DB if it's first login via OAuth
-  // -----------------------------
+  
   Future<void> insertUserIfNew(User user) async {
     final existing = await supabase
         .from('users')
@@ -249,9 +249,9 @@ class AuthController extends GetxController {
     }
   }
 
-  // -----------------------------
+  
   // 🚪 LOGOUT (FIXED & PROPER)
-  // -----------------------------
+  
   Future<void> logOut() async {
     try {
       isLoading.value = true;
@@ -395,9 +395,9 @@ class AuthController extends GetxController {
     }
   }
 
-  // -----------------------------
+  
   // 🎯 FETCH USER ROLE + REDIRECT
-  // -----------------------------
+  
   Future<void> fetchRoleAndNavigate(String userId) async {
     try {
       // Fetch fresh user row from DB
