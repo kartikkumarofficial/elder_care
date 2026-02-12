@@ -26,6 +26,9 @@ void main() async{
 
 
 
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   WidgetsBinding.instance
       .addObserver(AppLifecycleHandler());
   await AlarmService.init();
