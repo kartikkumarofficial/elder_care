@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:battery_plus/battery_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedometer/pedometer.dart';
@@ -78,6 +79,8 @@ class ReceiverDashboardController extends GetxController {
     super.onInit();
     debugPrint("🚀 ReceiverDashboardController initialized");
     loadDashboard();
+
+    syncFcmToken();
   }
 
   @override
@@ -512,6 +515,43 @@ class ReceiverDashboardController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> syncFcmToken() async {
+    final user = supabase.auth.currentUser;
+
+    if (user == null) {
+      debugPrint("❌ Cannot sync FCM token: user not logged in");
+      return;
+    }
+
+    final userId = user.id;
+    debugPrint("👤 Syncing FCM for user: $userId");
+
+    final fcm = FirebaseMessaging.instance;
+    final token = await fcm.getToken();
+
+    debugPrint("🔥 FCM TOKEN: $token");
+
+    if (token != null) {
+      await supabase
+          .from('users')
+          .update({'fcm_token': token})
+          .eq('id', userId);
+
+      debugPrint("✅ FCM token saved to Supabase");
+    }
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      debugPrint("🔄 FCM token refreshed: $newToken");
+
+      await supabase
+          .from('users')
+          .update({'fcm_token': newToken})
+          .eq('id', userId);
+
+      debugPrint("✅ Updated refreshed token in Supabase");
+    });
   }
 
 

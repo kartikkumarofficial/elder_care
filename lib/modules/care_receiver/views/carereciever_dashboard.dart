@@ -1,4 +1,5 @@
 import 'package:elder_care/modules/care_receiver/widgets/receiver_battery.dart';
+import 'package:elder_care/modules/events/controllers/events_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -41,6 +42,7 @@ class _ReceiverDashboardScreenState extends State<ReceiverDashboardScreen> {
 
 
   final ReceiverDashboardController controller = Get.put(ReceiverDashboardController(),permanent: true);
+  final EventsController eventsController = Get.put(EventsController());
   bool _dialogShown = false;
 
   @override

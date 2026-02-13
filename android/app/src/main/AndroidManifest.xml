@@ -2,9 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.elder_care">
 
-    <!-- ===================== -->
-    <!-- Required Permissions -->
-    <!-- ===================== -->
 
     <!-- Location -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -12,7 +9,7 @@
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
-    <!-- Foreground service (REQUIRED for background alarms) -->
+    <!-- Foreground service  -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <!-- Internet -->
@@ -37,11 +34,15 @@
 <!--    alarm-->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 
 
-    <!-- ===================== -->
+
+
+    
     <!-- Application -->
-    <!-- ===================== -->
+    
 
     <application
         android:name="${applicationName}"
@@ -87,14 +88,21 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".AlarmActivity"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+
         <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- ===================== -->
+        
         <!-- flutter_local_notifications -->
-        <!-- ===================== -->
+        
 
         <!-- Alarm trigger -->
         <receiver
@@ -125,6 +133,7 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
 
 
     </application>

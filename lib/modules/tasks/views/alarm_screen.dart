@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AlarmScreen extends StatefulWidget {
   final String time;
@@ -145,6 +146,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
   }
 
   void _onStop() {
+    // acknowledgeAlarm(alarmId);
     // TODO: stop alarm sound + close screen
     Navigator.pop(context);
   }
@@ -156,6 +158,15 @@ class _AlarmScreenState extends State<AlarmScreen> {
 }
 
 
+Future<void> acknowledgeAlarm(String alarmId) async {
+  await Supabase.instance.client
+      .from('alarm_instances')
+      .update({
+    'status': 'acknowledged',
+    'acknowledged_at': DateTime.now().toIso8601String(),
+  })
+      .eq('id', alarmId);
+}
 
 
 

@@ -16,7 +16,6 @@ dependencies:
 
 
   cupertino_icons: ^1.0.8
-  google_fonts: ^6.2.1
   fl_chart: ^0.69.0
   supabase: ^2.8.0
   get: ^4.7.2
@@ -60,6 +59,7 @@ dependencies:
   timezone: ^0.10.1
   country_code_picker: ^3.4.1
   country_picker: ^2.0.27
+  google_fonts: ^8.0.1
 
 
 dev_dependencies:
