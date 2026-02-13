@@ -160,7 +160,7 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 
 <br><br>
 
-<img src="outputs/13.jpg" width="180"/> 
+<img src="outputs/13.png" width="180"/> 
 <img src="outputs/14.jpg" width="180"/>
 <img src="outputs/15.jpg" width="180"/> 
 <img src="outputs/16.jpg" width="180"/> 
