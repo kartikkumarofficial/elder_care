@@ -9,27 +9,39 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Button;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import android.widget.TextView;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class AlarmActivity extends Activity {
 
     private MediaPlayer mediaPlayer;
     private Vibrator vibrator;
 
+    private TextView tvTime;
+    private TextView tvDate;
+    private TextView tvTitle;
+    private Button btnStop;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d("ALARM_DEBUG", "AlarmActivity launched");
 
         setContentView(R.layout.activity_alarm);
 
-        // ==========================
-        // 🔥 Wake Screen (All Versions)
-        // ==========================
+        // 🔥 Bind views AFTER setContentView
+        tvTime = findViewById(R.id.tvTime);
+        tvDate = findViewById(R.id.tvDate);
+        tvTitle = findViewById(R.id.tvTitle);
+        btnStop = findViewById(R.id.btnStop);
+
+        // 🔥 Wake screen properly
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
@@ -41,11 +53,35 @@ public class AlarmActivity extends Activity {
                         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         );
 
-        // ==========================
-        // 🔥 Start Alarm Sound (MediaPlayer)
-        // ==========================
-        try {
+        // 🔥 Set Current Time & Date
+        Date now = new Date();
 
+        SimpleDateFormat timeFormat =
+                new SimpleDateFormat("HH:mm", Locale.getDefault());
+
+        SimpleDateFormat dateFormat =
+                new SimpleDateFormat("EEEE, MMM dd", Locale.getDefault());
+
+        tvTime.setText(timeFormat.format(now));
+        tvDate.setText(dateFormat.format(now));
+
+        // 🔥 Get Alarm Title from Intent
+        String alarmTitle = getIntent().getStringExtra("alarm_title");
+
+        if (alarmTitle != null && !alarmTitle.isEmpty()) {
+            tvTitle.setText(alarmTitle);
+        } else {
+            tvTitle.setText("Medicine Reminder");
+        }
+
+        startAlarmSound();
+        startVibration();
+
+        btnStop.setOnClickListener(v -> stopAlarm());
+    }
+
+    private void startAlarmSound() {
+        try {
             Uri alarmUri = android.media.RingtoneManager
                     .getDefaultUri(android.media.RingtoneManager.TYPE_ALARM);
 
@@ -59,110 +95,59 @@ public class AlarmActivity extends Activity {
             );
 
             mediaPlayer.setDataSource(this, alarmUri);
-            mediaPlayer.setLooping(true); // 🔥 Important
+            mediaPlayer.setLooping(true);
             mediaPlayer.prepare();
             mediaPlayer.start();
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
 
-        // ==========================
-        // 🔥 Start Vibration (Looping)
-        // ==========================
+    private void startVibration() {
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         if (vibrator != null) {
-
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(
                         VibrationEffect.createWaveform(
                                 new long[]{0, 500, 500},
-                                0 // repeat index
+                                0
                         )
                 );
             } else {
                 vibrator.vibrate(new long[]{0, 500, 500}, 0);
             }
         }
-
-        // ==========================
-        // 🔥 Stop Button
-        // ==========================
-        Button stopButton = findViewById(R.id.stopButton);
-        stopButton.setOnClickListener(v -> stopAlarm());
     }
 
-    // ==========================
-    // 🔥 Stop Alarm Cleanly
-    // ==========================
     private void stopAlarm() {
-
-        try {
-
-            String alarmId = getIntent().getStringExtra("alarm_id");
-
-            if (alarmId != null) {
-                acknowledgeAlarm(alarmId);
+        if (mediaPlayer != null) {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
             }
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
 
-            if (mediaPlayer != null) {
-                if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                }
-                mediaPlayer.release();
-                mediaPlayer = null;
-            }
-
-            if (vibrator != null) {
-                vibrator.cancel();
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (vibrator != null) {
+            vibrator.cancel();
         }
 
         finish();
     }
-    private void acknowledgeAlarm(String alarmId) {
 
-        new Thread(() -> {
-            try {
-
-                URL url = new URL("https://YOUR_PROJECT_ID.supabase.co/rest/v1/alarm_instances?id=eq." + alarmId);
-
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("PATCH");
-
-                conn.setRequestProperty("apikey", "YOUR_SERVICE_ROLE_OR_ANON_KEY");
-                conn.setRequestProperty("Authorization", "Bearer YOUR_SERVICE_ROLE_OR_ANON_KEY");
-                conn.setRequestProperty("Content-Type", "application/json");
-
-                conn.setDoOutput(true);
-
-                String jsonInputString = "{ \"status\": \"acknowledged\", \"acknowledged_at\": \"" + new java.util.Date().toInstant().toString() + "\" }";
-
-                try (OutputStream os = conn.getOutputStream()) {
-                    byte[] input = jsonInputString.getBytes("utf-8");
-                    os.write(input, 0, input.length);
-                }
-
-                conn.getResponseCode();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
-
-
-
-    // ==========================
-    // 🔥 Safety Stop
-    // ==========================
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopAlarm();
+
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+
+        if (vibrator != null) {
+            vibrator.cancel();
+        }
     }
 }

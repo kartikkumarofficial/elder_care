@@ -8,41 +8,48 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 
 import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugin.common.MethodChannel;
 
 public class MainActivity extends FlutterActivity {
 
+    private static final String CHANNEL = "eldercare/alarm";
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+        super.configureFlutterEngine(flutterEngine);
 
-        //  Android 13+ notification permission
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
+        new MethodChannel(
+                flutterEngine.getDartExecutor().getBinaryMessenger(),
+                CHANNEL
+        ).setMethodCallHandler((call, result) -> {
 
-                requestPermissions(
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                        100
+            if (call.method.equals("scheduleAlarm")) {
+
+                String alarmId = call.argument("alarmId");
+                long triggerTime = call.argument("triggerTime");
+
+                AlarmScheduler.schedule(
+                        this,
+                        alarmId,
+                        triggerTime
                 );
-            }
-        }
-    }
 
-    @Override
-    public void onRequestPermissionsResult(
-            int requestCode,
-            @NonNull String[] permissions,
-            @NonNull int[] grantResults
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == 100) {
-            if (grantResults.length > 0 &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // ✅ Permission granted
-            } else {
-                // ❌ Permission denied
+                result.success(null);
             }
-        }
+
+            else if (call.method.equals("cancelAlarm")) {
+
+                String alarmId = call.argument("alarmId");
+
+                AlarmScheduler.cancel(this, alarmId);
+
+                result.success(null);
+            }
+
+            else {
+                result.notImplemented();
+            }
+        });
     }
 }

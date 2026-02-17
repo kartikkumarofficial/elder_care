@@ -1,3 +1,4 @@
+import 'package:elder_care/modules/care_receiver/controllers/activity_controller.dart';
 import 'package:elder_care/modules/caregiver/controllers/care_link_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -30,6 +31,7 @@ class InitialBinding extends Bindings {
 
     Get.put(TaskController(), permanent: true);
     debugPrint("[InitialBinding] TaskController registered");
+    Get.put(ActivityController(), permanent: true);
 
     debugPrint("[InitialBinding] end");
   }

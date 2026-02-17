@@ -207,6 +207,7 @@ class ReceiverDashboardController extends GetxController {
       },
       onConflict: 'user_id',
     );
+
     Get.find<ActivityController>().markActive();
 
     debugPrint("🔋 Battery: $level% | Charging: ${isCharging.value}");

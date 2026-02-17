@@ -1,23 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:background="@android:color/black">
+    android:background="#0D0D0D"
+    android:padding="32dp">
 
+    <!-- Current Time -->
     <TextView
-        android:id="@+id/alarmTitle"
+        android:id="@+id/tvTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Alarm Ringing"
-        android:textColor="@android:color/white"
-        android:textSize="24sp"
-        android:layout_marginBottom="24dp"/>
+        android:text="07:30"
+        android:textColor="#FFFFFF"
+        android:textSize="64sp"
+        android:textStyle="bold"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="60dp"/>
 
+    <!-- Current Date -->
+    <TextView
+        android:id="@+id/tvDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Monday, Feb 13"
+        android:textColor="#AAAAAA"
+        android:textSize="18sp"
+        android:layout_below="@id/tvTime"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Alarm Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Morning Medicine"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_centerInParent="true"/>
+
+    <!-- Stop Button -->
     <Button
-        android:id="@+id/stopButton"
+        android:id="@+id/btnStop"
         android:layout_width="200dp"
-        android:layout_height="56dp"
-        android:text="STOP"/>
-</LinearLayout>
+        android:layout_height="60dp"
+        android:text="STOP"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#FF3B30"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="60dp"
+        android:layout_gravity="center"
+        android:elevation="8dp"/>
+</RelativeLayout>

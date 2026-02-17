@@ -37,10 +37,13 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
 
 
 
-    
+
+
+
     <!-- Application -->
     
 
@@ -88,51 +91,52 @@
             </intent-filter>
         </activity>
 
+
+
         <activity
             android:name=".AlarmActivity"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+            android:exported="false">
+
+<!--            <intent-filter>-->
+<!--                <action android:name="ALARM_TRIGGER" />-->
+<!--                <category android:name="android.intent.category.DEFAULT" />-->
+<!--            </intent-filter>-->
+
+        </activity>
+
+
+
 
         <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="alarm_channel"/>
 
-        
-        <!-- flutter_local_notifications -->
-        
 
-        <!-- Alarm trigger -->
-        <receiver
-            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
-            android:exported="false" />
 
-        <!-- Reboot reschedule -->
-        <receiver
-            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
+
 
         <!--  Foreground Service -->
-        <service
-            android:name="com.dexterous.flutterlocalnotifications.ForegroundService"
-            android:exported="false"
-            android:stopWithTask="false"
-            android:foregroundServiceType="health|dataSync" />
+
         <!--  Firebase Cloud Messaging Service -->
         <service
             android:name=".MyFirebaseMessagingService"
-            android:exported="false">
+            android:exported="false"
+            android:stopWithTask="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <receiver
+            android:name=".AlarmReceiver"
+            android:exported="false" />
+
 
 
 

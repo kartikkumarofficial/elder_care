@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'app/utils/alarm_service.dart';
 import 'app/utils/constants.dart';
 import 'core/app_lifecycle_handler.dart';
 import 'core/services/notification_service.dart';
@@ -31,7 +30,6 @@ void main() async{
   );
   WidgetsBinding.instance
       .addObserver(AppLifecycleHandler());
-  await AlarmService.init();
   await Supabase.initialize(
     url: constants.supabaseUrl,
     anonKey: constants.supabaseKey,
