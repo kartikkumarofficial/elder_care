@@ -67,7 +67,7 @@ class LocationController extends GetxController {
   void onMapCreated(GoogleMapController controller) {
     gmapController = controller;
     // apply custom style if needed
-    controller.setMapStyle(_mapStyle);
+    // controller.setMapStyle(_mapStyle);
     // if we already have receiverLocation, move camera
     if (receiverLocation.value != null) {
       controller.animateCamera(CameraUpdate.newLatLngZoom(receiverLocation.value!, 15.0));
@@ -200,7 +200,4 @@ class LocationController extends GetxController {
   }
 }
 
-/// Replace with your map style string below (I provide a json further down).
-const String _mapStyle = ''' 
-// paste the map style JSON or a minimal style here (see map_style.json in repo)
-''';
+
