@@ -8,7 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../controllers/task_controller.dart';
 import 'repeat_options_tile.dart';
 
-/// Add / Edit Dialog (rounded, login-like style)
+/// Add / Edit Dialog
 class AddEditTaskDialog extends StatefulWidget {
   final bool isEdit;
   final TaskController controller;
@@ -25,7 +25,7 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
   bool loading = false;
   bool _showRepeatOptions = false;
 
-  // small fixed timeline height to avoid overflow
+
   static const double _timelineHeight = 92;
 
   Future<void> _showTimePicker() async {
@@ -170,7 +170,7 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                 Obx(() => Column(
                   children: [
 
-                    /// 🔔 REMINDER (replaces Set alarm + Vibrate)
+                    /// REMINDER
                     Row(
                       children: [
                         Checkbox(
@@ -186,7 +186,7 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                       ],
                     ),
 
-                    /// 💊 MEDICINE (TAG ONLY)
+                    ///  MEDICINE (TAG ONLY)
                     Row(
                       children: [
                         Checkbox(

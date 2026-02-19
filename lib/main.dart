@@ -14,30 +14,21 @@ import 'core/services/notification_service.dart';
 import 'firebase_options.dart';
 
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(
-  //     options: DefaultFirebaseOptions.currentPlatform);
-  // await NotificationService.init();
-  // FirebaseMessaging.onBackgroundMessage(
-  //   _firebaseMessagingBackgroundHandler,
-  // );
 
+  // if (Firebase.apps.isEmpty) {
 
+  // }
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  WidgetsBinding.instance
-      .addObserver(AppLifecycleHandler());
   await Supabase.initialize(
     url: constants.supabaseUrl,
     anonKey: constants.supabaseKey,
   );
 
-  runApp(
-      MyApp());
+  runApp(MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -58,10 +49,4 @@ class MyApp extends StatelessWidget {
 }
 
 
-// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-//   await Firebase.initializeApp(
-//     options: DefaultFirebaseOptions.currentPlatform,
-//   );
-//   debugPrint("🔔 BG MESSAGE: ${message.messageId}");
-// }
-//
+

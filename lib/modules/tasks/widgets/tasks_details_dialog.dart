@@ -29,175 +29,180 @@ class TaskDetailsDialog extends StatelessWidget {
 
     final isMedicine = task.taskType == 'medicine';
 
-    return Hero(
-      tag: 'hero-task-${task.id}',
-      child: Material(
-        color: Colors.transparent,
-        child: Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(26),
-          ),
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.75,
+    return Material(
+      color: Colors.transparent,
+      child: Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(26),
+        ),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.75,
+            ),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F6F7),
+                borderRadius: BorderRadius.circular(26),
               ),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F6F7),
-                  borderRadius: BorderRadius.circular(26),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
 
-                    /// ───── HEADER
-                    Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/task3.png',
-                          width: 36,
-                          height: 36,
-                          fit: BoxFit.contain,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Task Details',
-                          style: GoogleFonts.nunito(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    /// ───── TITLE
-                    Text(
-                      task.title,
-                      style: GoogleFonts.nunito(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
+                  /// HEADER
+                  Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/task3.png',
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.contain,
                       ),
-                    ),
-
-                    if (dt != null) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(width: 12),
                       Text(
-                        _friendlyDate(dt),
+                        'Task Details',
                         style: GoogleFonts.nunito(
-                          fontSize: 13,
-                          color: Colors.black54,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
                     ],
+                  ),
 
-                    const SizedBox(height: 14),
+                  const SizedBox(height: 14),
 
-                    /// ───── META CHIPS
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 8,
-                      children: [
-                        if (task.alarmEnabled)
-                          _metaChip(
-                            icon: Icons.alarm,
-                            label: 'Reminder',
-                          ),
-
-                        if (isMedicine)
-                          _metaChip(
-                            image: 'assets/images/pill.png',
-                            label: 'Medicine',
-                          ),
-
-                        if (task.repeatType != 'none')
-                          _metaChip(
-                            icon: Icons.repeat,
-                            label: 'Repeat',
-                          ),
-                      ],
+                  /// TITLE
+                  Text(
+                    task.title,
+                    style: GoogleFonts.nunito(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
                     ),
+                  ),
 
-                    const SizedBox(height: 22),
+                  if (dt != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _friendlyDate(dt),
+                      style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
 
-                    /// ───── ACTIONS
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              controller.startEdit(task);
-                              Navigator.pop(context);
-                              showDialog(
-                                context: context,
-                                builder: (_) => AddEditTaskDialog(
+                  const SizedBox(height: 14),
+
+                  /// META CHIPS
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: [
+                      if (task.alarmEnabled)
+                        _metaChip(
+                          icon: Icons.alarm,
+                          label: 'Reminder',
+                        ),
+
+                      if (isMedicine)
+                        _metaChip(
+                          image: 'assets/images/pill.png',
+                          label: 'Medicine',
+                        ),
+
+                      if (task.repeatType != 'none')
+                        _metaChip(
+                          icon: Icons.repeat,
+                          label: 'Repeat',
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  /// ACTIONS
+                  Row(
+                    children: [
+                      Expanded(
+                        //todo here
+                        child: ElevatedButton(
+                          onPressed: () {
+                            controller.startEdit(task);
+
+
+                            Navigator.pop(context);
+
+
+                            Future.delayed(const Duration(milliseconds: 100), () {
+                              openCustomDialog(
+                                context,
+                                AddEditTaskDialog(
                                   isEdit: true,
                                   controller: controller,
                                 ),
                               );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kTeal,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              elevation: 0,
+                            });
+                          },
+
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kTeal,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            child: Text(
-                              'Edit',
-                              style: GoogleFonts.nunito(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Edit',
+                            style: GoogleFonts.nunito(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              controller.deleteTaskConfirmed(task.id!);
-                              Get.back();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              elevation: 0,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            controller.deleteTaskConfirmed(task.id!);
+                            Get.back();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            child: Text(
-                              'Delete',
-                              style: GoogleFonts.nunito(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Delete',
+                            style: GoogleFonts.nunito(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         ),
       ),
-    ); // ✅ THIS was missing
+    );
   }
 
-  /// ─────────────────────────────────────────────
+  
   /// META CHIP
-  /// ─────────────────────────────────────────────
+  
 
   Widget _metaChip({
     IconData? icon,
@@ -244,5 +249,30 @@ class TaskDetailsDialog extends StatelessWidget {
 
     return '${d.day}/${d.month}/${d.year} • $hour12:$minute $period';
   }
+  void openCustomDialog(BuildContext context, Widget dialog) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black.withOpacity(0.25),
+        transitionDuration: const Duration(milliseconds: 250),
+        pageBuilder: (_, __, ___) => dialog,
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween(begin: 0.96, end: 1.0).animate(
+                CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                ),
+              ),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
 }
 

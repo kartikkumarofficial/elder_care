@@ -143,8 +143,6 @@ class TaskSection extends StatelessWidget {
                     return Dismissible(
                       key: ValueKey(t.id),
                       direction: DismissDirection.horizontal,
-
-                      // Swipe LEFT → RIGHT
                       background: Container(
                         padding: const EdgeInsets.only(left: 24),
                         alignment: Alignment.centerLeft,
@@ -300,8 +298,34 @@ class TaskSection extends StatelessWidget {
       ),
     );
   }
+  void openCustomDialog(BuildContext context, Widget dialog) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black.withOpacity(0.25),
+        transitionDuration: const Duration(milliseconds: 250),
+        pageBuilder: (_, __, ___) => dialog,
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween(begin: 0.96, end: 1.0).animate(
+                CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                ),
+              ),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
 
 }
+
 
 
 
