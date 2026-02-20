@@ -17,10 +17,9 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // if (Firebase.apps.isEmpty) {
-
-  // }
-
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await Supabase.initialize(
     url: constants.supabaseUrl,
     anonKey: constants.supabaseKey,

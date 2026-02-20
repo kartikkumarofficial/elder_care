@@ -18,7 +18,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver{
   late final ChatController controller;
 
 
@@ -30,6 +30,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
 
     controller = Get.put(ChatController(), tag: widget.chatId);
 
@@ -43,10 +45,24 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     Get.delete<ChatController>(tag: widget.chatId);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+  @override
+  void didChangeMetrics() {
+    final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
 
+    if (bottomInset > 0) {
+      // Keyboard opened
+      _scrollToBottom();
+    }
+  }
 
+  bool isKeyboardOpen(BuildContext context) {
+    return MediaQuery.of(context).viewInsets.bottom > 0;
+  }
+
+// keyboard opens -> padding and scroll to bottom
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 80), () {
       if (scrollController.hasClients) {
