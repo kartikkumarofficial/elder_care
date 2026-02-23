@@ -50,3 +50,5 @@ app.*.map.json
 
 android/app/src/main/res/values/secrets.xml
 android/app/google-services.json
+
+lib/firebase_options.dart
