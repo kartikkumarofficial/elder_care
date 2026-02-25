@@ -397,7 +397,8 @@
                       onPressed: () async {
                         await controller.markTaskCompleted(item);
                         await SoundUtils.playDone();
-                        Get.back();
+
+                        _closeDialog();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kTeal,
@@ -418,7 +419,8 @@
                 TextButton(
                   onPressed: () async {
                     await controller.deleteItem(item);
-                    Get.back();
+
+                    _closeDialog();
                   },
                   child: const Text(
                     'Delete',
@@ -429,6 +431,12 @@
             ),
           ),
         ),
+        barrierDismissible: true,
       );
+    }
+    void _closeDialog() {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
     }
   }

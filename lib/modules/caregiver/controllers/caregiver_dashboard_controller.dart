@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:battery_plus/battery_plus.dart';
+import 'package:elder_care/modules/events/controllers/events_controller.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/emergency_alert_service.dart';
 import '../../dashboard/controllers/nav_controller.dart';
+import '../../tasks/controllers/task_controller.dart';
 
 class CaregiverDashboardController extends GetxController {
   final supabase = Supabase.instance.client;
@@ -464,21 +466,32 @@ class CaregiverDashboardController extends GetxController {
   RxBool isRefreshing = false.obs;
 
   Future<void> refreshData() async {
-    print("🔄 Refresh tapped at: ${DateTime.now()}");
-    isRefreshing.value = true;
+    if (isRefreshing.value) return;
 
-    // Simulate API call / Fitbit fetch
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      isRefreshing.value = true;
+      debugPrint("🔄 FULL DASHBOARD REFRESH STARTED");
 
-    
-    await fetchLatestLocation();
-    await fetchLatestVitals();
-    await fetchDeviceStatus();
-    await fetchReceiverMood();
+      final stopwatch = Stopwatch()..start();
 
+      // Run independent fetches in parallel (FAST + PRODUCTION READY)
+      await Future.wait([
+        fetchLatestLocation(),
+        fetchLatestVitals(),
+        fetchDeviceStatus(),
+        fetchReceiverMood(),
+        fetchLatestSteps(),
+        _refreshTasks(),
+        _refreshEvents(),
+      ]);
 
-    isRefreshing.value = false;
-    print("✅ Refresh completed!");
+      stopwatch.stop();
+      debugPrint("✅ Dashboard refreshed in ${stopwatch.elapsedMilliseconds}ms");
+    } catch (e) {
+      debugPrint("❌ Refresh error: $e");
+    } finally {
+      isRefreshing.value = false;
+    }
   }
 
    
@@ -671,7 +684,12 @@ class CaregiverDashboardController extends GetxController {
               ElevatedButton(
                 onPressed: () {
                   EmergencyAlertService.stop();
+                  final navController = Get.find<NavController>();
+                  navController.changeTab(2);
                   Get.back();
+
+
+
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
@@ -723,6 +741,21 @@ class CaregiverDashboardController extends GetxController {
 
       debugPrint("✅ Updated refreshed token in Supabase");
     });
+  }
+  Future<void> _refreshTasks() async {
+    if (receiverId.value.isEmpty) return;
+
+    try {
+      final taskController = Get.find<TaskController>();
+      await taskController.loadTasksForReceiver(receiverId.value);
+    } catch (_) {}
+  }
+
+  Future<void> _refreshEvents() async {
+    try {
+      final eventController = Get.find<EventsController>();
+      await eventController.refreshEvents();
+    } catch (_) {}
   }
 
 

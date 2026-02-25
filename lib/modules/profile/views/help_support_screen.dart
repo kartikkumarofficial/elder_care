@@ -37,7 +37,7 @@ class HelpSupportScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Get.back(),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: Container(
@@ -208,7 +208,7 @@ class HelpSupportScreen extends StatelessWidget {
           SizedBox(height: h * 0.015),
           Text(
             // 'Version ${controller.appVersion.value}',
-            'Version 1.0.0',
+            'Version 2.0.1',
             style: GoogleFonts.nunito(
                 color: Colors.black54, fontSize: Get.height * 0.015),
           ),

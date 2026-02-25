@@ -132,11 +132,15 @@ class _StatusSectionState extends State<StatusSection> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      AnimatedRotation(
-                        turns: syncing ? 1 : 0,
-                        duration:
-                        const Duration(milliseconds: 800),
-                        curve: Curves.easeInOut,
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: syncing ? 4 : 0),
+                        duration: const Duration(seconds: 1),
+                        builder: (context, value, child) {
+                          return Transform.rotate(
+                            angle: value * 3.14,
+                            child: child,
+                          );
+                        },
                         child: const Icon(
                           Icons.sync,
                           size: 14,

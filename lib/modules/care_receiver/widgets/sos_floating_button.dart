@@ -73,15 +73,16 @@ class SOSFab extends StatelessWidget {
                 children: [
                   Expanded(
                     child: TextButton(
-                      onPressed: () => Get.back(),
+                      onPressed: () => Navigator.of(context).pop(),
                       child: Text("Cancel",
                           style: GoogleFonts.nunito(color: Colors.grey)),
                     ),
                   ),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Get.back();
+                      onPressed: () async {
+                        Navigator.of(context).pop(); // safely close dialog
+                        await Future.delayed(const Duration(milliseconds: 200));
                         controller.sendSOS();
                       },
                       style: ElevatedButton.styleFrom(
@@ -105,7 +106,7 @@ class SOSFab extends StatelessWidget {
           ),
         ),
       ),
-      barrierDismissible: false,
+      barrierDismissible: true,
     );
   }
 }

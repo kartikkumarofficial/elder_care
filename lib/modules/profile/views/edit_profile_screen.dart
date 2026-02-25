@@ -9,8 +9,8 @@ import '../controllers/edit_profile_controller.dart';
 class EditProfileScreen extends StatelessWidget {
   EditProfileScreen({super.key});
 
-  final EditProfileController controller = Get.put(EditProfileController());
-
+  // final EditProfileController controller = Get.put(EditProfileController());
+  final EditProfileController controller = Get.find();
   @override
   Widget build(BuildContext context) {
     final h = Get.height;
@@ -32,7 +32,7 @@ class EditProfileScreen extends StatelessWidget {
           ),
         ),
         leading: IconButton(
-          onPressed: () => Get.back(),
+          onPressed: () => Navigator.of(context).pop(),
           icon: Icon(Icons.arrow_back, color: Colors.black87),
         ),
       ),

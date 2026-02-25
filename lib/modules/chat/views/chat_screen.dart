@@ -32,7 +32,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
 
-
     controller = Get.put(ChatController(), tag: widget.chatId);
 
     controller.initChat(
@@ -41,6 +40,16 @@ class _ChatScreenState extends State<ChatScreen> {
       partnerName: widget.partnerName,
       partnerImage: widget.partnerImage,
     );
+
+    /// Scroll after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
+
+    /// Listen for new messages
+    ever(controller.messages, (_) {
+      _scrollToBottom();
+    });
   }
   @override
   void dispose() {
@@ -63,14 +72,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
 // keyboard opens -> padding and scroll to bottom
   void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 80), () {
-      if (scrollController.hasClients) {
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-        );
-      }
+    if (!scrollController.hasClients) return;
+
+    Future.delayed(const Duration(milliseconds: 50), () {
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
     });
   }
 
@@ -136,44 +145,42 @@ class _ChatScreenState extends State<ChatScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-          final isKeyboard = bottomInset > 0;
-
-          _scrollToBottom();
-
-          return Stack(
+          return Column(
             children: [
-              _chatBackground(),
 
-              ListView.builder(
-                controller: scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  Get.width * 0.002,
-                  16,
-                  Get.width * 0.002,
-                  isKeyboard ? Get.height * 0.1 : Get.height * 0.2,
+              /// MESSAGES AREA
+              Expanded(
+                child: Stack(
+                  children: [
+                    _chatBackground(),
+
+                    ListView.builder(
+                      controller: scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.symmetric(
+                        // horizontal: Get.width * 0.000,
+                        vertical: Get.height * 0.01,   // 1.5% height
+                      ),
+                      itemCount: controller.messages.length,
+                      itemBuilder: (_, i) {
+                        final msg = controller.messages[i];
+                        final isMe =
+                            msg.senderId == authController.user.value!.id;
+
+                        return ChatBubble(
+                          message: msg.content,
+                          isMe: isMe,
+                          time: msg.createdAt,
+                          isSeen: isMe ? msg.isSeen : false,
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                itemCount: controller.messages.length,
-                itemBuilder: (_, i) {
-                  final msg = controller.messages[i];
-                  final isMe = msg.senderId == me!.id;
-
-                  return ChatBubble(
-                    message: msg.content,
-                    isMe: isMe,
-                    time: msg.createdAt,
-                    isSeen: isMe ? msg.isSeen : false,
-                  );
-                },
               ),
 
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: _inputBar(),
-              ),
+              /// INPUT BAR
+              _inputBar(),
             ],
           );
         }),
@@ -186,15 +193,23 @@ class _ChatScreenState extends State<ChatScreen> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 6, 14, 10  ),
+        padding: EdgeInsets.fromLTRB(
+          Get.width * 0.04,
+          Get.height * 0.004,
+          Get.width * 0.04,
+          Get.height * 0.015,
+        ),
         child: Material(
-          elevation: 12,
-          borderRadius: BorderRadius.circular(28),
+          elevation: 10,
+          borderRadius: BorderRadius.circular(Get.width * 0.07),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: Get.width * 0.03,
+              vertical: Get.height * 0.006,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(Get.width * 0.07),
             ),
             child: Row(
               children: [
@@ -209,12 +224,18 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+
+                SizedBox(width: Get.width * 0.02),
+
                 CircleAvatar(
-                  radius: 22,
+                  radius: Get.width * 0.055,
                   backgroundColor: const Color(0xFF7AB7A7),
                   child: IconButton(
-                    icon: const Icon(Icons.send_rounded, color: Colors.white),
+                    icon: Icon(
+                      Icons.send_rounded,
+                      size: Get.width * 0.05,
+                      color: Colors.white,
+                    ),
                     onPressed: () {
                       final text = textController.text.trim();
                       if (text.isEmpty) return;

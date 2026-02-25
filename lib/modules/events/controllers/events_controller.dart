@@ -99,6 +99,9 @@ class EventsController extends GetxController {
     pickedTime = null;
   }
 
+  Future<void> refreshEvents() async {
+    await loadEvents(); // or whatever your fetch method is
+  }
   Future<void> loadEvents() async {
     try {
       final list = await SupabaseEventService.fetchEvents();

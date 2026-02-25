@@ -325,7 +325,7 @@ class ProfileScreen extends StatelessWidget {
               /// Footer
               Center(
                 child: Text(
-                  "ElderCare v2.0.1",
+                  "ElderCare v1.0.1",
                   style: GoogleFonts.nunito(
                     color: Colors.black45,
                     fontSize: w * 0.032,
@@ -341,9 +341,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// --------------------------------------
-  /// MENU TILE BUILDER (SLIMMER VERSION)
-  /// --------------------------------------
+
   Widget _menuTile({
     required IconData icon,
     required String label,

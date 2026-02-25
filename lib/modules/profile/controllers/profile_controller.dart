@@ -13,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/models/user_model.dart';
 import '../../../core/services/cloudinary_service.dart';
+import 'edit_profile_controller.dart';
 
 class ProfileController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
@@ -79,7 +80,12 @@ class ProfileController extends GetxController {
   }
 
 
-  void onEditProfileTap() => Get.to(() => EditProfileScreen());
+  void onEditProfileTap() {
+    if (!Get.isRegistered<EditProfileController>()) {
+      Get.put(EditProfileController());
+    }
+    Get.to(() => EditProfileScreen());
+  }
   void onLinkedTap() => Get.to(()=>LinkedUsersScreen());
   void onPrivacyTap() => Get.to(()=>HelpSupportScreen());
   void onHelpTap() => Get.to(()=>HelpSupportScreen());
