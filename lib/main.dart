@@ -10,15 +10,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app/utils/constants.dart';
 import 'core/app_lifecycle_handler.dart';
 import 'core/services/notification_service.dart';
-import 'firebase_options.dart';
+// import 'firebase_options.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // await Firebase.initializeApp(
+  //   options: DefaultFirebaseOptions.currentPlatform,
+  // );
   await Supabase.initialize(
     url: constants.supabaseUrl,
     anonKey: constants.supabaseKey,

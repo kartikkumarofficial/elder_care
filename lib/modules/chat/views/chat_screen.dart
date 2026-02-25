@@ -79,6 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final me = authController.user.value;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       extendBody: true,
 
 
@@ -185,7 +186,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
+        padding: const EdgeInsets.fromLTRB(14, 6, 14, 10  ),
         child: Material(
           elevation: 12,
           borderRadius: BorderRadius.circular(28),
