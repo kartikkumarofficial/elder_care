@@ -12,13 +12,14 @@ class ChatScreen extends StatefulWidget {
   final String partnerId;
   final String partnerName;
   final String? partnerImage;
-  ChatScreen({Key? key, required this.chatId, required this.partnerId, required this.partnerName, this.partnerImage}) : super(key: key);
+  final double keyboardInset;
+  ChatScreen({Key? key, required this.chatId, required this.partnerId, required this.partnerName, this.partnerImage, required this.keyboardInset}) : super(key: key);
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver{
+class _ChatScreenState extends State<ChatScreen> {
   late final ChatController controller;
 
 
@@ -30,7 +31,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver{
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
 
 
     controller = Get.put(ChatController(), tag: widget.chatId);
@@ -45,22 +45,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver{
   @override
   void dispose() {
     Get.delete<ChatController>(tag: widget.chatId);
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
-  @override
-  void didChangeMetrics() {
-    final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
+  // @override
+  // void didChangeMetrics() {
+  //   final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
+  //
+  //   if (bottomInset > 0) {
+  //     // Keyboard opened
+  //     _scrollToBottom();
+  //   }
+  // }
 
-    if (bottomInset > 0) {
-      // Keyboard opened
-      _scrollToBottom();
-    }
-  }
-
-  bool isKeyboardOpen(BuildContext context) {
-    return MediaQuery.of(context).viewInsets.bottom > 0;
-  }
+  // bool isKeyboardOpen(BuildContext context) {
+  //   return MediaQuery.of(context).viewInsets.bottom > 0;
+  // }
 
 // keyboard opens -> padding and scroll to bottom
   void _scrollToBottom() {
@@ -122,7 +121,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver{
         ],
       ),
 
-      // ✅ BODY
+      //  BODY
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -136,16 +135,24 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver{
             return const Center(child: CircularProgressIndicator());
           }
 
+          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+          final isKeyboard = bottomInset > 0;
+
           _scrollToBottom();
 
           return Stack(
             children: [
               _chatBackground(),
-              /// CHAT LIST
+
               ListView.builder(
                 controller: scrollController,
-                physics: AlwaysScrollableScrollPhysics(),
-                padding:  EdgeInsets.fromLTRB(Get.width*0.002, 16, Get.width*0.002, Get.height*0.2),
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  Get.width * 0.002,
+                  16,
+                  Get.width * 0.002,
+                  isKeyboard ? Get.height * 0.1 : Get.height * 0.2,
+                ),
                 itemCount: controller.messages.length,
                 itemBuilder: (_, i) {
                   final msg = controller.messages[i];
@@ -160,7 +167,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver{
                 },
               ),
 
-              /// FLOATING INPUT BAR
               Positioned(
                 left: 0,
                 right: 0,

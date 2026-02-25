@@ -21,11 +21,13 @@ class DirectChatScreen extends StatelessWidget {
         return Center(child: Text(controller.error.value!));
       }
 
+      final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
       return ChatScreen(
         chatId: controller.chatId!,
         partnerId: controller.partnerId!,
         partnerName: controller.partnerName!,
         partnerImage: controller.partnerImage,
+        keyboardInset: keyboardInset,
       );
 
     });

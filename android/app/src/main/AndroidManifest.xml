@@ -49,7 +49,7 @@
 
     <application
         android:name="${applicationName}"
-        android:label="elder_care"
+        android:label="ElderCare"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"
         android:usesCleartextTraffic="true">

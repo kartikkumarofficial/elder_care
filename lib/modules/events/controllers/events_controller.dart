@@ -125,17 +125,19 @@ class EventsController extends GetxController {
     return combined.isAfter(DateTime.now());
   }
 
-  Future<void> addEvent() async {
+  Future<bool> addEvent() async {
     if (titleController.text.trim().isEmpty) {
       Get.snackbar('Validation', 'Enter event title');
-      return;
+      return false;
     }
+
     if (!_isFutureSelected()) {
       Get.snackbar('Validation', 'Please select a future date & time');
-      return;
+      return false;
     }
 
     final iso = _combinedDateTime()!.toIso8601String();
+
     final model = EventModel(
       title: titleController.text.trim(),
       datetime: iso,
@@ -145,14 +147,17 @@ class EventsController extends GetxController {
 
     try {
       final created = await SupabaseEventService.createEvent(model);
+
       if (created != null) {
         events.insert(0, created);
-        clearForm();
-        Get.back(); // close dialog
         Get.snackbar('Success', 'Event added');
+        return true;
       }
+
+      return false;
     } catch (e) {
       Get.snackbar('Error', 'Failed to create event');
+      return false;
     }
   }
 
@@ -182,15 +187,17 @@ class EventsController extends GetxController {
   }
 
 
-  Future<void> confirmEdit() async {
-    if (editingId == null) return;
+  Future<bool> confirmEdit() async {
+    if (editingId == null) return false;
+
     if (titleController.text.trim().isEmpty) {
       Get.snackbar('Validation', 'Enter event title');
-      return;
+      return false;
     }
+
     if (!_isFutureSelected()) {
       Get.snackbar('Validation', 'Please select a future date & time');
-      return;
+      return false;
     }
 
     final iso = _combinedDateTime()!.toIso8601String();
@@ -205,26 +212,45 @@ class EventsController extends GetxController {
 
     try {
       final updated = await SupabaseEventService.updateEvent(model);
+
       if (updated != null) {
         final idx = events.indexWhere((e) => e.id == updated.id);
         if (idx != -1) events[idx] = updated;
-        clearForm();
-        Get.back();
+
         Get.snackbar('Success', 'Event updated');
+        return true;
       }
+
+      return false;
     } catch (e) {
       Get.snackbar('Error', 'Failed to update event');
+      return false;
     }
   }
 
-  Future<void> deleteEventConfirmed(int id) async {
+  Future<bool> deleteEventConfirmed(int id) async {
     try {
       await SupabaseEventService.deleteEvent(id);
       events.removeWhere((e) => e.id == id);
-      Get.back(); // close any dialog
-      Get.snackbar('Deleted', 'Event removed');
+
+      Get.snackbar(
+        'Deleted',
+        'Event removed successfully',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.black,
+      );
+
+      return true;
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete event');
+      Get.snackbar(
+        'Error',
+        'Failed to delete event',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.black,
+      );
+      return false;
     }
   }
 }

@@ -83,9 +83,9 @@ class CaregiverDashboardController extends GetxController {
   }
 
 
-  // ======================================================================
+   
   // mood/status section
-  // ======================================================================
+   
   Future<void> fetchReceiverMood() async {
     if (receiverId.value.isEmpty) return;
 
@@ -128,9 +128,9 @@ class CaregiverDashboardController extends GetxController {
 
 
 
-  // ======================================================================
+   
   // LOAD RECEIVER LINK
-  // ======================================================================
+   
   Future<void> loadReceiver() async {
     debugPrint("🔗 loadReceiver started");
     isLoading.value = true;
@@ -189,9 +189,9 @@ class CaregiverDashboardController extends GetxController {
     isLoading.value = false;
   }
 
-  // ======================================================================
+   
   // FETCH PROFILE
-  // ======================================================================
+   
   Future<void> fetchReceiverProfile() async {
     if (receiverId.value.isEmpty) return;
 
@@ -205,9 +205,9 @@ class CaregiverDashboardController extends GetxController {
     profileUrl.value = data?["profile_image"] ?? "";
   }
 
-  // ======================================================================
+   
   // FETCH LATEST LOCATION
-  // ======================================================================
+   
   // Replace existing fetchLatestLocation() with this
   Future<void> fetchLatestLocation() async {
     if (receiverId.value.isEmpty) {
@@ -281,9 +281,9 @@ class CaregiverDashboardController extends GetxController {
 
 
 
-  // ======================================================================
+   
   // SUBSCRIBE REALTIME LOCATION
-  // ======================================================================
+   
   void subscribeToLocationRealtime() {
     if (receiverId.value.isEmpty) return;
 
@@ -327,9 +327,9 @@ class CaregiverDashboardController extends GetxController {
 
 
 
-  // ======================================================================
+   
   // FETCH VITALS
-  // ======================================================================
+   
   Future<void> fetchLatestVitals() async {
     if (receiverId.value.isEmpty) {
       print("fetchLatestVitals: NO RECEIVER ID");
@@ -385,9 +385,9 @@ class CaregiverDashboardController extends GetxController {
 
 
 
-  // ======================================================================
+   
   // SUBSCRIBE REALTIME VITALS
-  // ======================================================================
+   
   void subscribeToVitalsRealtime() {
     if (receiverId.value.isEmpty) return;
 
@@ -434,9 +434,9 @@ class CaregiverDashboardController extends GetxController {
     ).subscribe();
   }
 
-  // ======================================================================
+   
   // MAP HANDLING
-  // ======================================================================
+   
   void onMapCreated(GoogleMapController c) {
     mapCtrl = c;
     _mapReady = true;
@@ -458,9 +458,9 @@ class CaregiverDashboardController extends GetxController {
     );
   }
 
-  // ======================================================================
+   
   // MANUAL REFRESH
-  // ======================================================================
+   
   RxBool isRefreshing = false.obs;
 
   Future<void> refreshData() async {
@@ -481,9 +481,9 @@ class CaregiverDashboardController extends GetxController {
     print("✅ Refresh completed!");
   }
 
-  // ======================================================================
+   
 // UTILS
-// ======================================================================
+ 
   String _formatTimeAgo(String timestamp) {
     try {
       final local = DateTime.parse(timestamp).toLocal();

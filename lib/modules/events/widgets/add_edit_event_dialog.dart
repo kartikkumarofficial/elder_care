@@ -84,7 +84,7 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
     return Dialog(
       insetPadding: EdgeInsets.symmetric(
         horizontal: Get.width * 0.05,
-        vertical: Get.height * 0.04,
+        // vertical: Get.height * 0.04,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: SingleChildScrollView(
@@ -97,6 +97,8 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
             key: _form,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               // header
+
+
               Text(widget.isEdit ? 'Edit Event' : 'New Event', style: GoogleFonts.nunito(fontSize: 22, fontWeight: FontWeight.w800)),
               SizedBox(height: Get.height * 0.015),
 
@@ -134,7 +136,7 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
 
               SizedBox(height: Get.height * 0.012),
 
-              // Time picker trigger (animated)
+              // Time picker trigger
               GestureDetector(
                 onTap: _showTimePicker,
                 child: Container(
@@ -228,40 +230,91 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
               SizedBox(height: 16),
 
               // Save button
+              // Save button
               ElevatedButton(
-                onPressed: () async {
+                onPressed: loading
+                    ? null
+                    : () async {
                   if (!_form.currentState!.validate()) return;
-                  if (widget.controller.pickedDate == null || widget.controller.pickedTime == null) {
-                    Get.snackbar('Validation', 'Pick date and time (future)');
+
+                  // Validate date & time
+                  if (widget.controller.pickedDate == null ||
+                      widget.controller.pickedTime == null) {
+                    Get.snackbar(
+                      'Validation',
+                      'Please select date & time',
+                      snackPosition: SnackPosition.TOP,
+                      backgroundColor: Colors.red.shade100,
+                      colorText: Colors.black,
+                      margin: const EdgeInsets.all(12),
+                    );
                     return;
                   }
+
                   final combined = DateTime(
-                      widget.controller.pickedDate!.year,
-                      widget.controller.pickedDate!.month,
-                      widget.controller.pickedDate!.day,
-                      widget.controller.pickedTime!.hour,
-                      widget.controller.pickedTime!.minute);
+                    widget.controller.pickedDate!.year,
+                    widget.controller.pickedDate!.month,
+                    widget.controller.pickedDate!.day,
+                    widget.controller.pickedTime!.hour,
+                    widget.controller.pickedTime!.minute,
+                  );
+
                   if (!combined.isAfter(DateTime.now())) {
-                    Get.snackbar('Validation', 'Select a future date/time');
+                    Get.snackbar(
+                      'Validation',
+                      'Please select a future date & time',
+                      snackPosition: SnackPosition.TOP,
+                      backgroundColor: Colors.red.shade100,
+                      colorText: Colors.black,
+                      margin: const EdgeInsets.all(12),
+                    );
                     return;
                   }
 
                   setState(() => loading = true);
+
+                  bool success;
+
                   if (widget.isEdit) {
-                    await widget.controller.confirmEdit();
+                    success = await widget.controller.confirmEdit();
                   } else {
-                    await widget.controller.addEvent();
+                    success = await widget.controller.addEvent();
                   }
+
+                  if (!mounted) return;
+
                   setState(() => loading = false);
+
+                  if (success) {
+                    widget.controller.clearForm();
+
+                    //   closing dialog
+                    Navigator.of(context).pop(true);
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kTeal,
                   minimumSize: Size(double.infinity, Get.height * 0.055),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(w * 0.05)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Get.width * 0.05),
+                  ),
                 ),
                 child: loading
-                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.2))
-                    : Text(widget.isEdit ? 'Save Changes' : 'Add Event', style: GoogleFonts.nunito(color: Colors.white)),
+                    ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.2,
+                  ),
+                )
+                    : Text(
+                  widget.isEdit ? 'Save Changes' : 'Add Event',
+                  style: GoogleFonts.nunito(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
 
               SizedBox(height: 8),
