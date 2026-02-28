@@ -165,7 +165,10 @@ class CaregiverDashboardController extends GetxController {
 
       receiverId.value = link["receiver_id"];
 
+
       Get.find<NavController>().linkedReceiverId.value = receiverId.value;
+      await Get.find<EventsController>()
+          .loadEventsForReceiver(receiverId.value);
 
       debugPrint("🧑‍🦳 Receiver ID linked: ${receiverId.value}");
 
@@ -346,7 +349,7 @@ class CaregiverDashboardController extends GetxController {
         .eq("user_id", receiverId.value)
         .order("timestamp", ascending: false);
 
-    print("Vitals fetched: $rows");
+    print("Vitals fetched: $rows"/**/);
 
     if (rows.isEmpty) {
       print("❌ No vitals found for this receiver");
@@ -707,6 +710,7 @@ class CaregiverDashboardController extends GetxController {
     );
   }
   Future<void> syncFcmToken() async {
+    if (kIsWeb) return;
     final user = supabase.auth.currentUser;
 
     if (user == null) {
@@ -754,7 +758,7 @@ class CaregiverDashboardController extends GetxController {
   Future<void> _refreshEvents() async {
     try {
       final eventController = Get.find<EventsController>();
-      await eventController.refreshEvents();
+      await eventController.loadEventsForReceiver(receiverId.value);
     } catch (_) {}
   }
 

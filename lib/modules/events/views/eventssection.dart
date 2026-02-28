@@ -16,7 +16,7 @@ final w = Get.width;
 class EventSection extends StatelessWidget {
   EventSection({Key? key}) : super(key: key);
 
-  final EventsController controller = Get.put(EventsController());
+  final EventsController controller = Get.find<EventsController>();
 
   @override
   Widget build(BuildContext context) {
@@ -61,31 +61,34 @@ class EventSection extends StatelessWidget {
   }
 
   Widget _horizontalList() {
-    return SizedBox(
-      height: Get.height*0.14,
-      child: Obx(() {
-        final events = controller.events;
-        if (events.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.only(left:20),
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Text('No events yet', style: GoogleFonts.nunito(color: Colors.grey)),
-            ),
-          );
-        }
+    return Obx(() {
+      final events = controller.events;
 
-        return ListView.builder(
-          padding: EdgeInsets.only(left: 20),
+      return SizedBox(
+        height: events.isNotEmpty
+            ? Get.height * 0.14
+            : Get.height * 0.06,
+        child: events.isEmpty
+            ? Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'No events yet',
+              style: GoogleFonts.nunito(color: Colors.grey),
+            ),
+          ),
+        )
+            : ListView.builder(
+          padding: const EdgeInsets.only(left: 20),
           scrollDirection: Axis.horizontal,
           itemCount: events.length,
           itemBuilder: (_, i) {
-            final e = events[i];
-            return EventCardCompact(event: e);
+            return EventCardCompact(event: events[i]);
           },
-        );
-      }),
-    );
+        ),
+      );
+    });
   }
 
   void _openAddDialog(BuildContext ctx, {required bool isEdit}) {

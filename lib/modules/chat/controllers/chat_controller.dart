@@ -46,17 +46,22 @@ class ChatController extends GetxController {
 
   Future<void> _loadMessages() async {
     if (_chatId == null) return;
+
     final res = await supabase
         .from('messages')
         .select()
         .eq('chat_id', _chatId!)
-        .order('created_at');
+        .order('created_at', ascending: true);
 
-    messages.value =
-        (res as List).map((e) => MessageModel.fromJson(e)).toList();
+    final loaded =
+    (res as List).map((e) => MessageModel.fromJson(e)).toList();
+
+    loaded.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+    messages.value = loaded;
   }
 
-  /// ✅ THIS FIXES SEEN STATUS
+  ///   SEEN STATUS
   Future<void> _markMessagesAsSeen() async {
     final myId = supabase.auth.currentUser!.id;
 
@@ -74,6 +79,7 @@ class ChatController extends GetxController {
       supabase.removeChannel(_channel!);
     }
 
+
     _channel = supabase.channel('chat:$_chatId')
       ..onPostgresChanges(
         event: PostgresChangeEvent.insert,
@@ -88,7 +94,7 @@ class ChatController extends GetxController {
           final msg = MessageModel.fromJson(payload.newRecord);
           messages.add(msg);
 
-          // ✅ auto-mark seen if message is from partner
+          // auto-mark seen if message is from partner
           if (msg.senderId == _partnerId) {
             await _markMessagesAsSeen();
           }
@@ -110,6 +116,7 @@ class ChatController extends GetxController {
           if (index != -1) {
             messages[index] = updated;
             messages.refresh();
+
           }
         },
       )

@@ -42,7 +42,7 @@ class _ReceiverDashboardScreenState extends State<ReceiverDashboardScreen> {
 
 
   final ReceiverDashboardController controller = Get.put(ReceiverDashboardController(),permanent: true);
-  final EventsController eventsController = Get.put(EventsController());
+  final EventsController eventsController = Get.find<EventsController>();
   bool _dialogShown = false;
 
   @override

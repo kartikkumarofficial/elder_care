@@ -1,35 +1,39 @@
 class EventModel {
   final int? id;
   final String title;
-  final String datetime; // ISO string of combined date+time
+  final DateTime eventTime;
   final String category;
   final String notes;
+  final String receiverId;
 
   EventModel({
     this.id,
     required this.title,
-    required this.datetime,
+    required this.eventTime,
     required this.category,
     required this.notes,
+    required this.receiverId,
   });
 
-  Map<String, dynamic> toMap() => {
-    if (id != null) 'id': id,
-    'title': title,
-    'date': datetime,
-    'category': category,
-    'notes': notes,
-  };
+  Map<String, dynamic> toMap() {
+    return {
+      if (id != null) 'id': id,
+      'title': title,
+      'event_time': eventTime.toUtc().toIso8601String(),
+      'category': category,
+      'notes': notes,
+      'receiver_id': receiverId,
+    };
+  }
 
   factory EventModel.fromMap(Map<String, dynamic> map) {
     return EventModel(
-      id: map['id'] is int
-          ? map['id']
-          : (map['id'] is num ? (map['id'] as num).toInt() : null),
-      title: (map['title'] ?? '').toString(),
-      datetime: (map['date'] ?? '').toString(),
-      category: (map['category'] ?? 'General').toString().trim(),
-      notes: (map['notes'] ?? '').toString(),
+      id: map['id'],
+      title: map['title'] ?? '',
+      eventTime: DateTime.parse(map['event_time']),
+      category: map['category'] ?? 'General',
+      notes: map['notes'] ?? '',
+      receiverId: map['receiver_id'],
     );
   }
 }

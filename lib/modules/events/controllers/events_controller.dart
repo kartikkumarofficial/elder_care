@@ -12,42 +12,56 @@ const double kCardRadius = 16.0;
 const double kCardHeight = 110.0;
 
 
-/// =================================================
-/// SUPABASE SERVICE (simple CRUD)
-/// =================================================
 class SupabaseEventService {
   static final supabase = Supabase.instance.client;
 
-  static Future<List<EventModel>> fetchEvents() async {
-    final res = await supabase.from('events').select().order('date', ascending: true);
+  static Future<List<EventModel>> fetchEvents(String receiverId) async {
+    final res = await supabase
+        .from('events')
+        .select()
+        .eq('receiver_id', receiverId)
+        .order('event_time', ascending: true);
+
     if (res is List) {
       return res
-          .map<EventModel>((e) => EventModel.fromMap(Map<String, dynamic>.from(e)))
+          .map<EventModel>(
+              (e) => EventModel.fromMap(Map<String, dynamic>.from(e)))
           .toList();
     }
     return [];
   }
 
   static Future<EventModel?> createEvent(EventModel event) async {
-    final res = await supabase.from('events').insert(event.toMap()).select().single();
-    if (res != null) return EventModel.fromMap(Map<String, dynamic>.from(res));
+    final res = await supabase
+        .from('events')
+        .insert(event.toMap())
+        .select()
+        .single();
+
+    if (res != null) {
+      return EventModel.fromMap(Map<String, dynamic>.from(res));
+    }
     return null;
   }
 
   static Future<EventModel?> updateEvent(EventModel event) async {
     if (event.id == null) return null;
+
     final res = await supabase
         .from('events')
         .update({
       'title': event.title,
-      'date': event.datetime,
+      'event_time': event.eventTime,
       'category': event.category,
       'notes': event.notes,
     })
         .eq('id', event.id!)
         .select()
         .single();
-    if (res != null) return EventModel.fromMap(Map<String, dynamic>.from(res));
+
+    if (res != null) {
+      return EventModel.fromMap(Map<String, dynamic>.from(res));
+    }
     return null;
   }
 
@@ -56,17 +70,17 @@ class SupabaseEventService {
   }
 }
 
-/// =================================================
-/// CONTROLLER
-/// =================================================
+// controller
 class EventsController extends GetxController {
-  RxList<EventModel> events = <EventModel>[].obs;
+  final RxList<EventModel> events = <EventModel>[].obs;
 
-  // Form controllers
+  String? currentReceiverId;
+
+  // ---------------- FORM ----------------
   final titleController = TextEditingController();
-  final dateController = TextEditingController(); // holds ISO datetime string
-  final category = RxString('Medication');
+  final dateController = TextEditingController();
   final notesController = TextEditingController();
+  final category = 'Medication'.obs;
 
   final List<String> categories = [
     'Medication',
@@ -79,14 +93,16 @@ class EventsController extends GetxController {
   ];
 
   int? editingId;
-
   DateTime? pickedDate;
   TimeOfDay? pickedTime;
 
+  // ---------------- CLEANUP ----------------
   @override
-  void onInit() {
-    super.onInit();
-    loadEvents();
+  void onClose() {
+    titleController.dispose();
+    dateController.dispose();
+    notesController.dispose();
+    super.onClose();
   }
 
   void clearForm() {
@@ -99,12 +115,14 @@ class EventsController extends GetxController {
     pickedTime = null;
   }
 
-  Future<void> refreshEvents() async {
-    await loadEvents(); // or whatever your fetch method is
-  }
-  Future<void> loadEvents() async {
+  // ---------------- LOADING ----------------
+  Future<void> loadEventsForReceiver(String receiverId) async {
+    currentReceiverId = receiverId;
+
     try {
-      final list = await SupabaseEventService.fetchEvents();
+      final list =
+      await SupabaseEventService.fetchEvents(receiverId);
+
       events.assignAll(list);
     } catch (e) {
       debugPrint('fetchEvents error: $e');
@@ -112,6 +130,12 @@ class EventsController extends GetxController {
     }
   }
 
+  Future<void> refreshEvents() async {
+    if (currentReceiverId == null) return;
+    await loadEventsForReceiver(currentReceiverId!);
+  }
+
+  // ---------------- HELPERS ----------------
   DateTime? _combinedDateTime() {
     if (pickedDate == null && pickedTime == null) return null;
 
@@ -121,13 +145,12 @@ class EventsController extends GetxController {
     return DateTime(d.year, d.month, d.day, t.hour, t.minute);
   }
 
-
   bool _isFutureSelected() {
     final combined = _combinedDateTime();
-    if (combined == null) return false;
-    return combined.isAfter(DateTime.now());
+    return combined != null && combined.isAfter(DateTime.now());
   }
 
+  // ---------------- CREATE ----------------
   Future<bool> addEvent() async {
     if (titleController.text.trim().isEmpty) {
       Get.snackbar('Validation', 'Enter event title');
@@ -135,125 +158,83 @@ class EventsController extends GetxController {
     }
 
     if (!_isFutureSelected()) {
-      Get.snackbar('Validation', 'Please select a future date & time');
+      Get.snackbar('Validation', 'Select future date & time');
       return false;
     }
 
-    final iso = _combinedDateTime()!.toIso8601String();
+    if (currentReceiverId == null) {
+      Get.snackbar('Error', 'No receiver selected');
+      return false;
+    }
 
     final model = EventModel(
+      receiverId: currentReceiverId!,
       title: titleController.text.trim(),
-      datetime: iso,
+      eventTime: _combinedDateTime()!,
       category: category.value,
       notes: notesController.text.trim(),
     );
 
-    try {
-      final created = await SupabaseEventService.createEvent(model);
+    final created =
+    await SupabaseEventService.createEvent(model);
 
-      if (created != null) {
-        events.insert(0, created);
-        Get.snackbar('Success', 'Event added');
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to create event');
-      return false;
+    if (created != null) {
+      events.add(created);
+      events.sort((a, b) => a.eventTime.compareTo(b.eventTime));
+      Get.snackbar('Success', 'Event added');
+      return true;
     }
+
+    return false;
   }
 
+  // ---------------- EDIT ----------------
   Future<void> startEdit(EventModel event) async {
     editingId = event.id;
     titleController.text = event.title;
     notesController.text = event.notes;
+    category.value =
+    categories.contains(event.category.trim())
+        ? event.category.trim()
+        : categories.first;
 
-    // 🔥 FIX: Ensure the category is valid
-    final cleanCat = event.category.trim();
-    if (categories.contains(cleanCat)) {
-      category.value = cleanCat;
-    } else {
-      category.value = categories.first; // fallback
-    }
-
-    try {
-      final dt = DateTime.parse(event.datetime);
-      pickedDate = DateTime(dt.year, dt.month, dt.day);
-      pickedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
-      dateController.text = dt.toIso8601String();
-    } catch (_) {
-      pickedDate = null;
-      pickedTime = null;
-      dateController.clear();
-    }
+    final dt = event.eventTime.toLocal();
+    pickedDate = DateTime(dt.year, dt.month, dt.day);
+    pickedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
   }
-
 
   Future<bool> confirmEdit() async {
     if (editingId == null) return false;
 
-    if (titleController.text.trim().isEmpty) {
-      Get.snackbar('Validation', 'Enter event title');
-      return false;
-    }
-
-    if (!_isFutureSelected()) {
-      Get.snackbar('Validation', 'Please select a future date & time');
-      return false;
-    }
-
-    final iso = _combinedDateTime()!.toIso8601String();
-
     final model = EventModel(
-      id: editingId,
+      id: editingId, // 🔥 CRITICAL FIX
+      receiverId: currentReceiverId!,
       title: titleController.text.trim(),
-      datetime: iso,
+      eventTime: _combinedDateTime()!,
       category: category.value,
       notes: notesController.text.trim(),
     );
 
-    try {
-      final updated = await SupabaseEventService.updateEvent(model);
+    final updated =
+    await SupabaseEventService.updateEvent(model);
 
-      if (updated != null) {
-        final idx = events.indexWhere((e) => e.id == updated.id);
-        if (idx != -1) events[idx] = updated;
+    if (updated != null) {
+      final idx =
+      events.indexWhere((e) => e.id == updated.id);
+      if (idx != -1) events[idx] = updated;
 
-        Get.snackbar('Success', 'Event updated');
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to update event');
-      return false;
+      events.sort((a, b) => a.eventTime.compareTo(b.eventTime));
+      Get.snackbar('Success', 'Event updated');
+      return true;
     }
+
+    return false;
   }
 
-  Future<bool> deleteEventConfirmed(int id) async {
-    try {
-      await SupabaseEventService.deleteEvent(id);
-      events.removeWhere((e) => e.id == id);
-
-      Get.snackbar(
-        'Deleted',
-        'Event removed successfully',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.black,
-      );
-
-      return true;
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to delete event',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.black,
-      );
-      return false;
-    }
+  // ---------------- DELETE ----------------
+  Future<void> deleteEventConfirmed(int id) async {
+    await SupabaseEventService.deleteEvent(id);
+    events.removeWhere((e) => e.id == id);
+    Get.snackbar('Deleted', 'Event removed');
   }
 }

@@ -7,6 +7,7 @@ import '../../modules/care_receiver/controllers/schedule_controller.dart';
 import '../../modules/dashboard/controllers/dashboard_controller.dart';
 import '../../modules/caregiver/controllers/caregiver_dashboard_controller.dart';
 import '../../modules/dashboard/controllers/nav_controller.dart';
+import '../../modules/events/controllers/events_controller.dart';
 import '../../modules/tasks/controllers/task_controller.dart';
 
 class InitialBinding extends Bindings {
@@ -31,7 +32,13 @@ class InitialBinding extends Bindings {
 
     Get.put(TaskController(), permanent: true);
     debugPrint("[InitialBinding] TaskController registered");
+
     Get.put(ActivityController(), permanent: true);
+    debugPrint("[InitialBinding] ActivityController registered");
+
+    Get.put(EventsController(), permanent: true);
+    debugPrint("[InitialBinding] EventsController registered");
+
 
     debugPrint("[InitialBinding] end");
   }

@@ -22,10 +22,7 @@ class EventDetailsDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     // final controller = Get.find<EventsController>();
 
-    DateTime? dt;
-    try {
-      dt = DateTime.parse(event.datetime).toLocal();
-    } catch (_) {}
+    final DateTime dt = event.eventTime.toLocal();
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -169,16 +166,11 @@ class EventDetailsDialog extends StatelessWidget {
                                 : () async {
                               setState(() => deleting = true);
 
-                              final success = await controller.deleteEventConfirmed(event.id!);
+                              await controller.deleteEventConfirmed(event.id!);
 
                               if (!context.mounted) return;
 
-                              setState(() => deleting = false);
-
-                              if (success) {
-                                // 🔥 Close EventDetailsDialog safely
-                                Navigator.of(context).pop();
-                              }
+                              Navigator.of(context).pop();
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.redAccent,

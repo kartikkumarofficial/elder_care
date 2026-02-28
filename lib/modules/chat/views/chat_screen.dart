@@ -47,8 +47,13 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     /// Listen for new messages
-    ever(controller.messages, (_) {
-      _scrollToBottom();
+    int previousLength = 0;
+
+    ever(controller.messages, (list) {
+      if (list.length > previousLength) {
+        _scrollToBottom();
+      }
+      previousLength = list.length;
     });
   }
   @override
@@ -74,13 +79,11 @@ class _ChatScreenState extends State<ChatScreen> {
   void _scrollToBottom() {
     if (!scrollController.hasClients) return;
 
-    Future.delayed(const Duration(milliseconds: 50), () {
-      scrollController.animateTo(
-        scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
-    });
+    scrollController.animateTo(
+      0.0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
@@ -156,6 +159,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
                     ListView.builder(
                       controller: scrollController,
+                      reverse: false,
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.symmetric(
                         // horizontal: Get.width * 0.000,
@@ -167,11 +171,26 @@ class _ChatScreenState extends State<ChatScreen> {
                         final isMe =
                             msg.senderId == authController.user.value!.id;
 
-                        return ChatBubble(
-                          message: msg.content,
-                          isMe: isMe,
-                          time: msg.createdAt,
-                          isSeen: isMe ? msg.isSeen : false,
+                        final currentDate = msg.createdAt;
+                        final previousDate = i < controller.messages.length - 1
+                            ? controller.messages[i + 1].createdAt
+                            : null;
+
+                        final showDateSeparator = previousDate == null ||
+                            !_isSameDay(currentDate, previousDate);
+
+                        return Column(
+                          children: [
+                            if (showDateSeparator)
+                              _buildDateSeparator(currentDate),
+
+                            ChatBubble(
+                              message: msg.content,
+                              isMe: isMe,
+                              time: msg.createdAt,
+                              isSeen: isMe ? msg.isSeen : false,
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -186,6 +205,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }),
       ),
     );
+
   }
 
   /// INPUT BAR
@@ -262,6 +282,47 @@ Widget _chatBackground() {
       child: Image.asset(
         'assets/images/chat_bgg.png',
         fit: BoxFit.cover,
+      ),
+    ),
+  );
+}
+
+bool _isSameDay(DateTime a, DateTime b) {
+  return a.year == b.year &&
+      a.month == b.month &&
+      a.day == b.day;
+}
+Widget _buildDateSeparator(DateTime date) {
+  final now = DateTime.now();
+
+  String label;
+
+  if (_isSameDay(date, now)) {
+    label = "Today";
+  } else if (_isSameDay(
+      date, now.subtract(const Duration(days: 1)))) {
+    label = "Yesterday";
+  } else {
+    label =
+    "${date.day}/${date.month}/${date.year}";
+  }
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    child: Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600),
+        ),
       ),
     ),
   );

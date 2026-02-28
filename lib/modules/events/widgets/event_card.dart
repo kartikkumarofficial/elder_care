@@ -13,15 +13,13 @@ class EventCardCompact extends StatelessWidget {
   final EventModel event;
   const EventCardCompact({Key? key, required this.event}) : super(key: key);
 
-  String _friendlyDate(String iso) {
-    try {
-      final d = DateTime.parse(iso);
-      return '${d.day}/${d.month}/${d.year} • ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return iso;
-    }
-  }
+  String _friendlyDate(DateTime dateTime) {
+    final d = dateTime.toLocal();
 
+    return '${d.day}/${d.month}/${d.year} • '
+        '${d.hour.toString().padLeft(2, '0')}:'
+        '${d.minute.toString().padLeft(2, '0')}';
+  }
   Widget _iconForCategory(String c, double size) {
     switch (c) {
       case 'Medication':
@@ -144,7 +142,7 @@ class EventCardCompact extends StatelessWidget {
                   SizedBox(height: 6),
 
                   Text(
-                    _friendlyDate(event.datetime),
+                    _friendlyDate(event.eventTime),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.nunito(

@@ -121,6 +121,8 @@ class ReceiverDashboardController extends GetxController {
       await refreshDeviceConnectionStatus();
       await startAutomaticLocationSharing();
       await startStepTracking();
+      await Get.find<EventsController>()
+          .loadEventsForReceiver(user.id);
 
       debugPrint("✅ Dashboard load complete");
     } catch (e) {
@@ -129,55 +131,6 @@ class ReceiverDashboardController extends GetxController {
       isLoading.value = false;
     }
   }
-  //for mood section - commented
-
-  
-  // MOOD
-  
-  // Future<void> checkTodayMood() async {
-  //   final user = supabase.auth.currentUser;
-  //   if (user == null) return;
-  //
-  //   final today = DateTime.now().toIso8601String().substring(0, 10);
-  //
-  //   final res = await supabase
-  //       .from('mood_tracking')
-  //       .select('mood')
-  //       .eq('user_id', user.id)
-  //       .eq('mood_date', today)
-  //       .maybeSingle();
-  //
-  //   if (res != null) {
-  //     selectedMood.value = res['mood'];
-  //     moodSubmittedToday.value = true;
-  //     debugPrint("🙂 Mood loaded: ${res['mood']}");
-  //   } else {
-  //     moodSubmittedToday.value = false;
-  //     debugPrint("🙂 No mood for today yet");
-  //   }
-  // }
-
-  // Future<void> submitMood(String mood) async {
-  //   final user = supabase.auth.currentUser;
-  //   if (user == null) return;
-  //
-  //   final today = DateTime.now().toIso8601String().substring(0, 10);
-  //
-  //   selectedMood.value = mood;
-  //   moodSubmittedToday.value = true;
-  //
-  //   await supabase.from('mood_tracking').upsert(
-  //     {
-  //       'user_id': user.id,
-  //       'mood': mood,
-  //       'mood_date': today,
-  //     },
-  //     onConflict: 'user_id,mood_date',
-  //   );
-  //
-  //   debugPrint("🙂 Mood updated → $mood");
-  // }
-
   
   // DEVICE STATUS
   
@@ -482,37 +435,20 @@ class ReceiverDashboardController extends GetxController {
 
     try {
       isLoading.value = true;
-      debugPrint("🔄 Pull-to-refresh started");
 
       final user = supabase.auth.currentUser;
       if (user == null) return;
 
-      // 🔹 Device status (battery + charging)
       await syncDeviceStatus();
-
-      // 🔹 Device connectivity (online / offline)
       await refreshDeviceConnectionStatus();
-
-      // 🔹 Mood re-check
       await checkTodayMood();
 
-      // 🔹 Tasks (via TaskController)
-      if (Get.isRegistered<TaskController>()) {
-        await Get.find<TaskController>()
-            .loadTasksForReceiver(user.id);
-      }
+      await Get.find<TaskController>()
+          .loadTasksForReceiver(user.id);
 
-      // 🔹 Events (if controller exists)
-      if (Get.isRegistered<EventsController>()) {
-        await Get.find<EventsController>().loadEvents();
-      }else{
-        Get.put(EventsController());
-        await Get.find<EventsController>().loadEvents();
-      }
+      await Get.find<EventsController>()
+          .loadEventsForReceiver(user.id);
 
-      debugPrint("✅ Pull-to-refresh completed");
-    } catch (e) {
-      debugPrint("❌ Refresh failed: $e");
     } finally {
       isLoading.value = false;
     }

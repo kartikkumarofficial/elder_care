@@ -81,6 +81,9 @@ import '../widgets/healthstatussection.dart';
           }
 
           return SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: kBottomNavigationBarHeight + Get.height*0.01,
+            ),
             child: Column(
               children: [
                 // =================== MAP + PANEL STACK ===================
@@ -223,6 +226,7 @@ import '../widgets/healthstatussection.dart';
                 SizedBox(height: srch * 0.02),
 
                 TaskSection(),
+                SizedBox(height: srch * 0.05),
 
 
 
