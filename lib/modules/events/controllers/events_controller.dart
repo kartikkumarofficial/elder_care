@@ -51,13 +51,14 @@ class SupabaseEventService {
         .from('events')
         .update({
       'title': event.title,
-      'event_time': event.eventTime,
+      'event_time': event.eventTime.toIso8601String(),
       'category': event.category,
       'notes': event.notes,
     })
         .eq('id', event.id!)
         .select()
-        .single();
+        .single()
+        .maybeSingle();
 
     if (res != null) {
       return EventModel.fromMap(Map<String, dynamic>.from(res));
@@ -75,6 +76,7 @@ class EventsController extends GetxController {
   final RxList<EventModel> events = <EventModel>[].obs;
 
   String? currentReceiverId;
+
 
   // ---------------- FORM ----------------
   final titleController = TextEditingController();
@@ -204,31 +206,38 @@ class EventsController extends GetxController {
   }
 
   Future<bool> confirmEdit() async {
-    if (editingId == null) return false;
+    try {
+      if (editingId == null) return false;
 
-    final model = EventModel(
-      id: editingId, // 🔥 CRITICAL FIX
-      receiverId: currentReceiverId!,
-      title: titleController.text.trim(),
-      eventTime: _combinedDateTime()!,
-      category: category.value,
-      notes: notesController.text.trim(),
-    );
+      final model = EventModel(
+        id: editingId,
+        receiverId: currentReceiverId!,
+        title: titleController.text.trim(),
+        eventTime: _combinedDateTime()!,
+        category: category.value,
+        notes: notesController.text.trim(),
+      );
 
-    final updated =
-    await SupabaseEventService.updateEvent(model);
+      final updated =
+      await SupabaseEventService.updateEvent(model);
 
-    if (updated != null) {
-      final idx =
-      events.indexWhere((e) => e.id == updated.id);
-      if (idx != -1) events[idx] = updated;
+      if (updated != null) {
+        final idx =
+        events.indexWhere((e) => e.id == updated.id);
 
-      events.sort((a, b) => a.eventTime.compareTo(b.eventTime));
-      Get.snackbar('Success', 'Event updated');
-      return true;
+        if (idx != -1) events[idx] = updated;
+
+        events.sort((a, b) =>
+            a.eventTime.compareTo(b.eventTime));
+
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint("Confirm edit error: $e");
+      return false;
     }
-
-    return false;
   }
 
   // ---------------- DELETE ----------------

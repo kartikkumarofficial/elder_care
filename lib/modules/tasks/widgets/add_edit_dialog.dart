@@ -136,7 +136,9 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                       final combined = DateTime(chooseDate.year, chooseDate.month, chooseDate.day, t.hour, t.minute);
                       widget.controller.dateController.text = combined.toIso8601String();
                     }
-                    setState(() {});
+                    setState(() {
+
+                    });
                   },
                 ),
               ),

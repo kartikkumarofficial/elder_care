@@ -23,6 +23,17 @@ class AddEditEventDialog extends StatefulWidget {
 }
 
 class _AddEditEventDialogState extends State<AddEditEventDialog> {
+
+  String? errorMessage;
+  @override
+  void initState() {
+    super.initState();
+
+    if (!widget.isEdit) {
+      final now = DateTime.now();
+      widget.controller.pickedDate ??= DateTime(now.year, now.month, now.day);
+    }
+  }
   final _form = GlobalKey<FormState>();
   bool loading = false;
 
@@ -55,7 +66,9 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
             final combined = DateTime(now.year, now.month, now.day, t.hour, t.minute);
             widget.controller.dateController.text = combined.toIso8601String();
           }
-          setState(() {});
+          setState(() {
+            errorMessage = null;
+          });
         },
 
         iosStylePicker: false,
@@ -129,7 +142,9 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                       final combined = DateTime(date.year, date.month, date.day, t.hour, t.minute);
                       widget.controller.dateController.text = combined.toIso8601String();
                     }
-                    setState(() {});
+                    setState(() {
+                      errorMessage=null;
+                    });
                   },
                 ),
               ),
@@ -228,8 +243,28 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
               ),
 
               SizedBox(height: 16),
+              SizedBox(height: 8),//todo fix sizing here
 
-              // Save button
+              if (errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 18),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          errorMessage!,
+                          style: GoogleFonts.nunito(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               // Save button
               ElevatedButton(
                 onPressed: loading
@@ -237,17 +272,16 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                     : () async {
                   if (!_form.currentState!.validate()) return;
 
-                  // Validate date & time
+
+                  setState(() {
+                    errorMessage = null;
+                  });
+
                   if (widget.controller.pickedDate == null ||
                       widget.controller.pickedTime == null) {
-                    Get.snackbar(
-                      'Validation',
-                      'Please select date & time',
-                      snackPosition: SnackPosition.TOP,
-                      backgroundColor: Colors.red.shade100,
-                      colorText: Colors.black,
-                      margin: const EdgeInsets.all(12),
-                    );
+                    setState(() {
+                      errorMessage = "Please select date & time";
+                    });
                     return;
                   }
 
@@ -260,14 +294,9 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                   );
 
                   if (!combined.isAfter(DateTime.now())) {
-                    Get.snackbar(
-                      'Validation',
-                      'Please select a future date & time',
-                      snackPosition: SnackPosition.TOP,
-                      backgroundColor: Colors.red.shade100,
-                      colorText: Colors.black,
-                      margin: const EdgeInsets.all(12),
-                    );
+                    setState(() {
+                      errorMessage = "Please select a future date & time";
+                    });
                     return;
                   }
 
@@ -287,9 +316,19 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
 
                   if (success) {
                     widget.controller.clearForm();
-
-                    //   closing dialog
                     Navigator.of(context).pop(true);
+
+
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      Get.snackbar(
+                        'Success',
+                        widget.isEdit ? 'Event updated' : 'Event added',
+                        snackPosition: SnackPosition.TOP,
+                        backgroundColor: Colors.green.shade100,
+                        colorText: Colors.black,
+                        margin: const EdgeInsets.all(12),
+                      );
+                    });
                   }
                 },
                 style: ElevatedButton.styleFrom(

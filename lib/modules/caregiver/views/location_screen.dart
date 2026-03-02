@@ -364,15 +364,23 @@ class LocationScreen extends StatelessWidget {
                 LatLng(20.5937, 78.9629);
 
             return GoogleMap(
-              initialCameraPosition:
-              CameraPosition(target: initial, zoom: 15),
+              initialCameraPosition: CameraPosition(
+                target: initial,
+                zoom: 15,
+              ),
               onMapCreated: controller.onMapCreated,
-              myLocationButtonEnabled: false,
+
               zoomControlsEnabled: false,
+              myLocationButtonEnabled: false,
+
+              zoomGesturesEnabled: true,
+              scrollGesturesEnabled: true,
+              rotateGesturesEnabled: true,
+              tiltGesturesEnabled: true,
+
               markers: _markers(controller),
               circles: _circles(controller),
 
-              // ⭐ TAP TO SELECT SAFE ZONE CENTER
               onTap: (pos) {
                 controller.safeCenter.value = pos;
                 Get.snackbar(
@@ -384,7 +392,7 @@ class LocationScreen extends StatelessWidget {
             );
           }),
 
-          // FLOATING APPBAR ================================================
+          // FLOATING APPBAR
           Positioned(
             top: 40,
             left: 16,
