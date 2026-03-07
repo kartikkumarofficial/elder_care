@@ -92,7 +92,6 @@ class _ReceiverStatusChipsState extends State<ReceiverStatusChips> {
                       : () async {
                     isSyncing.value = true;
 
-                    await controller.syncDeviceStatus();
                     await controller.refreshDeviceConnectionStatus();
 
                     debugPrint(

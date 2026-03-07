@@ -65,7 +65,7 @@ class _ReceiverDashboardScreenState extends State<ReceiverDashboardScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: RefreshIndicator(
-        onRefresh: ()=>ReceiverDashboardController().refreshDashboard(),
+        onRefresh: ()=>controller.refreshDashboard(),
         child: Container(
           height: h,
           width: w,

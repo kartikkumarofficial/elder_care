@@ -491,6 +491,26 @@ class ReceiverDashboardController extends GetxController {
     });
   }
 
+  Future<void> refreshQuickData() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // device info
+      await syncDeviceStatus();
+      await refreshDeviceConnectionStatus();
+
+      // fetch in background (NO loading state)
+      await Future.wait([
+        Get.find<TaskController>().loadTasksForReceiver(user.id),
+        Get.find<EventsController>().loadEventsForReceiver(user.id),
+      ]);
+
+      debugPrint("🔄 Quick refresh completed");
+    } catch (e) {
+      debugPrint("❌ Quick refresh error: $e");
+    }
+  }
 
 
 
