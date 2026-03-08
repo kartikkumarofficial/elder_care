@@ -41,6 +41,7 @@
 
 
 
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
 
 
 
