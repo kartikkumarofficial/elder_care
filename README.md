@@ -41,7 +41,6 @@ Built with **Flutter**, **Supabase**, and **GetX**, ElderCare focuses on reliabi
 
 ---
 
-
 ## 🧱 Tech Stack
 
 | Layer | Technology |
