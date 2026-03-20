@@ -24,6 +24,7 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
   final DateTime start = DateTime.now();
   bool loading = false;
   bool _showRepeatOptions = false;
+  String? _errorText;
 
 
   static const double _timelineHeight = 92;
@@ -268,17 +269,47 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                       : RepeatOptions(controller: widget.controller),
                 ),
 
-
-
-
               SizedBox(height: 12),
+
+              if (_errorText != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8,left: 10),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 18),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _errorText!,
+                          style: GoogleFonts.nunito(
+                            color: Colors.red,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+
+
+              SizedBox(height: 6),
+
 
               ElevatedButton(
                 onPressed: () async {
-                  if (!_form.currentState!.validate()) return;
+                  if (!_form.currentState!.validate()) {
+                    setState(() {
+                      _errorText = "Please enter a task name";
+                    });
+                    return;
+                  }
                   // if date chosen but no time -> ask
                   if (widget.controller.pickedDate != null && widget.controller.pickedTime == null) {
-                    Get.snackbar('Validation', 'Pick time or clear the date (alarm requires date+time)');
+                    setState(() {
+                      _errorText = "Please select a time for the chosen date";
+                    });
                     return;
                   }
 
@@ -286,7 +317,9 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                   if (widget.controller.pickedDate != null && widget.controller.pickedTime != null) {
                     final combined = DateTime(widget.controller.pickedDate!.year, widget.controller.pickedDate!.month, widget.controller.pickedDate!.day, widget.controller.pickedTime!.hour, widget.controller.pickedTime!.minute);
                     if (!combined.isAfter(DateTime.now())) {
-                      Get.snackbar('Validation', 'Select a future date/time');
+                      setState(() {
+                        _errorText = "Please choose a future time";
+                      });
                       return;
                     }
                   }

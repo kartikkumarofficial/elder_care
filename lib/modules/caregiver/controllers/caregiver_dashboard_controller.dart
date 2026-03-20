@@ -9,12 +9,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../../core/services/emergency_alert_service.dart';
 import '../../dashboard/controllers/nav_controller.dart';
 import '../../tasks/controllers/task_controller.dart';
 
 class CaregiverDashboardController extends GetxController {
+
+  final TaskController taskController = Get.put(TaskController(), permanent: true);
   final supabase = Supabase.instance.client;
   // ----------------------------- VITAL HISTORY FOR CHARTS -----------------------------
   RxList<double> heartRateHistory = <double>[80, 82, 81, 83, 85].obs;
@@ -34,6 +35,9 @@ class CaregiverDashboardController extends GetxController {
   final RxDouble lat = 0.0.obs;
   final RxDouble lng = 0.0.obs;
   final RxString lastLocationRefresh = "Loading...".obs;
+
+  final Rxn<DateTime> lastLocationUpdate = Rxn<DateTime>();
+
 
   // ----------------------------- VITALS DATA -----------------------------
   final RxString heartRate = "--".obs;
@@ -57,6 +61,7 @@ class CaregiverDashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
     debugPrint("👨‍⚕️ CaregiverDashboardController INIT");
 
 
@@ -269,8 +274,13 @@ class CaregiverDashboardController extends GetxController {
 
       lat.value = _lat;
       lng.value = _lng;
-      lastLocationRefresh.value = _formatTimeAgo(row['updated_at']?.toString() ?? DateTime.now().toIso8601String());
 
+      final updated = row['updated_at']?.toString();
+      if (updated != null) {
+        lastLocationUpdate.value = DateTime.parse(updated).toLocal();
+        lastLocationRefresh.value = _formatTimeAgo(updated);
+      }
+      print('fetchLatestLocation raw: $row');
       // make UI visible
       isMapReady.value = true;
 
@@ -318,14 +328,19 @@ class CaregiverDashboardController extends GetxController {
         if (latVal != null && lngVal != null) {
           lat.value = latVal.toDouble();
           lng.value = lngVal.toDouble();
-          lastLocationRefresh.value = _formatTimeAgo(newRow['updated_at']?.toString() ?? DateTime.now().toIso8601String());
+
+          final updated = newRow['updated_at']?.toString();
+          if (updated != null) {
+            lastLocationUpdate.value = DateTime.parse(updated).toLocal();
+            lastLocationRefresh.value = _formatTimeAgo(updated);
+          }
           if (!isMapReady.value) isMapReady.value = true;
           _animateMap();
         }
       },
     ).subscribe();
 
-    // Optionally create a second subscription for the 'locations' table (if you actually use that).
+
   }
 
 

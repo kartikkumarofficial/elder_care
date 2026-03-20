@@ -55,21 +55,40 @@ class _MainScaffoldState extends State<MainScaffold> {
       Get.put(TaskController(), permanent: true);
     }
 
-    if (!Get.isRegistered<CaregiverDashboardController>()) {
-      debugPrint("🧠 Registering CaregiverDashboardController");
-      Get.put(CaregiverDashboardController());
-    } else {
-      debugPrint("♻️ CaregiverDashboardController ALREADY registered");
+    // if (!Get.isRegistered<CaregiverDashboardController>()) {
+    //   debugPrint("🧠 Registering CaregiverDashboardController");
+    //   Get.put(CaregiverDashboardController());
+    // } else {
+    //   debugPrint("♻️ CaregiverDashboardController ALREADY registered");
+    // }
+
+
+    if (user?.role == 'receiver') {
+      if (!Get.isRegistered<ReceiverDashboardController>()) {
+        debugPrint("🧠 Registering ReceiverDashboardController");
+        Get.put(ReceiverDashboardController(), permanent: true);
+      }
     }
-
-
-    if (!Get.isRegistered<ReceiverDashboardController>()) {
-      Get.put(ReceiverDashboardController(), permanent: true);
+    if (user?.role == 'caregiver') {
+      if (Get.isRegistered<ReceiverDashboardController>()) {
+        Get.delete<ReceiverDashboardController>();
+      }
+      if (Get.isRegistered<ReceiverLocationController>()) {
+        Get.delete<ReceiverLocationController>();
+      }
+      if (Get.isRegistered<ActivityController>()) {
+        Get.delete<ActivityController>();
+      }
     }
 
     // 2️⃣ Caregiver task wiring (SINGLE SOURCE OF TRUTH)
     if (user?.role == 'caregiver') {
       debugPrint("🧵 Wiring caregiver task listeners");
+
+      if (!Get.isRegistered<CaregiverDashboardController>()) {
+        Get.put(CaregiverDashboardController(), permanent: true);
+      }
+
       final caregiverController = Get.find<CaregiverDashboardController>();
       final taskController = Get.find<TaskController>();
 
@@ -152,51 +171,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           ? CareGiverBottomNavBar()
           : CareReceiverBottomNavBar(),
 
-      // floatingActionButton: user.role == 'receiver'
-      //     ? SOSFab(Get.put(ReceiverDashboardController()))
-      //     : null,
 
-      // approach 2
-      //   floatingActionButton: Obx(() {
-      //
-      //     if (user.role != 'receiver') return const SizedBox.shrink();
-      //
-      //     if (navController.selectedIndex.value != 2) {
-      //       return SOSFab(Get.put(ReceiverDashboardController()));
-      //     }
-      //
-      //     return Column(
-      //       mainAxisSize: MainAxisSize.min,
-      //       children: [
-      //         FloatingActionButton(
-      //           heroTag: 'addTask',
-      //           backgroundColor: kTeal,
-      //           child: const Icon(Icons.add),
-      //           onPressed: () async {
-      //             final taskController = Get.find<TaskController>();
-      //
-      //             await Get.dialog(
-      //               AddEditTaskDialog(
-      //                 isEdit: false,
-      //                 controller: taskController,
-      //               ),
-      //             );
-      //
-      //             // refresh schedule after add
-      //             Get.find<ScheduleController>().loadForCurrentUser(
-      //               Get.find<ScheduleController>().selectedDate.value,
-      //             );
-      //           },
-      //         ),
-      //         const SizedBox(height: 12),
-      //
-      //         // SOS always below
-      //         SOSFab(Get.put(ReceiverDashboardController())),
-      //       ],
-      //     );
-      //   }),
 
-      /// ✅ FAB depends on selectedIndex → keep Obx here
       floatingActionButton: Obx(() {
         final rxUser = authController.user.value;
 

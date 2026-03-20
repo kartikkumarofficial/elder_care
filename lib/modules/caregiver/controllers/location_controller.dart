@@ -92,22 +92,12 @@ class LocationController extends GetxController {
         if (data['updated_at'] != null) {
           final raw = data['updated_at'] as String;
 
-          // 🪵 LOG 1: raw value from DB
           debugPrint("🕒 RAW updated_at from DB: $raw");
 
-          // 🔒 Force UTC parsing (Supabase sends UTC but without Z)
-          final parsedUtc = DateTime.parse(raw + 'Z');
+          final parsed = DateTime.parse(raw);
+          final localTime = parsed.toLocal();
 
-          // 🪵 LOG 2: parsed as UTC
-          debugPrint("🕒 Parsed as UTC: $parsedUtc");
-
-          final localTime = parsedUtc.toLocal();
-
-          // 🪵 LOG 3: converted to local time
-          debugPrint("🕒 Converted to Local: $localTime");
-
-          // 🪵 LOG 4: current local time
-          debugPrint("🕒 Now (local): ${DateTime.now()}");
+          debugPrint("🕒 Parsed local time: $localTime");
 
           lastUpdatedAt.value = localTime;
           _updateTimeAgo();
@@ -128,7 +118,10 @@ class LocationController extends GetxController {
       }
     } catch (e) {
       print('[LocationController] fetchLocation error: $e');
-      Get.snackbar('Error', 'Unable to fetch location', snackPosition: SnackPosition.BOTTOM);
+      Future.delayed(Duration.zero, () {
+        Get.snackbar('Error', 'Unable to fetch location', snackPosition: SnackPosition.BOTTOM);
+      });
+
     }
   }
 

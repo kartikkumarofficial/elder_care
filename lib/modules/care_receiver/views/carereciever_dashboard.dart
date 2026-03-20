@@ -85,9 +85,10 @@ class _ReceiverDashboardScreenState extends State<ReceiverDashboardScreen> {
                 () => controller.isLoading.value
                 ? const Center(child: CircularProgressIndicator())
                 : SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
+              padding: EdgeInsets.only(
                 // horizontal: w * 0.01,
-                vertical: h * 0.04,
+                top: h * 0.04,
+                bottom: kBottomNavigationBarHeight*0.2
 
               ),
               child: Column(
@@ -147,7 +148,7 @@ class _ReceiverDashboardScreenState extends State<ReceiverDashboardScreen> {
                   /// SOS
                   // sosButton(w, h),
 
-                  SizedBox(height: h * 0.04),
+                  // SizedBox(height: h * 0.04),
                 ],
               ),
             ),

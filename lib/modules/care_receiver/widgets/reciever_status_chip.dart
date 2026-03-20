@@ -92,7 +92,7 @@ class _ReceiverStatusChipsState extends State<ReceiverStatusChips> {
                       : () async {
                     isSyncing.value = true;
 
-                    await controller.refreshDeviceConnectionStatus();
+                    await controller.refreshQuickData();
 
                     debugPrint(
                         "⏱ Last sync updated: ${controller.lastDeviceSync}");

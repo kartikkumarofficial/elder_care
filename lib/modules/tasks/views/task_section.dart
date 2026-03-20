@@ -24,7 +24,7 @@ class TaskSection extends StatelessWidget {
   TaskSection({Key? key, this.receiverIdOverride}) : super(key: key);
 
   // final TaskController controller = Get.find<TaskController>();
-  final TaskController controller = Get.put(TaskController(),permanent: true);
+  final TaskController controller = Get.find<TaskController>();
   final NavController nav = Get.find<NavController>();
 
   @override
@@ -39,11 +39,11 @@ class TaskSection extends StatelessWidget {
 
 
 
-    // Load initial tasks if id already present
-    final initialId = receiverIdOverride ?? nav.linkedReceiverId.value;
-    if (initialId.isNotEmpty) {
-      controller.loadTasksForReceiver(initialId);
-    }
+    // // Load initial tasks if id already present
+    // final initialId = receiverIdOverride ?? nav.linkedReceiverId.value;
+    // if (initialId.isNotEmpty) {
+    //   controller.loadTasksForReceiver(initialId);
+    // }
 
 
     final receiverId = receiverIdOverride?.isNotEmpty == true
@@ -121,8 +121,13 @@ class TaskSection extends StatelessWidget {
             if (list.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10.0),
-                child: Text('No tasks yet',
-                    style: GoogleFonts.nunito(color: Colors.grey)),
+                child: Column(
+                  children: [
+                    Text('No tasks yet',
+                        style: GoogleFonts.nunito(color: Colors.grey)),
+                    SizedBox(height: Get.height*0.05,)
+                  ],
+                ),
               );
             }
 

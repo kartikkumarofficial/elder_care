@@ -82,7 +82,7 @@ import '../widgets/healthstatussection.dart';
 
           return SingleChildScrollView(
             padding: EdgeInsets.only(
-              bottom: kBottomNavigationBarHeight + Get.height*0.01,
+              bottom: kBottomNavigationBarHeight*0.2,
             ),
             child: Column(
               children: [

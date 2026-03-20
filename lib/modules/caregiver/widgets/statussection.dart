@@ -46,7 +46,7 @@ class _StatusSectionState extends State<StatusSection> {
       final connected = controller.fitbitConnected.value;
 
       final syncing = controller.isRefreshing.value;
-      final lastSync = activity.lastActivityAt;
+      final lastSync = controller.lastLocationUpdate.value;
 
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: Get.width * 0.05),
@@ -59,7 +59,7 @@ class _StatusSectionState extends State<StatusSection> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ================= MOOD =================
+              // Mood
               Expanded(
                 child: Row(
                   children: [
@@ -86,7 +86,7 @@ class _StatusSectionState extends State<StatusSection> {
 
               const SizedBox(width: 10),
 
-              // ================= WEARABLE =================
+              // Wearable
               _statusChip(
                 icon: connected ? Icons.watch : Icons.watch_off,
                 bg: connected ? Colors.teal.shade50 : Colors.red.shade50,
@@ -96,7 +96,7 @@ class _StatusSectionState extends State<StatusSection> {
 
               const SizedBox(width: 8),
 
-              // ================= BATTERY =================
+              // Battery status
               _statusChip(
                 icon: charging
                     ? Icons.battery_charging_full
@@ -108,7 +108,7 @@ class _StatusSectionState extends State<StatusSection> {
 
               const SizedBox(width: 8),
 
-              // ================= SYNC =================
+              // Sync
               GestureDetector(
                 onTap: syncing ? null : controller.refreshData,
                 child: Container(

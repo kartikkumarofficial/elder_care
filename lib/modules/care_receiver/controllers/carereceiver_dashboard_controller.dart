@@ -4,17 +4,21 @@ import 'package:battery_plus/battery_plus.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:health/health.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../events/controllers/events_controller.dart';
+import '../../events/widgets/healthconnect_dialog.dart';
 import '../../tasks/controllers/task_controller.dart';
 import 'activity_controller.dart';
 
 class ReceiverDashboardController extends GetxController {
   final SupabaseClient supabase = Supabase.instance.client;
+  final TaskController taskController = Get.put(TaskController(), permanent: true);
 
   // user info
   final userName = ''.obs;
@@ -65,7 +69,8 @@ class ReceiverDashboardController extends GetxController {
   Timer? _stepsFlushTimer;
   bool _stepsStarted = false;
   int _latestSteps = 0;
-
+  int _baselineSteps = 0;
+  String _baselineDate = "";
   
   // UI STATE
   
@@ -201,11 +206,17 @@ class ReceiverDashboardController extends GetxController {
     final user = supabase.auth.currentUser;
     if (user == null) return;
 
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
     if (!serviceEnabled) {
       locationStatusMessage.value = "Enable GPS";
-      debugPrint("❌ Location services disabled");
-      return;
+      await Geolocator.openLocationSettings();
+
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint("❌ Location still disabled");
+        return;
+      }
     }
 
     LocationPermission permission = await Geolocator.checkPermission();
@@ -260,7 +271,9 @@ class ReceiverDashboardController extends GetxController {
 
   
   // STEPS
-  
+
+  final Health _health = Health();
+
   Future<void> startStepTracking() async {
     if (_stepsStarted) return;
     _stepsStarted = true;
@@ -268,44 +281,72 @@ class ReceiverDashboardController extends GetxController {
     final user = supabase.auth.currentUser;
     if (user == null) return;
 
-    final permission = await Permission.activityRecognition.request();
-    if (!permission.isGranted) {
-      debugPrint("❌ Step permission denied");
-      return;
+    try {
+      // Request permission for reading step data
+      final types = [HealthDataType.STEPS];
+
+      bool requested = await _health.requestAuthorization(types);
+
+      if (!requested) {
+        debugPrint("❌ Health permission denied");
+        return;
+      }
+
+      debugPrint("✅ Health permission granted");
+
+      // fetch steps immediately
+      await _fetchTodaySteps();
+
+      // refresh every 5 minutes
+      _stepsFlushTimer = Timer.periodic(
+        const Duration(minutes: 5),
+            (_) => _fetchTodaySteps(),
+      );
+
+      debugPrint("🚶 Health step tracking started");
+    } catch (e) {
+      debugPrint("❌ Health step tracking error: $e");
+
+      if (e.toString().contains("Health Connect is not available")) {
+        showHealthConnectDialog();
+      }
     }
-
-    _stepSub = Pedometer.stepCountStream.listen((event) {
-      _latestSteps = event.steps;
-    });
-
-    _stepsFlushTimer = Timer.periodic(
-      const Duration(minutes: 5),
-          (_) => _flushStepsToDB(),
-    );
-
-    debugPrint("🚶 Step tracking started");
   }
 
-  Future<void> _flushStepsToDB() async {
+  Future<void> _fetchTodaySteps() async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
 
-    final now = DateTime.now();
-    final dateKey =
-    DateTime(now.year, now.month, now.day).toIso8601String().substring(0, 10);
+    try {
+      final now = DateTime.now();
+      final midnight = DateTime(now.year, now.month, now.day);
 
-    await supabase.from('steps_data').upsert(
-      {
-        'user_id': user.id,
-        'date': dateKey,
-        'steps': _latestSteps,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      },
-      onConflict: 'user_id,date',
-    );
-    Get.find<ActivityController>().markActive(syncToServer: false);
+      int steps =
+          await _health.getTotalStepsInInterval(midnight, now) ?? 0;
 
-    debugPrint("🚶 Steps synced: $_latestSteps");
+      _latestSteps = steps;
+
+      debugPrint("🚶 Today's steps from Health API: $steps");
+
+      final dateKey =
+      midnight.toIso8601String().substring(0, 10);
+
+      await supabase.from('steps_data').upsert(
+        {
+          'user_id': user.id,
+          'date': dateKey,
+          'steps': steps,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict: 'user_id,date',
+      );
+
+      Get.find<ActivityController>().markActive(syncToServer: false);
+
+      debugPrint("🚶 Steps synced: $steps");
+    } catch (e) {
+      debugPrint("❌ Health step fetch error: $e");
+    }
   }
 
   
@@ -496,19 +537,18 @@ class ReceiverDashboardController extends GetxController {
     if (user == null) return;
 
     try {
-      // device info
-      await syncDeviceStatus();
-      await refreshDeviceConnectionStatus();
+      debugPrint("🔄 Receiver quick refresh");
 
-      // fetch in background (NO loading state)
       await Future.wait([
+        syncDeviceStatus(),
+        refreshDeviceConnectionStatus(),
+        checkTodayMood(),
         Get.find<TaskController>().loadTasksForReceiver(user.id),
         Get.find<EventsController>().loadEventsForReceiver(user.id),
       ]);
 
-      debugPrint("🔄 Quick refresh completed");
     } catch (e) {
-      debugPrint("❌ Quick refresh error: $e");
+      debugPrint("❌ Receiver refresh error: $e");
     }
   }
 
