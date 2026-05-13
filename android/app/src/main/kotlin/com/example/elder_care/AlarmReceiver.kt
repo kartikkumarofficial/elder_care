@@ -1,21 +1,20 @@
-package com.example.elder_care;
+package com.example.elder_care
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
 
-public class AlarmReceiver extends BroadcastReceiver {
+class AlarmReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val i = Intent(context, AlarmActivity::class.java)
+        i.putExtra("alarm_id", intent.getStringExtra("alarm_id"))
+        i.putExtra("alarm_title", "Medicine Reminder")
 
-    @Override
-    public void onReceive(Context context, Intent intent) {
+        i.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+        )
 
-        Intent i = new Intent(context, AlarmActivity.class);
-        i.putExtra("alarm_id", intent.getStringExtra("alarm_id"));
-        i.putExtra("alarm_title", "Medicine Reminder");
-
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-                Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-        context.startActivity(i);
+        context.startActivity(i)
     }
 }
