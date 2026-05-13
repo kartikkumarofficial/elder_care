@@ -24,7 +24,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.elder_care"
-        minSdk = flutter.minSdkVersion
+        minSdk = 26
         targetSdk = 33
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -193,9 +193,7 @@ class AuthController extends GetxController {
         authScreenLaunchMode: LaunchMode.externalApplication,
       );
 
-      // DO NOT create a new onAuthStateChange listener here.
-      // The central listener (initAuthListener) will handle signedIn events,
-      // insert the user if new, and navigate appropriately.
+
     } catch (e) {
       print("Google Login Error: $e");
       Get.snackbar("Login Error", e.toString(),

@@ -1,7 +1,7 @@
 # 💙 ElderCare
 ### A Connected Care Platform for Monitoring, Safety, and Peace of Mind
 
-**ElderCare** is a modern, cross-platform caregiving application designed to seamlessly connect **caregivers** and **care receivers**. It enables real-time monitoring, scheduled reminders, and location awareness — helping families and caregivers ensure safety, consistency, and well-being without friction.
+**ElderCare** is a modern, cross-platform caregiving application designed to seamlessly connect **caregivers** and **care receivers**. It enables real-time monitoring, scheduled reminders, and location awareness - helping families and caregivers ensure safety, consistency, and well-being without friction.
 
 Built with **Flutter**, **Supabase**, and **GetX**, ElderCare focuses on reliability, clarity, and real-world usability.
 
@@ -65,7 +65,7 @@ Built with **Flutter**, **Supabase**, and **GetX**, ElderCare focuses on reliabi
 
 #### 2. Clone the Repository
 ```bash
-git clone https://github.com/your-username/elder_care.git
+git clone https://github.com/kartikkumarofficial/elder_care.git
 cd elder_care
 ```
 
@@ -99,16 +99,16 @@ The project follows a feature-first architecture, organized into modules.
 ```
 lib/
 ├── app/                # App-level config, constants, and utilities
-├── core/               # Core business logic, models, and shared controllers
+├── core/               # Core business logic, bindings, models, and services
 ├── modules/            # Feature-based modules
 │   ├── auth/           # Authentication, onboarding, role selection
 │   ├── care_receiver/  # Features for the care receiver role
 │   ├── caregiver/      # Features for the caregiver role
 │   ├── dashboard/      # Main dashboard screen
-│   ├── events/         # Event/task creation and management
+│   ├── events/         # Event creation and management
+│   ├── tasks/         # Task creation and management
 │   ├── profile/        # User profile and settings
 │   └── splash/         # Initial splash/loading screen
-├── services/           # Background services (location, alarms)
 └── main.dart           # App entry point
 ```
 
@@ -176,8 +176,7 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the `LICENSE.md` file for details.
-
+This project is proprietary and not open for public use. All rights reserved.
 ---
 
 ## 👨‍💻 Author
@@ -186,4 +185,4 @@ This project is licensed under the MIT License - see the `LICENSE.md` file for d
 - Flutter Developer
 
 ⭐ If you find this project useful, please consider starring the repository!
-```
+
