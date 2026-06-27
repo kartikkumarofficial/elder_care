@@ -1,3 +1,4 @@
+import 'package:elder_care/core/services/reciever_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -128,35 +129,43 @@ class TaskController extends GetxController {
         tasks.insert(0, created);
         tasks.assignAll(_sortTasks(tasks));
 
+        final myUid = supabase.auth.currentUser?.id;
+        final isReceiver = myUid == currentReceiverId;
+
         if (reminderEnabled.value && dt != null) {
-          final myUid = supabase.auth.currentUser?.id;
-          
-          if (myUid == currentReceiverId) {
+          if (isReceiver) {
             await NativeAlarmService.schedule(
               alarmId: created.id.toString(),
               dateTime: dt,
               title: created.title,
             );
+          } else {
+            await FcmService.sendRemoteAlarm(
+              receiverId: currentReceiverId!,
+              alarmId: created.id.toString(),
+              time: dt,
+              title: created.title,
+            );
           }
+        }
 
-          await FcmService.sendRemoteAlarm(
+        if (isReceiver) {
+          final caregiverId = await ReceiverService.getLinkedCaregiverId();
+          if (caregiverId != null) {
+            await FcmService.sendNotification(
+              receiverId: caregiverId,
+              title: "Task Added by Receiver",
+              body: "New task: ${created.title}",
+              type: "task_added"
+            );
+          }
+        } else {
+          await FcmService.sendNotification(
             receiverId: currentReceiverId!,
-            alarmId: created.id.toString(),
-            time: dt,
-            title: created.title,
+            title: "New Task for You",
+            body: "Your caregiver added: ${created.title}",
+            type: "task_added"
           );
-
-          if (myUid == currentReceiverId) {
-            final caregiverId = await _getCaregiverId();
-            if (caregiverId != null) {
-              await FcmService.sendNotification(
-                receiverId: caregiverId,
-                title: "New Task Added",
-                body: "Receiver added: ${created.title}",
-                type: "task_added"
-              );
-            }
-          }
         }
 
         clearForm();
@@ -165,32 +174,6 @@ class TaskController extends GetxController {
       }
     } catch (e) {
       debugPrint('addTask error: $e');
-    }
-  }
-
-  void startEdit(TaskModel t) {
-    editingId = t.id;
-    titleController.text = t.title;
-    repeatType.value = t.repeatType;
-    repeatDays.assignAll(t.repeatDays);
-    reminderEnabled.value = t.alarmEnabled;
-    isMedicine.value = t.taskType == 'medicine';
-
-    if (t.datetime != null) {
-      try {
-        final dt = DateTime.parse(t.datetime!).toLocal();
-        pickedDate = DateTime(dt.year, dt.month, dt.day);
-        pickedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
-        dateController.text = dt.toIso8601String();
-      } catch (_) {
-        pickedDate = null;
-        pickedTime = null;
-        dateController.clear();
-      }
-    } else {
-      pickedDate = null;
-      pickedTime = null;
-      dateController.clear();
     }
   }
 
@@ -223,29 +206,36 @@ class TaskController extends GetxController {
         if (idx != -1) tasks[idx] = updated;
         tasks.assignAll(_sortTasks(tasks));
 
-        await NativeAlarmService.cancel(updated.id.toString());
-        await FcmService.sendRemoteAlarm(
-          receiverId: currentReceiverId!,
-          alarmId: updated.id.toString(),
-          time: DateTime.now(),
-          title: "",
-          isCancel: true,
-        );
+        final myUid = supabase.auth.currentUser?.id;
+        final isReceiver = myUid == currentReceiverId;
+
+        if (isReceiver) {
+          await NativeAlarmService.cancel(updated.id.toString());
+        } else {
+          await FcmService.sendRemoteAlarm(
+            receiverId: currentReceiverId!,
+            alarmId: updated.id.toString(),
+            time: DateTime.now(),
+            title: "",
+            isCancel: true,
+          );
+        }
 
         if (reminderEnabled.value && dt != null) {
-          if (supabase.auth.currentUser?.id == currentReceiverId) {
+          if (isReceiver) {
             await NativeAlarmService.schedule(
               alarmId: updated.id.toString(),
               dateTime: dt,
               title: updated.title,
             );
+          } else {
+            await FcmService.sendRemoteAlarm(
+              receiverId: currentReceiverId!,
+              alarmId: updated.id.toString(),
+              time: dt,
+              title: updated.title,
+            );
           }
-          await FcmService.sendRemoteAlarm(
-            receiverId: currentReceiverId!,
-            alarmId: updated.id.toString(),
-            time: dt,
-            title: updated.title,
-          );
         }
 
         clearForm();
@@ -262,8 +252,21 @@ class TaskController extends GetxController {
       await supabase.from('tasks').delete().eq('id', id);
       tasks.removeWhere((t) => t.id == id);
 
-      await NativeAlarmService.cancel(id.toString());
-      if (currentReceiverId != null) {
+      final myUid = supabase.auth.currentUser?.id;
+      final isReceiver = myUid == currentReceiverId;
+
+      if (isReceiver) {
+        await NativeAlarmService.cancel(id.toString());
+        final caregiverId = await ReceiverService.getLinkedCaregiverId();
+        if (caregiverId != null) {
+          await FcmService.sendNotification(
+            receiverId: caregiverId,
+            title: "Task Deleted",
+            body: "Receiver removed a task",
+            type: "task_deleted"
+          );
+        }
+      } else if (currentReceiverId != null) {
          await FcmService.sendRemoteAlarm(
           receiverId: currentReceiverId!,
           alarmId: id.toString(),
@@ -271,18 +274,12 @@ class TaskController extends GetxController {
           title: "",
           isCancel: true,
         );
-
-         if (supabase.auth.currentUser?.id == currentReceiverId) {
-            final caregiver = await _getCaregiverId();
-            if (caregiver != null) {
-              await FcmService.sendNotification(
-                receiverId: caregiver,
-                title: "Task Deleted",
-                body: "Receiver removed a task",
-                type: "task_deleted"
-              );
-            }
-         }
+         await FcmService.sendNotification(
+            receiverId: currentReceiverId!,
+            title: "Task Cancelled",
+            body: "Caregiver removed a task",
+            type: "task_deleted"
+          );
       }
 
       if (Get.isDialogOpen ?? false) Get.back();
@@ -299,8 +296,12 @@ class TaskController extends GetxController {
 
     tasks.removeAt(index);
 
-    await NativeAlarmService.cancel(task.id!.toString());
-    if (currentReceiverId != null) {
+    final myUid = supabase.auth.currentUser?.id;
+    final isReceiver = myUid == currentReceiverId;
+
+    if (isReceiver) {
+      await NativeAlarmService.cancel(task.id!.toString());
+    } else if (currentReceiverId != null) {
       await FcmService.sendRemoteAlarm(
         receiverId: currentReceiverId!,
         alarmId: task.id.toString(),
@@ -312,8 +313,8 @@ class TaskController extends GetxController {
 
     await supabase.from('tasks').delete().eq('id', task.id!);
 
-    if (supabase.auth.currentUser?.id == currentReceiverId) {
-      final caregiverId = await _getCaregiverId();
+    if (isReceiver) {
+      final caregiverId = await ReceiverService.getLinkedCaregiverId();
       if (caregiverId != null) {
         await FcmService.sendNotification(
           receiverId: caregiverId,
@@ -354,19 +355,22 @@ class TaskController extends GetxController {
 
         if (recreated.alarmEnabled && recreated.datetime != null) {
           final dt = DateTime.parse(recreated.datetime!).toLocal();
-          if (supabase.auth.currentUser?.id == currentReceiverId) {
+          final isReceiver = supabase.auth.currentUser?.id == currentReceiverId;
+          
+          if (isReceiver) {
             await NativeAlarmService.schedule(
               alarmId: recreated.id.toString(),
               dateTime: dt,
               title: recreated.title,
             );
+          } else {
+            await FcmService.sendRemoteAlarm(
+              receiverId: currentReceiverId!,
+              alarmId: recreated.id.toString(),
+              time: dt,
+              title: recreated.title,
+            );
           }
-          await FcmService.sendRemoteAlarm(
-            receiverId: currentReceiverId!,
-            alarmId: recreated.id.toString(),
-            time: dt,
-            title: recreated.title,
-          );
         }
       }
     } catch (e) {
@@ -380,8 +384,12 @@ class TaskController extends GetxController {
   Future<void> markTaskCompleted(TaskModel task, int index) async {
     tasks.removeAt(index);
 
-    await NativeAlarmService.cancel(task.id!.toString());
-    if (currentReceiverId != null) {
+    final myUid = supabase.auth.currentUser?.id;
+    final isReceiver = myUid == currentReceiverId;
+
+    if (isReceiver) {
+      await NativeAlarmService.cancel(task.id!.toString());
+    } else if (currentReceiverId != null) {
        await FcmService.sendRemoteAlarm(
          receiverId: currentReceiverId!,
          alarmId: task.id.toString(),
@@ -393,8 +401,8 @@ class TaskController extends GetxController {
 
     await supabase.from('tasks').update({'is_completed': true}).eq('id', task.id!);
 
-    if (supabase.auth.currentUser?.id == currentReceiverId) {
-      final caregiverId = await _getCaregiverId();
+    if (isReceiver) {
+      final caregiverId = await ReceiverService.getLinkedCaregiverId();
       if (caregiverId != null) {
         await FcmService.sendNotification(
           receiverId: caregiverId,
@@ -408,11 +416,30 @@ class TaskController extends GetxController {
     Get.snackbar('Task completed', task.title, snackPosition: SnackPosition.BOTTOM);
   }
 
-  Future<String?> _getCaregiverId() async {
-    final uid = supabase.auth.currentUser?.id;
-    if (uid == null) return null;
-    final res = await supabase.from('care_links').select('caregiver_id').eq('receiver_id', uid).maybeSingle();
-    return res?['caregiver_id'];
+  void startEdit(TaskModel t) {
+    editingId = t.id;
+    titleController.text = t.title;
+    repeatType.value = t.repeatType;
+    repeatDays.assignAll(t.repeatDays);
+    reminderEnabled.value = t.alarmEnabled;
+    isMedicine.value = t.taskType == 'medicine';
+
+    if (t.datetime != null) {
+      try {
+        final dt = DateTime.parse(t.datetime!).toLocal();
+        pickedDate = DateTime(dt.year, dt.month, dt.day);
+        pickedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
+        dateController.text = dt.toIso8601String();
+      } catch (_) {
+        pickedDate = null;
+        pickedTime = null;
+        dateController.clear();
+      }
+    } else {
+      pickedDate = null;
+      pickedTime = null;
+      dateController.clear();
+    }
   }
 
   void setPickedDate(DateTime d) { pickedDate = d; }
