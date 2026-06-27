@@ -14,130 +14,142 @@ import com.google.firebase.messaging.RemoteMessage
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Log.d("FCM_DEBUG", "Message received!")
-        Log.d("FCM_DEBUG", "Data: " + remoteMessage.getData())
-        Log.d("FCM_DEBUG", "Notification: " + remoteMessage.getNotification())
-
+        Log.d("FCM_DEBUG", "Message received from: ${remoteMessage.from}")
+        
         createChannels()
 
-        // Handle DATA payload
-        if (remoteMessage.getData().size > 0) {
-            val type = remoteMessage.getData().get("type")
-            val alarmId = remoteMessage.getData().get("alarm_id")
+        val data = remoteMessage.data
+        if (data.isNotEmpty()) {
+            val type = data["type"]
+            Log.d("FCM_DEBUG", "Payload type: $type")
 
-            Log.d("FCM_DEBUG", "Type: " + type)
-            Log.d("FCM_DEBUG", "AlarmId: " + alarmId)
-
-            if ("alarm" == type) {
-                showFullScreenAlarm(alarmId!!)
-            }
-
-            if ("alarm_missed" == type) {
-                showMissedNotification(alarmId)
+            when (type) {
+                "schedule_alarm" -> {
+                    val alarmId = data["alarm_id"] ?: return
+                    val alarmTime = data["alarm_time"]?.toLongOrNull() ?: return
+                    val title = data["title"] ?: "Task Reminder"
+                    
+                    // Schedule the native alarm
+                    AlarmScheduler.schedule(this, alarmId, alarmTime, title)
+                    
+                    // Schedule advance notification (e.g., 10 minutes before)
+                    val advanceTime = alarmTime - (10 * 60 * 1000)
+                    if (advanceTime > System.currentTimeMillis()) {
+                        AlarmScheduler.scheduleAdvanceNotification(this, alarmId, advanceTime, title)
+                    }
+                }
+                "cancel_alarm" -> {
+                    val alarmId = data["alarm_id"] ?: return
+                    AlarmScheduler.cancel(this, alarmId)
+                }
+                "sos" -> {
+                    showFullScreenAlarm("SOS", "EMERGENCY ALERT", true)
+                }
+                "chat" -> {
+                    showStandardNotification(
+                        "chat_channel",
+                        data["sender_name"] ?: "New Message",
+                        data["message"] ?: "You received a chat message",
+                        data["chat_id"]
+                    )
+                }
+                "mood_update", "location_alert", "event_update" -> {
+                    showStandardNotification(
+                        "update_channel",
+                        data["title"] ?: "Update",
+                        data["body"] ?: "Receiver activity detected",
+                        null
+                    )
+                }
             }
         }
 
-        // Handle NOTIFICATION payload (important when app is killed)
-        if (remoteMessage.getNotification() != null) {
-            Log.d(
-                "FCM_DEBUG", "Notification title: "
-                        + remoteMessage.getNotification()!!.getTitle()
-            )
+        remoteMessage.notification?.let {
+            showStandardNotification("default_channel", it.title ?: "ElderCare", it.body ?: "", null)
         }
     }
 
+    private fun showFullScreenAlarm(alarmId: String, title: String, isSOS: Boolean) {
+        val intent = Intent(this, AlarmActivity::class.java).apply {
+            putExtra("alarm_id", alarmId)
+            putExtra("alarm_title", title)
+            putExtra("is_sos", isSOS)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
 
-    private fun showFullScreenAlarm(alarmId: String) {
-        val intent = Intent(this, AlarmActivity::class.java)
-        intent.putExtra("alarm_id", alarmId)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-
-        val fullScreenIntent = PendingIntent.getActivity(
+        val pendingIntent = PendingIntent.getActivity(
             this,
             alarmId.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder: NotificationCompat.Builder =
-            NotificationCompat.Builder(this, ALARM_CHANNEL)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Medicine Reminder")
-                .setContentText("Tap to respond")
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .setFullScreenIntent(fullScreenIntent, true)
-                .setOngoing(true)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setAutoCancel(false)
+        val builder = NotificationCompat.Builder(this, ALARM_CHANNEL)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(if (isSOS) "EMERGENCY - Tap to Respond" else "Time for your task")
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setFullScreenIntent(pendingIntent, true)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
-        val manager =
-            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(alarmId.hashCode(), builder.build())
     }
 
-    private fun showMissedNotification(alarmId: String?) {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra("alarm_id", alarmId)
+    private fun showStandardNotification(channelId: String, title: String, body: String, extraId: String?) {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            putExtra("extra_id", extraId)
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
 
         val pendingIntent = PendingIntent.getActivity(
             this,
-            1,
+            (title + body).hashCode(),
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder: NotificationCompat.Builder =
-            NotificationCompat.Builder(this, MISSED_CHANNEL)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Missed Alarm")
-                .setContentText("Receiver did not respond")
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
+        val builder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
 
-        val manager =
-            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-
-        manager.notify(1001, builder.build())
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify((title + body).hashCode(), builder.build())
     }
 
     private fun createChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager =
-                getSystemService<NotificationManager>(NotificationManager::class.java)
+            val manager = getSystemService(NotificationManager::class.java)
 
-            val alarmChannel =
-                NotificationChannel(
-                    ALARM_CHANNEL,
-                    "Alarms",
-                    NotificationManager.IMPORTANCE_HIGH
-                )
-
-            alarmChannel.enableVibration(true)
-            alarmChannel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            alarmChannel.setSound(
-                Settings.System.DEFAULT_ALARM_ALERT_URI,
-                AudioAttributes.Builder()
+            val alarmChannel = NotificationChannel(ALARM_CHANNEL, "Alarms", NotificationManager.IMPORTANCE_HIGH).apply {
+                enableVibration(true)
+                setSound(Settings.System.DEFAULT_ALARM_ALERT_URI, AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
-                    .build()
-            )
+                    .build())
+            }
 
-            val missedChannel =
-                NotificationChannel(
-                    MISSED_CHANNEL,
-                    "Missed Alarms",
-                    NotificationManager.IMPORTANCE_HIGH
-                )
+            val chatChannel = NotificationChannel("chat_channel", "Chat Messages", NotificationManager.IMPORTANCE_HIGH)
+            val updateChannel = NotificationChannel("update_channel", "Receiver Updates", NotificationManager.IMPORTANCE_DEFAULT)
+            val defaultChannel = NotificationChannel("default_channel", "General Notifications", NotificationManager.IMPORTANCE_DEFAULT)
 
-            manager.createNotificationChannel(alarmChannel)
-            manager.createNotificationChannel(missedChannel)
+            manager.createNotificationChannels(listOf(alarmChannel, chatChannel, updateChannel, defaultChannel))
         }
     }
 
+    override fun onNewToken(token: String) {
+        Log.d("FCM_DEBUG", "New token: $token")
+        // Token sync is handled in CaregiverDashboardController/SplashScreen, 
+        // but it's good practice to log it here.
+    }
+
     companion object {
-        private const val ALARM_CHANNEL = "alarm_channel"
-        private const val MISSED_CHANNEL = "missed_channel"
+        const val ALARM_CHANNEL = "alarm_channel"
     }
 }

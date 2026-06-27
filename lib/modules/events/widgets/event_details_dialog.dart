@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/models/event_model.dart';
+import '../../care_receiver/views/schedule_screen.dart';
 import '../controllers/events_controller.dart';
 import '../views/eventssection.dart';
 import 'add_edit_event_dialog.dart';

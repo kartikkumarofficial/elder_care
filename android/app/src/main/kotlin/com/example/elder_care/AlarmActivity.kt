@@ -1,6 +1,8 @@
 package com.example.elder_care
 
 import android.app.Activity
+import android.app.KeyguardManager
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.RingtoneManager
@@ -8,8 +10,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
-import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
@@ -29,119 +31,113 @@ class AlarmActivity : Activity() {
         super.onCreate(savedInstanceState)
         Log.d("ALARM_DEBUG", "AlarmActivity launched")
 
-        setContentView(R.layout.activity_alarm)
-
-        // 🔥 Bind views AFTER setContentView
-        tvTime = findViewById<TextView>(R.id.tvTime)
-        tvDate = findViewById<TextView>(R.id.tvDate)
-        tvTitle = findViewById<TextView>(R.id.tvTitle)
-        btnStop = findViewById<Button>(R.id.btnStop)
-
-        // 🔥 Wake screen properly
+        // 🔥 Professional Unlock & Wake Screen logic for Alarms
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
-        }
-
-        getWindow().addFlags(
-            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-        )
-
-        // 🔥 Set Current Time & Date
-        val now = Date()
-
-        val timeFormat =
-            SimpleDateFormat("HH:mm", Locale.getDefault())
-
-        val dateFormat =
-            SimpleDateFormat("EEEE, MMM dd", Locale.getDefault())
-
-        tvTime!!.setText(timeFormat.format(now))
-        tvDate!!.setText(dateFormat.format(now))
-
-        // 🔥 Get Alarm Title from Intent
-        val alarmTitle = getIntent().getStringExtra("alarm_title")
-
-        if (alarmTitle != null && !alarmTitle.isEmpty()) {
-            tvTitle!!.setText(alarmTitle)
+            val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            keyguardManager.requestDismissKeyguard(this, null)
         } else {
-            tvTitle!!.setText("Medicine Reminder")
-        }
-
-        startAlarmSound()
-        startVibration()
-
-        btnStop!!.setOnClickListener(View.OnClickListener { v: View? -> stopAlarm() })
-    }
-
-    private fun startAlarmSound() {
-        try {
-            val alarmUri = RingtoneManager
-                .getDefaultUri(RingtoneManager.TYPE_ALARM)
-
-            mediaPlayer = MediaPlayer()
-
-            mediaPlayer!!.setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             )
+        }
 
-            mediaPlayer!!.setDataSource(this, alarmUri)
-            mediaPlayer!!.setLooping(true)
-            mediaPlayer!!.prepare()
-            mediaPlayer!!.start()
+        setContentView(R.layout.activity_alarm)
+
+        tvTime = findViewById(R.id.tvTime)
+        tvDate = findViewById(R.id.tvDate)
+        tvTitle = findViewById(R.id.tvTitle)
+        btnStop = findViewById(R.id.btnStop)
+
+        // Set Current Time & Date
+        val now = Date()
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val dateFormat = SimpleDateFormat("EEEE, MMM dd", Locale.getDefault())
+
+        tvTime?.text = timeFormat.format(now)
+        tvDate?.text = dateFormat.format(now)
+
+        // Handle Alarm or SOS specific styling
+        val alarmTitle = intent.getStringExtra("alarm_title")
+        val isSOS = intent.getBooleanExtra("is_sos", false)
+
+        if (isSOS) {
+            tvTitle?.text = "EMERGENCY ALERT (SOS)"
+            tvTitle?.setTextColor(0xFFFF0000.toInt()) // High-visibility red
+        } else if (!alarmTitle.isNullOrEmpty()) {
+            tvTitle?.text = alarmTitle
+        } else {
+            tvTitle?.text = "Task Reminder"
+        }
+
+        startAlarmSound(isSOS)
+        startVibration(isSOS)
+
+        btnStop?.setOnClickListener { stopAlarm() }
+    }
+
+    private fun startAlarmSound(isSOS: Boolean) {
+        try {
+            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                setDataSource(this@AlarmActivity, alarmUri)
+                isLooping = true
+                prepare()
+                start()
+            }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("ALARM_DEBUG", "Error playing alarm sound", e)
         }
     }
 
-    private fun startVibration() {
-        vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator?
+    private fun startVibration(isSOS: Boolean) {
+        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
 
-        if (vibrator != null) {
+        vibrator?.let {
+            val pattern = if (isSOS) longArrayOf(0, 1000, 200) else longArrayOf(0, 500, 500)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator!!.vibrate(
-                    VibrationEffect.createWaveform(
-                        longArrayOf(0, 500, 500),
-                        0
-                    )
-                )
+                it.vibrate(VibrationEffect.createWaveform(pattern, 0))
             } else {
-                vibrator!!.vibrate(longArrayOf(0, 500, 500), 0)
+                @Suppress("DEPRECATION")
+                it.vibrate(pattern, 0)
             }
         }
     }
 
     private fun stopAlarm() {
-        if (mediaPlayer != null) {
-            if (mediaPlayer!!.isPlaying()) {
-                mediaPlayer!!.stop()
-            }
-            mediaPlayer!!.release()
-            mediaPlayer = null
+        mediaPlayer?.let {
+            if (it.isPlaying) it.stop()
+            it.release()
         }
-
-        if (vibrator != null) {
-            vibrator!!.cancel()
-        }
-
+        mediaPlayer = null
+        vibrator?.cancel()
         finish()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
+        vibrator?.cancel()
+    }
 
-        if (mediaPlayer != null) {
-            mediaPlayer!!.release()
-            mediaPlayer = null
-        }
-
-        if (vibrator != null) {
-            vibrator!!.cancel()
-        }
+    override fun onBackPressed() {
+        // Disable back button to force user to use the 'STOP' button
     }
 }

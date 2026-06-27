@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../events/controllers/events_controller.dart';
 import '../controllers/task_controller.dart';
 import 'day_chips.dart';
+
 class RepeatOptions extends StatelessWidget {
   final TaskController controller;
-  const RepeatOptions({required this.controller});
+  const RepeatOptions({Key? key, required this.controller}) : super(key: key);
+
+  static const Color kTeal = Color(0xFF7AB7A7);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Obx(() => Column(
       key: const ValueKey('repeat-options'),
       children: [
         const SizedBox(height: 8),
@@ -46,12 +49,8 @@ class RepeatOptions extends StatelessWidget {
           CustomDayChips(controller: controller),
         ],
       ],
-    );
-
+    ));
   }
-
-
-
 }
 
 class RepeatCard extends StatelessWidget {
@@ -60,10 +59,13 @@ class RepeatCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const RepeatCard({
+    Key? key,
     required this.label,
     required this.selected,
     required this.onTap,
   });
+
+  static const Color kTeal = Color(0xFF7AB7A7);
 
   @override
   Widget build(BuildContext context) {

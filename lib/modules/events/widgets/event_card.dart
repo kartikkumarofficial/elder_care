@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/models/event_model.dart';
+import '../../care_receiver/views/schedule_screen.dart';
 import '../controllers/events_controller.dart';
 import '../views/eventssection.dart';
 import 'event_details_dialog.dart';
@@ -62,7 +63,7 @@ class EventCardCompact extends StatelessWidget {
       case 'Reminder':
         return Colors.purple.shade300;
       default:
-        return kTealLight;
+        return kTeal.withAlpha(100);
     }
   }
 
@@ -161,7 +162,7 @@ class EventCardCompact extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white.withAlpha(65),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: kTealLight.withOpacity(0.6)),
+                          border: Border.all(color: kTeal.withOpacity(0.3)),
                         ),
                         child: Text(
                           event.category,

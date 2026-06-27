@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/services/fcm_service.dart';
 import '../../events/controllers/events_controller.dart';
 import '../../events/widgets/healthconnect_dialog.dart';
 import '../../tasks/controllers/task_controller.dart';
@@ -86,6 +87,19 @@ class ReceiverDashboardController extends GetxController {
     loadDashboard();
 
     syncFcmToken();
+    _notifyCaregiverAppOpened();
+  }
+
+  Future<void> _notifyCaregiverAppOpened() async {
+    final caregiverId = await _getCaregiverId();
+    if (caregiverId != null) {
+      await FcmService.sendNotification(
+        receiverId: caregiverId,
+        title: "Receiver Online",
+        body: "The care receiver has just opened the app.",
+        type: "app_opened"
+      );
+    }
   }
 
   @override
@@ -265,8 +279,40 @@ class ReceiverDashboardController extends GetxController {
     );
     Get.find<ActivityController>().markActive();
 
+    // Check Geofence on each update
+    _checkSafeZone(position.latitude, position.longitude);
+
 
     debugPrint("📍 Location upload successful");
+  }
+
+  Future<void> _checkSafeZone(double lat, double lng) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final res = await supabase.from('geofences').select().eq('receiver_id', user.id).maybeSingle();
+      if (res == null) return;
+
+      final double sLat = (res['latitude'] as num).toDouble();
+      final double sLng = (res['longitude'] as num).toDouble();
+      final int radius = (res['radius'] as num).toInt();
+
+      final distance = Geolocator.distanceBetween(lat, lng, sLat, sLng);
+      if (distance > radius) {
+        final caregiverId = await _getCaregiverId();
+        if (caregiverId != null) {
+          await FcmService.sendNotification(
+            receiverId: caregiverId,
+            title: "Safe Zone Alert!",
+            body: "The receiver has left the safe zone.",
+            type: "location_alert"
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Geofence check error: $e");
+    }
   }
 
   
@@ -377,16 +423,26 @@ class ReceiverDashboardController extends GetxController {
 
       debugPrint("📍 SOS location fetched: ${position.latitude}, ${position.longitude}");
 
-      final res = await supabase.from('sos_alerts').insert({
+      await supabase.from('sos_alerts').insert({
         'user_id': user.id,
         'lat': position.latitude,
         'lng': position.longitude,
         'message': 'Emergency SOS triggered',
         'handled': false,
       });
-      Get.find<ActivityController>().markActive(syncToServer: false);
 
-      debugPrint("✅ SOS INSERT SUCCESS: $res");
+      // 🔥 Send Remote SOS Alarm to Caregiver
+      final caregiverId = await _getCaregiverId();
+      if (caregiverId != null) {
+        await FcmService.sendNotification(
+          receiverId: caregiverId,
+          title: "EMERGENCY SOS",
+          body: "Receiver has triggered an SOS alert!",
+          type: "sos"
+        );
+      }
+
+      Get.find<ActivityController>().markActive(syncToServer: false);
 
       Get.snackbar(
         "SOS Sent",
@@ -467,6 +523,17 @@ class ReceiverDashboardController extends GetxController {
       onConflict: 'user_id,mood_date',
     );
 
+    // Notify Caregiver
+    final caregiverId = await _getCaregiverId();
+    if (caregiverId != null) {
+      await FcmService.sendNotification(
+        receiverId: caregiverId,
+        title: "Mood Update",
+        body: "Receiver is feeling $mood",
+        type: "mood_update"
+      );
+    }
+
     Get.back();
     debugPrint("🙂 Mood updated → $mood");
   }
@@ -532,6 +599,13 @@ class ReceiverDashboardController extends GetxController {
     });
   }
 
+  Future<String?> _getCaregiverId() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return null;
+    final res = await supabase.from('care_links').select('caregiver_id').eq('receiver_id', uid).maybeSingle();
+    return res?['caregiver_id'];
+  }
+
   Future<void> refreshQuickData() async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
@@ -551,9 +625,5 @@ class ReceiverDashboardController extends GetxController {
       debugPrint("❌ Receiver refresh error: $e");
     }
   }
-
-
-
-
 
 }

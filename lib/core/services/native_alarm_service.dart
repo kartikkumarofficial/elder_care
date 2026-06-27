@@ -6,10 +6,12 @@ class NativeAlarmService {
   static Future<void> schedule({
     required String alarmId,
     required DateTime dateTime,
+    required String title,
   }) async {
     await _channel.invokeMethod('scheduleAlarm', {
       'alarmId': alarmId,
       'triggerTime': dateTime.millisecondsSinceEpoch,
+      'title': title,
     });
   }
 
