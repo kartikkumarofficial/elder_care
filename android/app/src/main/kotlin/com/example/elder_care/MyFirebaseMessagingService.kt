@@ -16,6 +16,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d("FCM_DEBUG", "Message received from: ${remoteMessage.from}")
         
+        // Ensure channels are created
         createChannels()
 
         val data = remoteMessage.data
@@ -29,10 +30,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     val alarmTime = data["alarm_time"]?.toLongOrNull() ?: return
                     val title = data["title"] ?: "Task Reminder"
                     
-                    // Schedule the native alarm
                     AlarmScheduler.schedule(this, alarmId, alarmTime, title)
                     
-                    // Schedule advance notification (e.g., 10 minutes before)
                     val advanceTime = alarmTime - (10 * 60 * 1000)
                     if (advanceTime > System.currentTimeMillis()) {
                         AlarmScheduler.scheduleAdvanceNotification(this, alarmId, advanceTime, title)
@@ -46,6 +45,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     showFullScreenAlarm("SOS", "EMERGENCY ALERT", true)
                 }
                 "chat" -> {
+                    // Handled by Flutter if app is in foreground/background, 
+                    // but showing a notification here ensures it appears if the app is killed.
                     showStandardNotification(
                         "chat_channel",
                         data["sender_name"] ?: "New Message",
@@ -57,16 +58,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     showStandardNotification(
                         "update_channel",
                         data["title"] ?: "Update",
-                        data["body"] ?: "Receiver activity detected",
+                        data["body"] ?: "Update detected",
                         null
                     )
                 }
             }
         }
 
-        remoteMessage.notification?.let {
-            showStandardNotification("default_channel", it.title ?: "ElderCare", it.body ?: "", null)
-        }
+        // If the message contains a notification payload, it is handled by the system 
+        // when the app is in the background. If in foreground, we might want to show it.
+        // However, Flutter's onMessage will also trigger. To avoid double notifications
+        // in foreground, we usually let Flutter handle it.
     }
 
     private fun showFullScreenAlarm(alarmId: String, title: String, isSOS: Boolean) {
@@ -109,7 +111,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             this,
             (title + body).hashCode(),
             intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val builder = NotificationCompat.Builder(this, channelId)
@@ -128,6 +130,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(NotificationManager::class.java)
 
+            // Alarms: High Importance + Alarm Sound
             val alarmChannel = NotificationChannel(ALARM_CHANNEL, "Alarms", NotificationManager.IMPORTANCE_HIGH).apply {
                 enableVibration(true)
                 setSound(Settings.System.DEFAULT_ALARM_ALERT_URI, AudioAttributes.Builder()
@@ -135,9 +138,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     .build())
             }
 
+            // Chat: High Importance for Heads-up
             val chatChannel = NotificationChannel("chat_channel", "Chat Messages", NotificationManager.IMPORTANCE_HIGH)
-            val updateChannel = NotificationChannel("update_channel", "Receiver Updates", NotificationManager.IMPORTANCE_DEFAULT)
-            val defaultChannel = NotificationChannel("default_channel", "General Notifications", NotificationManager.IMPORTANCE_DEFAULT)
+            
+            // Updates: High Importance for Heads-up
+            val updateChannel = NotificationChannel("update_channel", "Receiver Updates", NotificationManager.IMPORTANCE_HIGH)
+            
+            // Default: High Importance for Heads-up
+            val defaultChannel = NotificationChannel("default_channel", "General Notifications", NotificationManager.IMPORTANCE_HIGH)
 
             manager.createNotificationChannels(listOf(alarmChannel, chatChannel, updateChannel, defaultChannel))
         }
@@ -145,8 +153,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         Log.d("FCM_DEBUG", "New token: $token")
-        // Token sync is handled in CaregiverDashboardController/SplashScreen, 
-        // but it's good practice to log it here.
     }
 
     companion object {

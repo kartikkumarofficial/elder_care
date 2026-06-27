@@ -1,10 +1,12 @@
 package com.example.elder_care
 
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
+import androidx.core.app.NotificationCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -43,11 +45,49 @@ class MainActivity : FlutterActivity() {
                         result.error("INVALID_ARGUMENTS", "alarmId was null", null)
                     }
                 }
+                "showFullScreenAlarm" -> {
+                    val alarmId = call.argument<String>("alarmId") ?: "SOS"
+                    val title = call.argument<String>("title") ?: "EMERGENCY"
+                    val isSos = call.argument<Boolean>("isSos") ?: false
+                    
+                    showFullScreenNotification(alarmId, title, isSos)
+                    result.success(null)
+                }
                 else -> {
                     result.notImplemented()
                 }
             }
         }
+    }
+
+    private fun showFullScreenNotification(alarmId: String, title: String, isSos: Boolean) {
+        val intent = Intent(this, AlarmActivity::class.java).apply {
+            putExtra("alarm_id", alarmId)
+            putExtra("alarm_title", title)
+            putExtra("is_sos", isSos)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            alarmId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(this, "alarm_channel")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(if (isSos) "EMERGENCY - Tap to Respond" else "Time for your task")
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setFullScreenIntent(pendingIntent, true)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(alarmId.hashCode(), builder.build())
     }
 
     companion object {
