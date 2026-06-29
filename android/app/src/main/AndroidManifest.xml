@@ -2,15 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.elder_care">
 
-
-    <!-- Location -->
+    <!-- Location Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
-    <!-- Foreground service  -->
+    <!-- Foreground Service (Android 9+) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- Android 14+ Foreground Service types -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -18,35 +19,27 @@
     <!-- Notifications (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Exact alarms (Android 14+) -->
+    <!-- Exact Alarms (Android 12+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
-    <!-- Reboot reschedule -->
+    <!-- Exact Alarms (Android 14+ for specific apps) -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- Reboot Reschedule -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- Camera -->
-    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Wake Lock & Screen Interaction -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
-    <!-- Legacy storage (kept as-is) -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- Audio & Vibration -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
-<!--    alarm-->
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <!-- Battery Optimization Bypass -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
-
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
-
-
-
-    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
-
-
-
-    <!-- Application -->
-    
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
     <application
         android:name="${applicationName}"
@@ -55,12 +48,10 @@
         android:enableOnBackInvokedCallback="true"
         android:usesCleartextTraffic="true">
 
-        <!-- Google Maps API -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_api_key" />
 
-        <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -71,7 +62,6 @@
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
 
-
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
@@ -81,50 +71,46 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Supabase OAuth / Reset -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-
                 <data android:scheme="io.supabase.flutter" android:host="login-callback" />
                 <data android:scheme="io.supabase.flutter" android:host="reset-callback" />
             </intent-filter>
         </activity>
 
-
-
+        <!-- Alarm Activity: Optimized for full-screen wake-up -->
         <activity
             android:name=".AlarmActivity"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:exported="false">
-
-<!--            <intent-filter>-->
-<!--                <action android:name="ALARM_TRIGGER" />-->
-<!--                <category android:name="android.intent.category.DEFAULT" />-->
-<!--            </intent-filter>-->
-
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:taskAffinity="com.example.elder_care.alarm"
+            android:exported="false"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
         </activity>
 
-
-
-
-        <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="alarm_channel"/>
+            android:value="alarm_channel" />
 
+        <!-- Alarm Service for persistent ringing -->
+        <service
+            android:name=".AlarmService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FQS_SUBTYPE"
+                android:value="Medication reminder and emergency alarm functionality to ensure the alarm rings reliably until the user interacts, even if the app is killed." />
+        </service>
 
-
-
-
-        <!--  Foreground Service -->
-
-        <!--  Firebase Cloud Messaging Service -->
+        <!-- Firebase Service -->
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false"
@@ -134,16 +120,29 @@
             </intent-filter>
         </service>
 
+        <!-- Alarm Receiver: Local triggers -->
         <receiver
             android:name=".AlarmReceiver"
             android:exported="false" />
 
-
-
+        <!-- Boot Receiver: System-wide events -->
+        <receiver
+            android:name=".AlarmBootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIME_CHANGED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
 
     </application>
 
-    <!-- Process text -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT" />

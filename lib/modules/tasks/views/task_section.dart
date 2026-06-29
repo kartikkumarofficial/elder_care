@@ -50,7 +50,7 @@ class TaskSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(context),
-          const SizedBox(height: 15),
+          // const SizedBox(height: 10),
           _buildTaskList(context),
         ],
       ),
@@ -81,7 +81,7 @@ class TaskSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                    color: kTeal.withAlpha(60),
+                    color: kTeal.withValues(alpha: 0.23),
                     blurRadius: 8,
                     offset: const Offset(0, 5))
               ],
@@ -136,7 +136,7 @@ class TaskSection extends StatelessWidget {
                 Container(
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.green.withAlpha(40),
+                    color: Colors.green.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(22),
                   ),
                 ),
@@ -170,7 +170,7 @@ class TaskSection extends StatelessWidget {
       alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.redAccent.withAlpha(40),
+        color: Colors.redAccent.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(22),
       ),
       child: const Icon(Icons.delete_sweep, color: Colors.redAccent),
@@ -187,7 +187,7 @@ class TaskSection extends StatelessWidget {
   void _openDetailsDialog(BuildContext context, TaskModel t) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withAlpha(80),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (_) => TaskDetailsDialog(task: t, controller: controller),
     );
   }

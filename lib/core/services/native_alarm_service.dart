@@ -7,11 +7,17 @@ class NativeAlarmService {
     required String alarmId,
     required DateTime dateTime,
     required String title,
+    String? instructions,
+    String repeatType = 'none',
+    List<String> repeatDays = const [],
   }) async {
     await _channel.invokeMethod('scheduleAlarm', {
       'alarmId': alarmId,
       'triggerTime': dateTime.millisecondsSinceEpoch,
       'title': title,
+      'instructions': instructions,
+      'repeatType': repeatType,
+      'repeatDays': repeatDays,
     });
   }
 
@@ -19,5 +25,9 @@ class NativeAlarmService {
     await _channel.invokeMethod('cancelAlarm', {
       'alarmId': alarmId,
     });
+  }
+
+  static Future<void> checkBatteryOptimizations() async {
+    await _channel.invokeMethod('checkBatteryOptimizations');
   }
 }

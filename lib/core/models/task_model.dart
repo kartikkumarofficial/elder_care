@@ -30,8 +30,6 @@ class TaskModel {
     this.taskType = 'normal',
   });
 
-  // Insert Map
-
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
@@ -49,8 +47,6 @@ class TaskModel {
     };
   }
 
-  // Update map
-
   Map<String, dynamic> toUpdateMap() {
     return {
       'title': title,
@@ -65,8 +61,6 @@ class TaskModel {
     };
   }
 
-  // From DB
-
   factory TaskModel.fromMap(Map<String, dynamic> m) {
     return TaskModel(
       id: m['id'] is int
@@ -74,8 +68,7 @@ class TaskModel {
           : (m['id'] is num ? (m['id'] as num).toInt() : null),
       receiverId: (m['receiver_id'] ?? '').toString(),
       title: (m['title'] ?? '').toString(),
-      datetime:
-      m['datetime'] == null ? null : m['datetime'].toString(),
+      datetime: m['datetime'] == null ? null : m['datetime'].toString(),
       alarmEnabled: m['alarm_enabled'] is bool
           ? m['alarm_enabled'] as bool
           : m['alarm_enabled']?.toString().toLowerCase() == 'true',
@@ -83,15 +76,11 @@ class TaskModel {
       repeatType: m['repeat_type'] ?? 'none',
       repeatDays: List<String>.from(m['repeat_days'] ?? const []),
       isCompleted: m['is_completed'] ?? false,
-      completedDates:
-      List<String>.from(m['completed_dates'] ?? const []),
-      createdAt:
-      m['created_at'] == null ? null : m['created_at'].toString(),
+      completedDates: List<String>.from(m['completed_dates'] ?? const []),
+      createdAt: m['created_at'] == null ? null : m['created_at'].toString(),
       taskType: m['task_type'] ?? 'normal',
     );
   }
-
-  // COPY WITH
 
   TaskModel copyWith({
     String? title,

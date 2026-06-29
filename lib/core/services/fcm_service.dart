@@ -11,6 +11,9 @@ class FcmService {
     required String alarmId,
     required DateTime time,
     required String title,
+    String? instructions,
+    String repeatType = 'none',
+    List<String> repeatDays = const [],
     bool isCancel = false,
   }) async {
     await _invoke(
@@ -20,6 +23,9 @@ class FcmService {
         'alarm_id': alarmId,
         'alarm_time': time.millisecondsSinceEpoch.toString(),
         'title': title,
+        if (instructions != null) 'instructions': instructions,
+        'repeat_type': repeatType,
+        'repeat_days': jsonEncode(repeatDays),
         'click_action': 'FLUTTER_NOTIFICATION_CLICK',
       },
     );
@@ -50,7 +56,7 @@ class FcmService {
 
   static Future<void> _invoke({
     required String receiverId,
-    required Map<String, String> data, // FCM v1 data must be Map<String, String>
+    required Map<String, String> data,
     Map<String, String>? notification,
   }) async {
     try {

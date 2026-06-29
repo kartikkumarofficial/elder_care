@@ -11,12 +11,13 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import org.json.JSONArray
+import org.json.JSONException
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Log.d("FCM_DEBUG", "Message received from: ${remoteMessage.from}")
+        Log.d("FCM_DEBUG", "🔔 Message received from: ${remoteMessage.from}")
         
-        // Ensure channels are created
         createChannels()
 
         val data = remoteMessage.data
@@ -29,24 +30,48 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     val alarmId = data["alarm_id"] ?: return
                     val alarmTime = data["alarm_time"]?.toLongOrNull() ?: return
                     val title = data["title"] ?: "Task Reminder"
+                    val dosage = data["dosage"]
+                    val instructions = data["instructions"]
+                    val repeatType = data["repeat_type"] ?: "none"
+                    val repeatDaysStr = data["repeat_days"] ?: "[]"
                     
-                    AlarmScheduler.schedule(this, alarmId, alarmTime, title)
+                    val repeatDays = try {
+                        val arr = JSONArray(repeatDaysStr)
+                        val list = mutableListOf<String>()
+                        for (i in 0 until arr.length()) {
+                            list.add(arr.getString(i))
+                        }
+                        list
+                    } catch (e: JSONException) {
+                        emptyList<String>()
+                    }
+                    
+                    Log.d("FCM_DEBUG", "Scheduling local alarm: $alarmId at $alarmTime")
+                    AlarmScheduler.schedule(
+                        this, 
+                        alarmId, 
+                        alarmTime, 
+                        title, 
+                        dosage, 
+                        instructions, 
+                        repeatType, 
+                        repeatDays
+                    )
                     
                     val advanceTime = alarmTime - (10 * 60 * 1000)
-                    if (advanceTime > System.currentTimeMillis()) {
+                    if (advanceTime > System.currentTimeMillis() && repeatType == "none") {
                         AlarmScheduler.scheduleAdvanceNotification(this, alarmId, advanceTime, title)
                     }
                 }
                 "cancel_alarm" -> {
                     val alarmId = data["alarm_id"] ?: return
+                    Log.d("FCM_DEBUG", "Cancelling local alarm: $alarmId")
                     AlarmScheduler.cancel(this, alarmId)
                 }
                 "sos" -> {
                     showFullScreenAlarm("SOS", "EMERGENCY ALERT", true)
                 }
                 "chat" -> {
-                    // Handled by Flutter if app is in foreground/background, 
-                    // but showing a notification here ensures it appears if the app is killed.
                     showStandardNotification(
                         "chat_channel",
                         data["sender_name"] ?: "New Message",
@@ -64,11 +89,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 }
             }
         }
-
-        // If the message contains a notification payload, it is handled by the system 
-        // when the app is in the background. If in foreground, we might want to show it.
-        // However, Flutter's onMessage will also trigger. To avoid double notifications
-        // in foreground, we usually let Flutter handle it.
     }
 
     private fun showFullScreenAlarm(alarmId: String, title: String, isSOS: Boolean) {
@@ -130,7 +150,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(NotificationManager::class.java)
 
-            // Alarms: High Importance + Alarm Sound
             val alarmChannel = NotificationChannel(ALARM_CHANNEL, "Alarms", NotificationManager.IMPORTANCE_HIGH).apply {
                 enableVibration(true)
                 setSound(Settings.System.DEFAULT_ALARM_ALERT_URI, AudioAttributes.Builder()
@@ -138,13 +157,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     .build())
             }
 
-            // Chat: High Importance for Heads-up
             val chatChannel = NotificationChannel("chat_channel", "Chat Messages", NotificationManager.IMPORTANCE_HIGH)
-            
-            // Updates: High Importance for Heads-up
             val updateChannel = NotificationChannel("update_channel", "Receiver Updates", NotificationManager.IMPORTANCE_HIGH)
-            
-            // Default: High Importance for Heads-up
             val defaultChannel = NotificationChannel("default_channel", "General Notifications", NotificationManager.IMPORTANCE_HIGH)
 
             manager.createNotificationChannels(listOf(alarmChannel, chatChannel, updateChannel, defaultChannel))

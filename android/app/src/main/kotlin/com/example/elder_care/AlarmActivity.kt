@@ -3,14 +3,9 @@ package com.example.elder_care
 import android.app.Activity
 import android.app.KeyguardManager
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import android.media.RingtoneManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import android.view.WindowManager
 import android.widget.Button
@@ -20,24 +15,28 @@ import java.util.Date
 import java.util.Locale
 
 class AlarmActivity : Activity() {
-    private var mediaPlayer: MediaPlayer? = null
-    private var vibrator: Vibrator? = null
     private var tvTime: TextView? = null
     private var tvDate: TextView? = null
     private var tvTitle: TextView? = null
+    private var tvDosage: TextView? = null
+    private var tvInstructions: TextView? = null
     private var btnStop: Button? = null
+    private var btnSnooze: Button? = null
+    private var btnTake: Button? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("ALARM_DEBUG", "AlarmActivity launched")
+        val alarmId = intent.getStringExtra("alarm_id") ?: "unknown"
+        Log.d("ALARM_DEBUG", "🚀 AlarmActivity launched for ID: $alarmId")
 
-        // 🔥 Professional Unlock & Wake Screen logic for Alarms
+        // Professional Unlock & Wake Screen logic for Alarms
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
             val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
             keyguardManager.requestDismissKeyguard(this, null)
         } else {
+            @Suppress("DEPRECATION")
             window.addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
                         WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
@@ -51,9 +50,12 @@ class AlarmActivity : Activity() {
         tvTime = findViewById(R.id.tvTime)
         tvDate = findViewById(R.id.tvDate)
         tvTitle = findViewById(R.id.tvTitle)
+        tvDosage = findViewById(R.id.tvDosage)
+        tvInstructions = findViewById(R.id.tvInstructions)
         btnStop = findViewById(R.id.btnStop)
+        btnSnooze = findViewById(R.id.btnSnooze)
+        btnTake = findViewById(R.id.btnTake)
 
-        // Set Current Time & Date
         val now = Date()
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         val dateFormat = SimpleDateFormat("EEEE, MMM dd", Locale.getDefault())
@@ -61,83 +63,65 @@ class AlarmActivity : Activity() {
         tvTime?.text = timeFormat.format(now)
         tvDate?.text = dateFormat.format(now)
 
-        // Handle Alarm or SOS specific styling
         val alarmTitle = intent.getStringExtra("alarm_title")
+        val dosage = intent.getStringExtra("dosage")
+        val instructions = intent.getStringExtra("instructions")
         val isSOS = intent.getBooleanExtra("is_sos", false)
 
         if (isSOS) {
             tvTitle?.text = "EMERGENCY ALERT (SOS)"
-            tvTitle?.setTextColor(0xFFFF0000.toInt()) // High-visibility red
-        } else if (!alarmTitle.isNullOrEmpty()) {
-            tvTitle?.text = alarmTitle
+            tvTitle?.setTextColor(0xFFFF0000.toInt())
+            btnSnooze?.visibility = android.view.View.GONE
+            btnTake?.visibility = android.view.View.GONE
         } else {
-            tvTitle?.text = "Task Reminder"
-        }
-
-        startAlarmSound(isSOS)
-        startVibration(isSOS)
-
-        btnStop?.setOnClickListener { stopAlarm() }
-    }
-
-    private fun startAlarmSound(isSOS: Boolean) {
-        try {
-            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                setDataSource(this@AlarmActivity, alarmUri)
-                isLooping = true
-                prepare()
-                start()
+            if (!alarmTitle.isNullOrEmpty()) {
+                tvTitle?.text = alarmTitle
             }
-        } catch (e: Exception) {
-            Log.e("ALARM_DEBUG", "Error playing alarm sound", e)
-        }
-    }
-
-    private fun startVibration(isSOS: Boolean) {
-        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-
-        vibrator?.let {
-            val pattern = if (isSOS) longArrayOf(0, 1000, 200) else longArrayOf(0, 500, 500)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                it.vibrate(VibrationEffect.createWaveform(pattern, 0))
-            } else {
-                @Suppress("DEPRECATION")
-                it.vibrate(pattern, 0)
+            if (!dosage.isNullOrEmpty()) {
+                tvDosage?.text = dosage
+                tvDosage?.visibility = android.view.View.VISIBLE
             }
+            if (!instructions.isNullOrEmpty()) {
+                tvInstructions?.text = instructions
+                tvInstructions?.visibility = android.view.View.VISIBLE
+            }
+        }
+
+        btnStop?.setOnClickListener {
+            Log.d("ALARM_DEBUG", "Alarm dismissed by user")
+            stopAlarm()
+        }
+
+        btnSnooze?.setOnClickListener {
+            Log.d("ALARM_DEBUG", "Alarm snoozed (10 mins)")
+            val snoozeTime = System.currentTimeMillis() + (10 * 60 * 1000)
+            AlarmScheduler.schedule(
+                this, 
+                "snooze_$alarmId", 
+                snoozeTime, 
+                "Snoozed: $alarmTitle",
+                dosage,
+                instructions
+            )
+            stopAlarm()
+        }
+
+        btnTake?.setOnClickListener {
+            Log.d("ALARM_DEBUG", "Medication marked as TAKEN")
+            // Here you could send a broadcast to Flutter to update Supabase
+            stopAlarm()
         }
     }
 
     private fun stopAlarm() {
-        mediaPlayer?.let {
-            if (it.isPlaying) it.stop()
-            it.release()
+        val stopServiceIntent = Intent(this, AlarmService::class.java).apply {
+            action = AlarmService.ACTION_STOP_ALARM
         }
-        mediaPlayer = null
-        vibrator?.cancel()
+        startService(stopServiceIntent)
         finish()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        mediaPlayer?.release()
-        mediaPlayer = null
-        vibrator?.cancel()
-    }
-
     override fun onBackPressed() {
-        // Disable back button to force user to use the 'STOP' button
+        // Force button use to stop alarm
     }
 }

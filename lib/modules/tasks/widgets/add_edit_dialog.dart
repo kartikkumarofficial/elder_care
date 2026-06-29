@@ -19,7 +19,7 @@ class AddEditTaskDialog extends StatefulWidget {
 }
 
 class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
-  Color kTeal = Color(0xFF7AB7A7);
+  Color kTeal = const Color(0xFF7AB7A7);
   final _form = GlobalKey<FormState>();
   final DateTime start = DateTime.now();
   bool loading = false;
@@ -96,26 +96,26 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
     });
 
     return Dialog(
-      insetPadding: EdgeInsets.symmetric(horizontal: 20),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       child: SingleChildScrollView(
         child: Container(
-          padding: EdgeInsets.all(18),
-          decoration: BoxDecoration(
+          padding: const EdgeInsets.all(18),
+          decoration: const BoxDecoration(
               borderRadius: BorderRadius.all(Radius.circular(40)),
               gradient: LinearGradient(colors: [Color(0xFFeaf4f2), Colors.white])),
           child: Form(
             key: _form,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Text(widget.isEdit ? 'Edit Task' : 'New Task', style: GoogleFonts.nunito(fontSize: 20, fontWeight: FontWeight.w800)),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
 
               TextFormField(
                 controller: widget.controller.titleController,
                 decoration: _inputDecor('Task name', Icons.edit, w),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a task name' : null,
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
 
               SizedBox(
                 height: _timelineHeight,
@@ -124,9 +124,9 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                   initialSelectedDate: widget.controller.pickedDate ?? start,
                   selectionColor: kTeal,
                   selectedTextColor: Colors.white,
-                  dayTextStyle: TextStyle(fontSize: 12),
-                  dateTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  monthTextStyle: TextStyle(fontSize: 10),
+                  dayTextStyle: const TextStyle(fontSize: 12),
+                  dateTextStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  monthTextStyle: const TextStyle(fontSize: 10),
                   onDateChange: (date) {
                     // disallow selecting a past date
                     final now = DateTime.now();
@@ -144,31 +144,25 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                 ),
               ),
 
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
 
               GestureDetector(
                 onTap: _showTimePicker,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(w * 0.05)),
                   child: Row(children: [
                     Icon(Icons.access_time, color: kTeal),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(child: Text(_displayPicked(), style: GoogleFonts.nunito())),
-                    Icon(Icons.keyboard_arrow_down)
+                    const Icon(Icons.keyboard_arrow_down)
                   ]),
                 ),
               ),
 
-              SizedBox(height: 12),
-
-
-
-
+              const SizedBox(height: 12),
 
               // visible only when both date & time selected
-
-              // reminder
               if (widget.controller.showAlarmCheckbox())
                 Obx(() => Column(
                   children: [
@@ -221,7 +215,7 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: _showRepeatOptions ? kTeal.withOpacity(0.4) : Colors.transparent,
+                        color: _showRepeatOptions ? kTeal.withValues(alpha: 0.4) : Colors.transparent,
                         width: 1,
                       ),
                     ),
@@ -269,15 +263,15 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                       : RepeatOptions(controller: widget.controller),
                 ),
 
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
 
               if (_errorText != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8,left: 10),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red, size: 18),
-                      SizedBox(width: 6),
+                      const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           _errorText!,
@@ -294,7 +288,7 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
 
 
 
-              SizedBox(height: 6),
+              const SizedBox(height: 6),
 
 
               ElevatedButton(
@@ -335,21 +329,21 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kTeal,
-                  minimumSize: Size(double.infinity, 48),
+                  minimumSize: const Size(double.infinity, 48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(w * 0.05)),
                 ),
                 child: loading
-                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.2))
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.2))
                     : Text(widget.isEdit ? 'Save Changes' : 'Add Task', style: GoogleFonts.nunito(color: Colors.white)),
               ),
 
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               TextButton(
                 onPressed: () {
                   widget.controller.clearForm();
                   Navigator.pop(context);
                 },
-                child: Text('Cancel', style: GoogleFonts.nunito(color: Colors.grey)),
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
               ),
             ]),
           ),
@@ -376,13 +370,5 @@ class _AddEditTaskDialogState extends State<AddEditTaskDialog> {
       default: return 'Repeat: Never';
     }
   }
-  Widget _repeatTile(String text, VoidCallback onTap) {
-    return ListTile(
-      dense: true,
-      title: Text(text, style: GoogleFonts.nunito()),
-      onTap: onTap,
-    );
-  }
-
 
 }
