@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-
 import '../../../core/models/event_model.dart';
-
-const Color kTeal = Color(0xFF7AB7A7);
-const Color kTealLight = Color(0xFFBFEDE2);
-const double kCardRadius = 16.0;
-const double kCardHeight = 110.0;
-
+import '../../../core/services/native_alarm_service.dart';
+import '../../../core/services/fcm_service.dart';
 
 class SupabaseEventService {
   static final supabase = Supabase.instance.client;
@@ -50,11 +44,11 @@ class SupabaseEventService {
     final res = await supabase
         .from('events')
         .update({
-      'title': event.title,
-      'event_time': event.eventTime.toIso8601String(),
-      'category': event.category,
-      'notes': event.notes,
-    })
+          'title': event.title,
+          'event_time': event.eventTime.toIso8601String(),
+          'category': event.category,
+          'notes': event.notes,
+        })
         .eq('id', event.id!)
         .select()
         .single()
@@ -71,14 +65,11 @@ class SupabaseEventService {
   }
 }
 
-// controller
 class EventsController extends GetxController {
+  final supabase = Supabase.instance.client;
   final RxList<EventModel> events = <EventModel>[].obs;
-
   String? currentReceiverId;
 
-
-  // ---------------- FORM ----------------
   final titleController = TextEditingController();
   final dateController = TextEditingController();
   final notesController = TextEditingController();
@@ -98,7 +89,6 @@ class EventsController extends GetxController {
   DateTime? pickedDate;
   TimeOfDay? pickedTime;
 
-  // ---------------- CLEANUP ----------------
   @override
   void onClose() {
     titleController.dispose();
@@ -117,133 +107,166 @@ class EventsController extends GetxController {
     pickedTime = null;
   }
 
-  // ---------------- LOADING ----------------
   Future<void> loadEventsForReceiver(String receiverId) async {
     currentReceiverId = receiverId;
-
     try {
-      final list =
-      await SupabaseEventService.fetchEvents(receiverId);
-
+      final list = await SupabaseEventService.fetchEvents(receiverId);
       events.assignAll(list);
     } catch (e) {
       debugPrint('fetchEvents error: $e');
-      Get.snackbar('Error', 'Failed to load events');
     }
   }
 
-  Future<void> refreshEvents() async {
-    if (currentReceiverId == null) return;
-    await loadEventsForReceiver(currentReceiverId!);
-  }
-
-  // ---------------- HELPERS ----------------
   DateTime? _combinedDateTime() {
     if (pickedDate == null && pickedTime == null) return null;
-
     final d = pickedDate ?? DateTime.now();
     final t = pickedTime ?? const TimeOfDay(hour: 9, minute: 0);
-
     return DateTime(d.year, d.month, d.day, t.hour, t.minute);
   }
 
-  bool _isFutureSelected() {
-    final combined = _combinedDateTime();
-    return combined != null && combined.isAfter(DateTime.now());
-  }
-
-  // ---------------- CREATE ----------------
   Future<bool> addEvent() async {
     if (titleController.text.trim().isEmpty) {
       Get.snackbar('Validation', 'Enter event title');
       return false;
     }
-
-    if (!_isFutureSelected()) {
+    final dt = _combinedDateTime();
+    if (dt == null || dt.isBefore(DateTime.now())) {
       Get.snackbar('Validation', 'Select future date & time');
       return false;
     }
-
-    if (currentReceiverId == null) {
-      Get.snackbar('Error', 'No receiver selected');
-      return false;
-    }
+    if (currentReceiverId == null) return false;
 
     final model = EventModel(
       receiverId: currentReceiverId!,
       title: titleController.text.trim(),
-      eventTime: _combinedDateTime()!,
+      eventTime: dt,
       category: category.value,
       notes: notesController.text.trim(),
     );
 
-    final created =
-    await SupabaseEventService.createEvent(model);
-
+    final created = await SupabaseEventService.createEvent(model);
     if (created != null) {
       events.add(created);
       events.sort((a, b) => a.eventTime.compareTo(b.eventTime));
+
+      // Native Alarm Scheduling
+      if (supabase.auth.currentUser?.id == currentReceiverId) {
+        await NativeAlarmService.schedule(
+          alarmId: "event_${created.id}",
+          dateTime: created.eventTime,
+          title: created.title,
+        );
+      }
+      await FcmService.sendRemoteAlarm(
+        receiverId: currentReceiverId!,
+        alarmId: "event_${created.id}",
+        time: created.eventTime,
+        title: created.title,
+      );
+
+      // Notify caregiver if receiver added an event
+      if (supabase.auth.currentUser?.id == currentReceiverId) {
+        final caregiver = await _getCaregiverId();
+        if (caregiver != null) {
+          await FcmService.sendNotification(
+            receiverId: caregiver,
+            title: "New Event Added",
+            body: "Receiver added: ${created.title}",
+            type: "event_added"
+          );
+        }
+      }
+
       Get.snackbar('Success', 'Event added');
       return true;
     }
-
     return false;
   }
 
-  // ---------------- EDIT ----------------
-  Future<void> startEdit(EventModel event) async {
-    editingId = event.id;
-    titleController.text = event.title;
-    notesController.text = event.notes;
-    category.value =
-    categories.contains(event.category.trim())
-        ? event.category.trim()
-        : categories.first;
-
-    final dt = event.eventTime.toLocal();
-    pickedDate = DateTime(dt.year, dt.month, dt.day);
-    pickedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
-  }
-
   Future<bool> confirmEdit() async {
-    try {
-      if (editingId == null) return false;
+    if (editingId == null) return false;
+    final dt = _combinedDateTime();
+    if (dt == null) return false;
 
-      final model = EventModel(
-        id: editingId,
+    final model = EventModel(
+      id: editingId,
+      receiverId: currentReceiverId!,
+      title: titleController.text.trim(),
+      eventTime: dt,
+      category: category.value,
+      notes: notesController.text.trim(),
+    );
+
+    final updated = await SupabaseEventService.updateEvent(model);
+    if (updated != null) {
+      final idx = events.indexWhere((e) => e.id == updated.id);
+      if (idx != -1) events[idx] = updated;
+      events.sort((a, b) => a.eventTime.compareTo(b.eventTime));
+
+      // Reschedule Native Alarm
+      await NativeAlarmService.cancel("event_${updated.id}");
+      if (supabase.auth.currentUser?.id == currentReceiverId) {
+        await NativeAlarmService.schedule(
+          alarmId: "event_${updated.id}",
+          dateTime: updated.eventTime,
+          title: updated.title,
+        );
+      }
+      await FcmService.sendRemoteAlarm(
         receiverId: currentReceiverId!,
-        title: titleController.text.trim(),
-        eventTime: _combinedDateTime()!,
-        category: category.value,
-        notes: notesController.text.trim(),
+        alarmId: "event_${updated.id}",
+        time: updated.eventTime,
+        title: updated.title,
       );
 
-      final updated =
-      await SupabaseEventService.updateEvent(model);
-
-      if (updated != null) {
-        final idx =
-        events.indexWhere((e) => e.id == updated.id);
-
-        if (idx != -1) events[idx] = updated;
-
-        events.sort((a, b) =>
-            a.eventTime.compareTo(b.eventTime));
-
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      debugPrint("Confirm edit error: $e");
-      return false;
+      return true;
     }
+    return false;
   }
 
-  // ---------------- DELETE ----------------
   Future<void> deleteEventConfirmed(int id) async {
     await SupabaseEventService.deleteEvent(id);
     events.removeWhere((e) => e.id == id);
+    await NativeAlarmService.cancel("event_$id");
+    if (currentReceiverId != null) {
+       await FcmService.sendRemoteAlarm(
+        receiverId: currentReceiverId!,
+        alarmId: "event_$id",
+        time: DateTime.now(),
+        title: "",
+        isCancel: true,
+      );
+
+       // Notify caregiver
+       if (supabase.auth.currentUser?.id == currentReceiverId) {
+          final caregiver = await _getCaregiverId();
+          if (caregiver != null) {
+            await FcmService.sendNotification(
+              receiverId: caregiver,
+              title: "Event Deleted",
+              body: "Receiver deleted an event",
+              type: "event_deleted"
+            );
+          }
+       }
+    }
     Get.snackbar('Deleted', 'Event removed');
+  }
+
+  Future<String?> _getCaregiverId() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return null;
+    final res = await supabase.from('care_links').select('caregiver_id').eq('receiver_id', uid).maybeSingle();
+    return res?['caregiver_id'];
+  }
+
+  void startEdit(EventModel event) {
+    editingId = event.id;
+    titleController.text = event.title;
+    notesController.text = event.notes;
+    category.value = categories.contains(event.category.trim()) ? event.category.trim() : categories.first;
+    final dt = event.eventTime.toLocal();
+    pickedDate = DateTime(dt.year, dt.month, dt.day);
+    pickedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
   }
 }

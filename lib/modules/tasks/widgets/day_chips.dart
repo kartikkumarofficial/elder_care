@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-import '../../events/controllers/events_controller.dart';
 import '../controllers/task_controller.dart';
 
+const Color kTeal = Color(0xFF7AB7A7);
 class CustomDayChips extends StatelessWidget {
   final TaskController controller;
-  const CustomDayChips({required this.controller});
+  const CustomDayChips({Key? key, required this.controller}) : super(key: key);
 
-  static const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  static const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const Color kTeal = Color(0xFF7AB7A7);
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +17,7 @@ class CustomDayChips extends StatelessWidget {
       builder: (_, constraints) {
         final chipWidth = (constraints.maxWidth - 24) / 4;
 
-        return Wrap(
+        return Obx(() => Wrap(
           spacing: 8,
           runSpacing: 8,
           children: days.map((d) {
@@ -25,9 +26,11 @@ class CustomDayChips extends StatelessWidget {
               width: chipWidth,
               child: GestureDetector(
                 onTap: () {
-                  selected
-                      ? controller.repeatDays.remove(d)
-                      : controller.repeatDays.add(d);
+                  if (selected) {
+                    controller.repeatDays.remove(d);
+                  } else {
+                    controller.repeatDays.add(d);
+                  }
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
@@ -53,7 +56,7 @@ class CustomDayChips extends StatelessWidget {
               ),
             );
           }).toList(),
-        );
+        ));
       },
     );
   }

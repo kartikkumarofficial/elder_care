@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/models/message_model.dart';
 import '../../../core/services/chat_service.dart';
+import '../../../core/services/fcm_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 class ChatController extends GetxController {
@@ -124,7 +125,7 @@ class ChatController extends GetxController {
   }
 
   Future<void> sendMessage(String text) async {
-    if (_chatId == null) return;
+    if (_chatId == null || _partnerId == null) return;
 
     final userId = supabase.auth.currentUser!.id;
 
@@ -132,8 +133,24 @@ class ChatController extends GetxController {
       'chat_id': _chatId,
       'sender_id': userId,
       'content': text,
-      'is_seen': false, // ✔️ sent
+      'is_seen': false,
     });
+
+    // 🔥 Send FCM Notification to partner
+    final myProfile = await supabase.from('users').select('full_name').eq('id', userId).maybeSingle();
+    final myName = myProfile?['full_name'] ?? "Someone";
+
+    await FcmService.sendNotification(
+      receiverId: _partnerId!,
+      title: "New Message from $myName",
+      body: text,
+      type: "chat",
+      extraData: {
+        'chat_id': _chatId!,
+        'sender_name': myName,
+        'message': text,
+      }
+    );
   }
 
   @override
@@ -144,4 +161,3 @@ class ChatController extends GetxController {
     super.onClose();
   }
 }
-

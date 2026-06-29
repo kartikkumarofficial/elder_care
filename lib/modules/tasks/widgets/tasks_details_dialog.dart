@@ -128,15 +128,10 @@ class TaskDetailsDialog extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        //todo here
                         child: ElevatedButton(
                           onPressed: () {
                             controller.startEdit(task);
-
-
                             Navigator.pop(context);
-
-
                             Future.delayed(const Duration(milliseconds: 100), () {
                               openCustomDialog(
                                 context,
@@ -169,7 +164,7 @@ class TaskDetailsDialog extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            controller.deleteTaskConfirmed(task.id!);
+                            controller.deleteTaskConfirmed(task);
                             Get.back();
                           },
                           style: ElevatedButton.styleFrom(
@@ -199,10 +194,6 @@ class TaskDetailsDialog extends StatelessWidget {
       ),
     );
   }
-
-  
-  /// META CHIP
-  
 
   Widget _metaChip({
     IconData? icon,
@@ -249,11 +240,12 @@ class TaskDetailsDialog extends StatelessWidget {
 
     return '${d.day}/${d.month}/${d.year} • $hour12:$minute $period';
   }
+
   void openCustomDialog(BuildContext context, Widget dialog) {
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
-        barrierColor: Colors.black.withOpacity(0.25),
+        barrierColor: Colors.black.withValues(alpha: 0.25),
         transitionDuration: const Duration(milliseconds: 250),
         pageBuilder: (_, __, ___) => dialog,
         transitionsBuilder: (_, animation, __, child) {
@@ -273,6 +265,4 @@ class TaskDetailsDialog extends StatelessWidget {
       ),
     );
   }
-
 }
-

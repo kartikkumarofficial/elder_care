@@ -22,7 +22,7 @@ class MessageModel {
       senderId: json['sender_id'],
       content: json['content'],
       createdAt: DateTime.parse(json['created_at']).toLocal(),
-      isSeen: json['is_seen'] == true, // ✅ CRITICAL: null-safe
+      isSeen: json['is_seen'] == true,
     );
   }
 }

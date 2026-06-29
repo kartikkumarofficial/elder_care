@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../care_receiver/views/schedule_screen.dart';
 import '../controllers/events_controller.dart';
-import '../views/eventssection.dart';
+import '../views/eventssection.dart' hide h;
 
 
 
